@@ -98,7 +98,7 @@ const fmt = (i: string, tz: string, o: Intl.DateTimeFormatOptions) => new Intl.D
 const hora = (i: string, tz: string) => fmt(i, tz, { hour: '2-digit', minute: '2-digit', hour12: false })
 const dia = (i: string) => fmt(i, 'Europe/Madrid', { weekday: 'long', day: 'numeric', month: 'long' })
 const nac = (n: unknown) => NACIONALIDADES[minusc(n)] ?? String(n ?? '')
-const piloto = (d: J) => `${d?.givenName ?? ''} ${d?.familyName ?? ''}`.trim()
+export const piloto = (d: J) => `${d?.givenName ?? ''} ${d?.familyName ?? ''}`.trim()
 
 function lineasMundial(pilotos: J[], equipos: J[], L: string[], tras: string) {
   if (pilotos.length) {

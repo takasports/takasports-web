@@ -12,7 +12,7 @@ import { NextResponse } from 'next/server'
 import { checkBearerOrHeader } from '@/lib/auth-utils'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { encargar, encargosRecientes } from '@/lib/produccion-propia'
-import { construirDossierGpCronica, construirDossierGpPrevia, fetchJolpica, gpDesdeJolpica, refGp, type Gp } from '@/lib/f1'
+import { construirDossierGpCronica, construirDossierGpPrevia, fetchJolpica, gpDesdeJolpica, piloto, refGp, type Gp } from '@/lib/f1'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -67,7 +67,10 @@ async function handle(req: Request) {
       const { datos, texto } = construirDossierGpPrevia(prox, m.pilotos, m.equipos)
       encargos.push({ gp: prox.nombre, tipo: 'previa', dossier: seco ? texto : undefined, dossierChars: texto.length })
       if (!seco) {
-        const fallo = await encargar(sb, 'previa', candidata(prox), datos, texto, { titulo: `Previa: ${prox.nombre} ${prox.temporada}`, resumen: `${prox.nombre}, ronda ${prox.ronda} del Mundial de F1, en ${prox.circuito}.` })
+        // Con el líder del Mundial como protagonista, la foto de la tarjeta es la de un piloto
+        // y no un gráfico genérico del GP (10/10/2026: rechazado en la previa de Singapur).
+        const lider = m.pilotos[0]?.Driver ? piloto(m.pilotos[0].Driver) : null
+        const fallo = await encargar(sb, 'previa', candidata(prox), datos, texto, { titulo: `Previa: ${prox.nombre} ${prox.temporada}`, resumen: `${prox.nombre}, ronda ${prox.ronda} del Mundial de F1, en ${prox.circuito}.`, ...(lider ? { personas: [lider] } : {}) })
         if (fallo) notas.push(`previa: ${fallo}`)
       }
     }
@@ -88,7 +91,7 @@ async function handle(req: Request) {
         const { datos, texto } = construirDossierGpCronica(g, ult.Results, m.pilotos, m.equipos)
         encargos.push({ gp: g.nombre, tipo: 'cronica', dossier: seco ? texto : undefined, dossierChars: texto.length })
         if (!seco) {
-          const fallo = await encargar(sb, 'cronica', candidata(g), datos, texto, { titulo: `Crónica: ${g.nombre} ${g.temporada}`, resumen: `${g.nombre}: gana ${String(datos.ganador ?? '?')}.` })
+          const fallo = await encargar(sb, 'cronica', candidata(g), datos, texto, { titulo: `Crónica: ${g.nombre} ${g.temporada}`, resumen: `${g.nombre}: gana ${String(datos.ganador ?? '?')}.`, ...(datos.ganador ? { personas: [String(datos.ganador)] } : {}) })
           if (fallo) notas.push(`crónica: ${fallo}`)
         }
       }

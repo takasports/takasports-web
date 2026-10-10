@@ -146,6 +146,7 @@ Reglas:
 - ORIGINAL: estructura y enfoque propios, NO copies el titular tal cual ni titulares de otros medios.
 - Empieza por la ENTIDAD o KEYWORD que la gente busca (nombre, equipo, competición).
 - Si la noticia lo contiene, PRIORIZA los elementos con más intención de búsqueda: cifras y datos concretos, horario ("a qué hora"), "dónde ver", alineaciones o convocatoria, fichaje, lesión, marcador/resultado, competición y temporada.
+- LO QUE DA CLICS EN ESTE MEDIO (medido en 2.668 noticias, oct. 2026): con una CIFRA concreta de la noticia (millones, años de contrato, marcador, fecha, semanas de baja) el título recibe un 45 % más de clics que sin ella; la forma «Entidad: dato» rinde un 30 % más que una frase larga; los títulos de declaraciones («X dice que…») rinden un 30 % menos: titula con el HECHO que revela la declaración; las lesiones sin dato rinden menos de la mitad: di cuánto tiempo estará de baja si la noticia lo dice.
 - Usa EXACTAMENTE los mismos nombres propios y cifras de la noticia. NUNCA añadas ni inventes datos que no estén en ella; si no hay cifras/horarios, no los pongas.
 - Español periodístico, concreto y natural, sin clickbait ni Mayúsculas Inglesas. Máx 57 caracteres.
 - Sin "TakaSports" ni " | ...". Devuelve SOLO el título.
@@ -155,7 +156,7 @@ ${kw ? `Lo que busca la gente (ponlo al principio si encaja): ${kw}\n` : ''}Titu
 Contexto: ${ctx}
 Título SEO:`
 const pCompress = (h, sport) => `Acorta este titular deportivo a un TÍTULO SEO de máximo 57 caracteres, en español, gramatical y fiel.
-No inventes ni añadas nombres o cifras; usa solo los del titular. Sin "TakaSports". Devuelve SOLO el título.
+No inventes ni añadas nombres o cifras; usa solo los del titular. Si el titular tiene una cifra (millones, años, marcador, fecha), CONSÉRVALA: es lo que más clics da. Sin "TakaSports". Devuelve SOLO el título.
 
 Titular: ${h}
 Título corto:`
