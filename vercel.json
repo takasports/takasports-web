@@ -136,6 +136,10 @@
     {
       "path": "/api/cron/f1",
       "schedule": "35 * * * *"
+    },
+    {
+      "path": "/api/cron/tenis",
+      "schedule": "45 * * * *"
     }
   ],
   "functions": {

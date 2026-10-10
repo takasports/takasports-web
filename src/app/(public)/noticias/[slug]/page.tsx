@@ -160,7 +160,7 @@ async function datosSeoPartido(
     tipo, home, away,
     iso: k?.iso || ficha?.iso || null,
     competicion: competicionCorta(article.matchRef, k?.competition || ficha?.liga),
-    deporte: /^mma_/.test(article.matchRef ?? '') ? 'ufc' : /^racing_/.test(article.matchRef ?? '') ? 'f1' : parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
+    deporte: /^mma_/.test(article.matchRef ?? '') ? 'ufc' : /^racing_/.test(article.matchRef ?? '') ? 'f1' : /^tennis_/.test(article.matchRef ?? '') ? 'tenis' : parseMatchRef(article.matchRef ?? '')?.sport === 'basketball' ? 'baloncesto' : 'futbol',
     ficha, tv,
   }
 }
@@ -1525,7 +1525,8 @@ export default async function NoticiaPage({
               <MatchScheduleCard kickoff={article.matchKickoff} accent={badgeColor} />
             )}
 
-            {article.matchRef && (
+            {/* El tenis no tiene ficha de partido en /partido (ESPN no da resumen de tenis). */}
+            {article.matchRef && !/^tennis_/.test(article.matchRef) && (
               <FichaPartidoLink
                 matchRef={article.matchRef}
                 home={article.matchKickoff?.home ?? seoPartido?.home}

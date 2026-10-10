@@ -29,7 +29,7 @@ export interface DatosSeoPartido {
   iso: string | null
   /** Etiqueta corta de la competición («LaLiga», «Champions»), si se conoce. */
   competicion: string | null
-  deporte: 'futbol' | 'baloncesto' | 'ufc' | 'f1'
+  deporte: 'futbol' | 'baloncesto' | 'ufc' | 'f1' | 'tenis'
   ficha: FichaVisual | null
   tv: BroadcastRow[]
 }
@@ -56,6 +56,13 @@ export function competicionCorta(matchRef: string | null | undefined, etiqueta?:
 }
 
 // ── Formato ──────────────────────────────────────────────────────────────────
+/** Apellido para titulares de tenis: «Carlos Alcaraz» → «Alcaraz», «Alex de Minaur» → «de Minaur». */
+export function apellido(nombre: string): string {
+  const p = nombre.trim().split(/\s+/)
+  if (p.length < 2) return nombre.trim()
+  const i = p.findIndex((x, k) => k > 0 && /^(de|del|da|van|von|di|le|la)$/i.test(x))
+  return i > 0 ? p.slice(i).join(' ') : p[p.length - 1]
+}
 const fmt = (iso: string, tz: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('es-ES', { timeZone: tz, ...o }).format(new Date(iso))
 const hora = (iso: string, tz: string) => fmt(iso, tz, { hour: '2-digit', minute: '2-digit', hour12: false })
 const diaLargo = (iso: string) => fmt(iso, 'Europe/Madrid', { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^(\p{L}+), /u, '$1 ')
@@ -108,6 +115,12 @@ export function tituloSeoPartido(d: DatosSeoPartido): string | null {
     const gp = d.home.replace(/^Gran Premio/, 'GP')
     return primero([`${gp}: horarios y dónde ver la carrera | F1`, `${gp}: horarios y dónde ver la carrera`, `${gp}: horarios de la F1`, gp], MAX_TITULO)
   }
+  if (d.deporte === 'tenis') {
+    // En tenis se busca por apellido («alcaraz vs cerundolo horario»), y el torneo
+    // («alcaraz shanghai») pesa más que «el partido».
+    const cruce = `${apellido(d.home)} vs ${apellido(d.away)}`
+    return primero([`${cruce}: horario y dónde ver el partido${comp}`, `${cruce}: horario y TV${comp}`, `${cruce}: horario y dónde ver el partido`, `${cruce}: horario y TV`, cruce], MAX_TITULO)
+  }
   // «vs»: es como más se escribe la búsqueda («barcelona vs real madrid»), sobre todo en Latinoamérica.
   const cruce = `${d.home} vs ${d.away}`
   const riv = d.deporte === 'futbol' ? rivalidadDe(d.home, d.away) : null
@@ -142,7 +155,9 @@ export function descripcionSeoPartido(d: DatosSeoPartido): string | null {
     return primero([`${gp}: carrera el ${cuando}. Horarios de libres, clasificación y carrera, y cómo llega el Mundial.`, `${gp}: carrera el ${cuando}.`], MAX_DESCRIPCION)
   }
   const base = `${d.home} - ${d.away}${comp}: ${cuando}.`
-  const extra = d.deporte === 'ufc' ? ' Previa con la cartelera estelar y lo que se juega.' : ' Previa con la forma, el cara a cara y lo que se juega.'
+  const extra = d.deporte === 'ufc' ? ' Previa con la cartelera estelar y lo que se juega.'
+    : d.deporte === 'tenis' ? ' Previa con el camino de cada uno en el torneo y lo que se juega.'
+    : ' Previa con la forma, el cara a cara y lo que se juega.'
   return primero([`${base}${tv ? ` Por ${tv}.` : ''}${extra}`, `${base}${tv ? ` Por ${tv}.` : ''}`, base], MAX_DESCRIPCION)
 }
 
@@ -167,7 +182,9 @@ export function faqPartido(d: DatosSeoPartido): PreguntaFrecuente[] {
       const otras = ZONAS.map(([pais, tz]) => `en ${pais}, a las ${hora(d.iso!, tz)}`)
       out.push(d.deporte === 'f1'
         ? { q: `¿A qué hora es la carrera del ${cruce}?`, a: `La carrera se corre el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}. Los horarios de libres y clasificación están en la previa.` }
-        : { q: `¿A qué hora es el ${cruce}?`, a: `Se juega el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}.` })
+        : d.deporte === 'tenis'
+          ? { q: `¿A qué hora es el ${cruce}?`, a: `Está previsto el ${diaLargo(d.iso)} hacia las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}. En el tenis la hora es orientativa: depende de cuánto duren los partidos anteriores en la pista.` }
+          : { q: `¿A qué hora es el ${cruce}?`, a: `Se juega el ${diaLargo(d.iso)} a las ${hora(d.iso, 'Europe/Madrid')} en España (hora peninsular); ${lista(otras)}.` })
     }
     const tv = d.tv.filter((r) => r.channels.length).slice(0, 7)
     if (tv.length) out.push({ q: `¿Dónde ver el ${cruce} por TV?`, a: tv.map((r) => `En ${r.country}, por ${lista(r.channels)}.`).join(' ') })
@@ -215,12 +232,14 @@ export function sportsEventJsonLd(d: DatosSeoPartido, canonical: string, descrip
     startDate: d.iso,
     ...(d.tipo === 'previa' ? { eventStatus: 'https://schema.org/EventScheduled' } : {}),
     eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : d.deporte === 'ufc' ? 'Artes marciales mixtas' : d.deporte === 'f1' ? 'Fórmula 1' : 'Fútbol',
+    sport: d.deporte === 'baloncesto' ? 'Baloncesto' : d.deporte === 'ufc' ? 'Artes marciales mixtas' : d.deporte === 'f1' ? 'Fórmula 1' : d.deporte === 'tenis' ? 'Tenis' : 'Fútbol',
     ...(descripcion ? { description: descripcion } : {}),
     // En F1 no hay dos rivales: el «local» es el GP y el «visitante», el circuito.
     ...(d.deporte === 'f1'
       ? { location: { '@type': 'Place', name: d.away, address: d.away } }
-      : { homeTeam: equipo(d.home), awayTeam: equipo(d.away), competitor: [equipo(d.home), equipo(d.away)] }),
+      : d.deporte === 'tenis'
+        ? { competitor: [{ '@type': 'Person', name: d.home }, { '@type': 'Person', name: d.away }] }
+        : { homeTeam: equipo(d.home), awayTeam: equipo(d.away), competitor: [equipo(d.home), equipo(d.away)] }),
     ...(f?.estadio ? { location: { '@type': 'Place', name: f.estadio, address: f.ciudad ?? f.estadio } } : {}),
     ...(d.competicion ? { superEvent: { '@type': 'SportsEvent', name: d.competicion } } : {}),
     url: canonical,

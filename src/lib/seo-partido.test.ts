@@ -47,6 +47,12 @@ describe('seo de partido', () => {
     expect(tituloSeoPartido(pre({ home: 'Natalia Silva', away: 'Wang Cong', competicion: 'UFC', deporte: 'ufc', ficha: null, tv: [] }))).toBe('Natalia Silva vs Wang Cong: horario y dónde ver el combate')
     expect(tituloSeoPartido({ ...cronica, deporte: 'ufc', ficha: null })).toBeNull()
     expect(faqPartido(pre({ home: 'Natalia Silva', away: 'Wang Cong', deporte: 'ufc', ficha: null, tv: [] }))[0].q).toBe('¿A qué hora es el combate Natalia Silva vs Wang Cong?')
+    // Tenis (10/10/2026): por apellido y con el torneo, la hora es orientativa y los rivales son personas.
+    const ten = pre({ home: 'Carlos Alcaraz', away: 'Juan Manuel Cerundolo', competicion: 'Masters de Shanghái', deporte: 'tenis', ficha: null, tv: [] })
+    expect(tituloSeoPartido(ten)).toBe('Alcaraz vs Cerundolo: horario y TV | Masters de Shanghái')
+    expect(faqPartido(ten)[0].a).toMatch(/hora es orientativa/)
+    expect(sportsEventJsonLd(ten, 'https://x/y')).toMatchObject({ sport: 'Tenis', competitor: [{ '@type': 'Person', name: 'Carlos Alcaraz' }, { '@type': 'Person', name: 'Juan Manuel Cerundolo' }] })
+    expect(sportsEventJsonLd(ten, 'https://x/y')).not.toHaveProperty('homeTeam')
   })
   it('título de crónica con el marcador', () => {
     expect(tituloSeoPartido(cronica)).toBe('Polonia 6-0 Rumanía: resumen, goles y figura | Nations League')
