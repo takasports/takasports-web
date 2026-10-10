@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@sanity/client'
 import { captureException } from '@/lib/monitoring'
 import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
+import { withCoverUrls, type CoverRow } from '@/lib/cover-image'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -101,10 +102,12 @@ export async function GET(req: NextRequest) {
     if (to) params.to = to
     if (q) params.q = q
 
-    const [articles, total] = await Promise.all([
-      sanity.fetch(buildQuery(start, end, filters), params),
+    const [rows, total] = await Promise.all([
+      sanity.fetch<CoverRow[]>(buildQuery(start, end, filters), params),
       sanity.fetch<number>(buildCountQuery(filters), params),
     ])
+    // Reportajes del Studio: portada solo como asset → la app necesita imageUrl.
+    const articles = withCoverUrls(rows ?? [])
 
     // Lista de artículos pública (varía por query, no por usuario): cacheable en
     // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así

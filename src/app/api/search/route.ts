@@ -3,6 +3,7 @@ import { createClient as createSanity } from '@sanity/client'
 import { createClient as createSupabase } from '@supabase/supabase-js'
 import { captureException } from '@/lib/monitoring'
 import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
+import { withCoverUrls, type CoverRow } from '@/lib/cover-image'
 
 const sanity = createSanity({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -59,14 +60,14 @@ export async function GET(req: NextRequest) {
   const sb = getSupabase()
 
   const [articleRes, playerRes] = await Promise.allSettled([
-    sanity.fetch(ARTICLE_QUERY, { q }).catch(() => []),
+    sanity.fetch<CoverRow[]>(ARTICLE_QUERY, { q }).catch(() => []),
     // Usa RPC search_players con unaccent — maneja acentos correctamente
     sb
       ? sb.rpc('search_players', { q, lim: 8 })
       : Promise.resolve({ data: [], error: null }),
   ])
 
-  const articles = articleRes.status === 'fulfilled' ? (articleRes.value ?? []) : []
+  const articles = withCoverUrls(articleRes.status === 'fulfilled' ? (articleRes.value ?? []) : [])
 
   let players: Record<string, unknown>[] = []
   if (playerRes.status === 'fulfilled' && playerRes.value && 'data' in playerRes.value) {

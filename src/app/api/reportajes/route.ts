@@ -3,7 +3,7 @@ import { createClient } from '@sanity/client'
 import { captureException } from '@/lib/monitoring'
 import { readingMinutes } from '@/lib/reading'
 import { displayAuthor } from '@/lib/brand'
-import { urlFor } from '@/lib/sanity'
+import { resolveCoverUrl } from '@/lib/cover-image'
 import { REPORTAJES_ENABLED, REPORTAJES_OCULTOS_GROQ, SOLO_ESPANOL_GROQ } from '@/lib/constants'
 
 // Reportajes para la app móvil. Mismo cliente/caché que /api/articles (CDN de
@@ -53,19 +53,6 @@ interface Row {
   [k: string]: unknown
 }
 
-// La app solo sabe pintar `imageUrl`. Los reportajes redactados en el Studio
-// llevan la foto como referencia de asset (`image`) y no traen imageUrl, así que
-// la resolvemos aquí; si no, la app se quedaría sin portada.
-function resolveCover(row: Row): string | null {
-  if (row.imageUrl) return row.imageUrl
-  if (!row.image?.asset?._ref) return null
-  try {
-    return urlFor(row.image).width(900).height(600).url()
-  } catch {
-    return null
-  }
-}
-
 export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams
   const limitRaw = Number(sp.get('limit') ?? DEFAULT_LIMIT)
@@ -94,7 +81,7 @@ export async function GET(req: NextRequest) {
       const { readWords, author, image, ...rest } = row
       return {
         ...rest,
-        imageUrl: resolveCover(row),
+        imageUrl: resolveCoverUrl(row, { width: 900, height: 600 }),
         author: displayAuthor(author),
         readingMinutes: readingMinutes(readWords),
       }
