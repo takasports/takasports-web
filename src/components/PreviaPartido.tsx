@@ -1,11 +1,12 @@
-// "La previa de Taka" en la ficha del partido: la nota previa enlazada por su
-// matchRef exacto. Va arriba del Resumen, que es lo primero que ve quien entra a la
-// ficha antes del partido. Server component, sin JS: indexable, y distribuye
-// autoridad interna ficha → nota (la ficha recibe mucho más tráfico que la nota).
-// Si el partido no tiene previa, no pinta nada.
+// Las notas de Taka de un partido (previa y crónica) en la ficha /partido/[ref]:
+// enlazadas por su matchRef exacto, nunca por texto. Viven en su propia pestaña
+// «Notas» — antes la previa iba arriba del Resumen y tapaba las estadísticas, que es
+// lo primero que busca quien abre la ficha [dueño, 21/10/2026]. Server component, sin
+// JS: indexable aunque la pestaña esté oculta, y distribuye autoridad interna
+// ficha → nota (la ficha recibe mucho más tráfico que la nota).
 
 import Link from 'next/link'
-import { sanityClient, previaByMatchRefQuery, urlFor } from '@/lib/sanity'
+import { sanityClient, notasByMatchRefQuery, urlFor } from '@/lib/sanity'
 import { smallImage } from '@/lib/image-url'
 
 export interface Previa {
@@ -17,15 +18,34 @@ export interface Previa {
   image?: { asset: { _ref: string } } | null
 }
 
-export default async function PreviaPartido({ matchRef, accent = '#34D399' }: { matchRef: string; accent?: string }) {
-  const previa = await sanityClient
-    .fetch<Previa | null>(previaByMatchRefQuery, { ref: matchRef })
-    .catch(() => null)
-  if (!previa?.slug) return null
-  return <PreviaPartidoCard previa={previa} accent={accent} />
+export type TipoNota = 'previa' | 'cronica'
+
+export interface NotasPartido {
+  previa: Previa | null
+  cronica: Previa | null
 }
 
-export function PreviaPartidoCard({ previa, accent }: { previa: Previa; accent: string }) {
+const SIN_NOTAS: NotasPartido = { previa: null, cronica: null }
+
+/** Previa y crónica del partido (solo las que tienen slug). Nunca lanza. */
+export async function fetchNotasPartido(matchRef: string): Promise<NotasPartido> {
+  const r = await sanityClient
+    .fetch<{ previa: Previa | null; cronica: Previa | null } | null>(notasByMatchRefQuery, { ref: matchRef })
+    .catch(() => null)
+  if (!r) return SIN_NOTAS
+  return {
+    previa: r.previa?.slug ? r.previa : null,
+    cronica: r.cronica?.slug ? r.cronica : null,
+  }
+}
+
+const TEXTOS: Record<TipoNota, { etiqueta: string; leer: string }> = {
+  previa: { etiqueta: 'La previa de Taka', leer: 'Leer la previa →' },
+  cronica: { etiqueta: 'La crónica de Taka', leer: 'Leer la crónica →' },
+}
+
+export function PreviaPartidoCard({ previa, accent, tipo = 'previa' }: { previa: Previa; accent: string; tipo?: TipoNota }) {
+  const textos = TEXTOS[tipo]
 
   const img = previa.imageUrl
     ? smallImage(previa.imageUrl, 720) ?? null
@@ -47,7 +67,7 @@ export function PreviaPartidoCard({ previa, accent }: { previa: Previa; accent: 
           className="text-[10px] font-black uppercase tracking-widest"
           style={{ color: accent, fontFamily: 'var(--font-sport)' }}
         >
-          La previa de Taka
+          {textos.etiqueta}
         </span>
         <span className="text-[16px] font-bold leading-snug">{previa.title}</span>
         {previa.short_summary && (
@@ -55,7 +75,7 @@ export function PreviaPartidoCard({ previa, accent }: { previa: Previa; accent: 
             {previa.short_summary}
           </span>
         )}
-        <span className="mt-1 text-[12.5px] font-bold" style={{ color: accent }}>Leer la previa →</span>
+        <span className="mt-1 text-[12.5px] font-bold" style={{ color: accent }}>{textos.leer}</span>
       </span>
     </Link>
   )

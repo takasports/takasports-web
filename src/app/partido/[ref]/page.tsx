@@ -19,7 +19,7 @@ import { Kickoff } from './Kickoff'
 import { ShareButton } from '@/components/ShareButton'
 import { AddToCalendarButton } from '@/components/AddToCalendarButton'
 import MatchNews from '@/components/MatchNews'
-import PreviaPartido from '@/components/PreviaPartido'
+import { fetchNotasPartido, PreviaPartidoCard, type NotasPartido } from '@/components/PreviaPartido'
 import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
@@ -1682,7 +1682,7 @@ function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: strin
 }
 
 // ── Main match content ─────────────────────────────────────────────
-function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h: H2HResult | null; forms: Record<string, FormResult[]>; matchRef: string }) {
+function MatchContent({ match, h2h, forms, matchRef, notas }: { match: MatchDetail; h2h: H2HResult | null; forms: Record<string, FormResult[]>; matchRef: string; notas: NotasPartido }) {
   const live       = isLive(match.status)
   const isSoccer   = match.sport === 'soccer'
   const isBasket   = match.sport === 'basketball'
@@ -1698,6 +1698,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
   const hasStats   = hasSoccerStats || hasBasketStats
   const hasTable   = (match.leagueTable?.length ?? 0) > 0
   const hasH2H     = (h2h?.matches.length ?? 0) > 0
+  const hasNotas   = !!(notas.previa || notas.cronica)
 
   // Pulso del partido (solo fútbol): dominio (posesión+tiros) cuando ya hay
   // juego con stats; si no, y aún no ha terminado, probabilidad estimada
@@ -1827,13 +1828,18 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
     )
   }
 
+  // Orden y nombres pedidos por el dueño (21/10/2026), los mismos que la app. Los
+  // `id` no cambian (alineacion, clasificacion): son los de las anclas ARIA
+  // match-tab-* / match-panel-*. El ORDEN de los hijos de <MatchTabs> tiene que
+  // seguir a este array: van emparejados por posición.
   const tabs = [
     { id: 'resumen',      label: 'Resumen',         available: true },
     { id: 'minuto',       label: 'Minuto a minuto', available: hasCommentary },
-    { id: 'alineacion',   label: 'Alineación',      available: hasLineups },
+    { id: 'alineacion',   label: 'Alineaciones',    available: hasLineups },
     { id: 'estadisticas', label: 'Estadísticas',    available: hasStats },
+    { id: 'clasificacion',label: 'Tabla',           available: hasTable },
+    { id: 'notas',        label: 'Notas',           available: hasNotas },
     { id: 'h2h',          label: 'H2H',             available: hasH2H },
-    { id: 'clasificacion',label: 'Clasificación',   available: hasTable },
   ]
 
   return (
@@ -1897,7 +1903,6 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
       >
         {/* ── Tab 0: Resumen ───────────────────────────── */}
         <div>
-          <PreviaPartido matchRef={decodeURIComponent(matchRef)} />
           {hasSoccerScoring && (
             <Section title="Eventos del partido">
               <ScoringTimeline
@@ -1959,8 +1964,8 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         {/* ── Tab 1: Minuto a minuto ───────────────────── */}
         {/* OJO: el vacío de abajo NO se ve nunca. La pestaña «Minuto a minuto» se
             deshabilita con `available: hasCommentary`, o sea justo cuando este
-            mensaje tendría sentido. Lo mismo les pasa a los vacíos de Alineación,
-            Estadísticas, H2H y Clasificación: sus pestañas también se apagan sin
+            mensaje tendría sentido. Lo mismo les pasa a los vacíos de Alineaciones,
+            Estadísticas, Tabla, Notas y H2H: sus pestañas también se apagan sin
             datos. Se dejan como red de seguridad, pero el único vacío que un
             lector ve de verdad es el del Resumen, que es donde va la acción.
             [04/09/2026] */}
@@ -1972,7 +1977,7 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
           )}
         </div>
 
-        {/* ── Tab 2: Alineación ────────────────────────── */}
+        {/* ── Tab 2: Alineaciones ──────────────────────── */}
         <div>
           {hasLineups ? (
             <LineupField
@@ -2022,21 +2027,37 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
           } kind="stats" />}
         </div>
 
-        {/* ── Tab 4: H2H ───────────────────────────────── */}
-        <div>
-          {hasH2H && match.homeTeam && match.awayTeam ? (
-            <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
-          ) : (
-            <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
-          )}
-        </div>
-
-        {/* ── Tab 5: Clasificación ─────────────────────── */}
+        {/* ── Tab 4: Tabla ─────────────────────────────── */}
         <div>
           {hasTable ? (
             <LeagueTableBlock rows={match.leagueTable!} leagueLabel={match.leagueTableLabel ?? match.leagueLabel} />
           ) : (
             <EmptyState message="Clasificación no disponible" kind="table" />
+          )}
+        </div>
+
+        {/* ── Tab 5: Notas (previa y crónica de Taka) ──── */}
+        {/* Antes la previa iba ARRIBA del Resumen y empujaba las estadísticas
+            hacia abajo: lo primero que se ve tienen que ser los datos del
+            partido [dueño, 21/10/2026]. Misma tarjeta de siempre; la crónica
+            primero porque, cuando existe, el partido ya ha terminado. */}
+        <div>
+          {hasNotas ? (
+            <>
+              {notas.cronica && <PreviaPartidoCard previa={notas.cronica} accent="#34D399" tipo="cronica" />}
+              {notas.previa && <PreviaPartidoCard previa={notas.previa} accent="#34D399" tipo="previa" />}
+            </>
+          ) : (
+            <EmptyState message="Este partido no tiene previa ni crónica de Taka." kind="events" />
+          )}
+        </div>
+
+        {/* ── Tab 6: H2H ───────────────────────────────── */}
+        <div>
+          {hasH2H && match.homeTeam && match.awayTeam ? (
+            <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+          ) : (
+            <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
           )}
         </div>
       </MatchTabs>
@@ -2045,7 +2066,14 @@ function MatchContent({ match, h2h, forms, matchRef }: { match: MatchDetail; h2h
         {/* ── Lateral: contexto del partido (datos / forma / pulso / noticias) ── */}
         <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0">
           <FormGuide homeTeam={match.homeTeam} awayTeam={match.awayTeam} forms={forms} />
-          <MatchNews homeTeam={match.homeTeam} awayTeam={match.awayTeam} sport={match.sport} leagueSlug={match.leagueSlug} startDate={match.startDate} />
+          <MatchNews
+            homeTeam={match.homeTeam}
+            awayTeam={match.awayTeam}
+            sport={match.sport}
+            leagueSlug={match.leagueSlug}
+            startDate={match.startDate}
+            excludeSlugs={[notas.cronica?.slug, notas.previa?.slug].filter((x): x is string => !!x)}
+          />
         </aside>
       </div>
       </LiveMatchProvider>
@@ -2078,13 +2106,18 @@ export default async function MatchPage({
     : null
   // leagueSlug → filtro de género (el femenino comparte nombre de club/selección
   // con el masculino). Ver isWomensPastRow en lib/past-events.
-  const [fbH2H, fbForms] = await Promise.all([
+  // Previa y crónica de Taka (pestaña «Notas»): solo fútbol y baloncesto, que son
+  // los deportes con pestañas — y los únicos a los que /api/match les añade previa.
+  const [fbH2H, fbForms, notas] = await Promise.all([
     teamPair && !espnH2H
       ? fetchH2H(teamPair.home, teamPair.away, { limit: 10, excludeId: match.id, leagueSlug: match.leagueSlug })
       : Promise.resolve(null),
     teamPair && !espnForm
       ? fetchRecentFormByTeams([teamPair.home, teamPair.away], 5, match.leagueSlug).then((m) => m ?? {})
       : Promise.resolve({} as Record<string, FormResult[]>),
+    match.sport === 'soccer' || match.sport === 'basketball'
+      ? fetchNotasPartido(decodeURIComponent(ref))
+      : Promise.resolve<NotasPartido>({ previa: null, cronica: null }),
   ])
   const h2h: H2HResult | null = espnH2H ?? fbH2H
   // forms indexadas por NOMBRE de equipo (lo que consumen FormGuide + estimate).
@@ -2263,7 +2296,7 @@ export default async function MatchPage({
             portada y Reels. Mismo texto que el <title>. [26/09/2026] */}
         <h1 className="sr-only">{tituloPartido(match)}</h1>
         <Suspense>
-          <MatchContent match={match} h2h={h2h} forms={forms} matchRef={ref} />
+          <MatchContent match={match} h2h={h2h} forms={forms} matchRef={ref} notas={notas} />
         </Suspense>
       </main>
       <Footer />
