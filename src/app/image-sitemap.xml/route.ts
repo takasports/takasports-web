@@ -1,5 +1,6 @@
 import { sanityClient } from '@/lib/sanity'
 import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
+import { imagenPrincipal } from '@/lib/imagen-noticia'
 
 export const runtime = 'nodejs'
 export const revalidate = 86400
@@ -26,13 +27,17 @@ export async function GET() {
     )
     .catch(() => [] as Array<{ slug: string; title: string; imageUrl: string | null; imageAlt: string | null }>)
 
+  // La misma URL que og:image y NewsArticle.image (lib/imagen-noticia): la foto
+  // servida desde nuestro dominio a 1200 px, y siempre en absoluto (una
+  // `image:loc` relativa no vale en un sitemap).
   const urls = articles
-    .filter(a => a.slug && typeof a.imageUrl === 'string' && a.imageUrl.length > 0)
+    .map(a => ({ ...a, imagen: a.slug ? imagenPrincipal(a.imageUrl, SITE_URL) : null }))
+    .filter(a => a.imagen)
     .map(
       a => `  <url>
     <loc>${SITE_URL}/noticias/${a.slug}</loc>
     <image:image>
-      <image:loc>${escapeXml(a.imageUrl)}</image:loc>
+      <image:loc>${escapeXml(a.imagen!.url)}</image:loc>
       <image:title>${escapeXml(a.title)}</image:title>
       ${a.imageAlt ? `<image:caption>${escapeXml(a.imageAlt)}</image:caption>` : ''}
     </image:image>

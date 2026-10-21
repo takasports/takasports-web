@@ -57,9 +57,11 @@ const CRAWLER_TRAPS = ['/comparar', '/rankings/comparar']
 // og:image e image-sitemap) y la portada de los reels cuando no hay otra
 // (VideoObject.thumbnailUrl y video-sitemap). Con `/api/` cerrado Googlebot no
 // podía bajarlas, y una noticia sin imagen rastreable no sale con miniatura en
-// Top Stories ni en Discover. La regla más larga gana, así que esto abre solo
-// estas rutas y el resto de /api/ sigue cerrado.
-const API_IMAGES = ['/api/og/', '/api/instagram/thumbnail']
+// Top Stories ni en Discover. Lo mismo el proxy de fotos: desde el 21/10/2026
+// es la og:image y la NewsArticle.image de las noticias con foto de un medio de
+// terceros (lib/imagen-noticia). La regla más larga gana, así que esto abre
+// solo estas rutas y el resto de /api/ sigue cerrado.
+const API_IMAGES = ['/api/og/', '/api/instagram/thumbnail', '/api/image-proxy']
 
 const ALLOW = ['/', ...API_IMAGES]
 const DISALLOW = ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS]
