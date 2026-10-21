@@ -2,7 +2,7 @@
 
 import { eventHasFavorite, formKey, isFavorite } from './calendar-favorites'
 import { useLiveFixtures, useLiveScores, type RawLiveFixture } from './calendar-live'
-import { CompGroupHeader, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, SearchInput, SectionHeader, compConfigForGroup } from './CalendarCards'
+import { CompGroupHeader, DayCompactRow, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, SearchInput, SectionHeader, compConfigForGroup } from './CalendarCards'
 import { DayChips } from './CalendarDatePicker'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -11,7 +11,7 @@ import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
 import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
 import { orderCompGroups } from '@/lib/comp-group-order'
-import { ligasAbiertasPorDefecto, diasAbiertosPorDefecto, estaAbierto } from '@/lib/calendar-collapse'
+import { ligasAbiertasPorDefecto, diasAbiertosPorDefecto, diasVisiblesDeArranque, estaAbierto } from '@/lib/calendar-collapse'
 import { groupChannel } from '@/lib/comp-group-channel'
 import { getBroadcastForTz } from '@/lib/broadcasts'
 import { mergeFeedEvents } from '@/lib/calendar-initial-window'
@@ -744,6 +744,10 @@ export default function CalendarioContent({
     })
   }, [])
 
+  // «Ver N días más» (Destacados): al llegar se ven hoy y los seis días
+  // siguientes; el resto, detrás de ese botón. Ver diasVisiblesDeArranque.
+  const [verTodosLosDias, setVerTodosLosDias] = useState(false)
+
   // La regla NO se aplica en el render del servidor: así el HTML servido sigue
   // trayendo todo (nada desaparece para un rastreador ni hay desajuste de
   // hidratación) y el plegado ocurre ya en el navegador.
@@ -1080,6 +1084,14 @@ export default function CalendarioContent({
   const diasAbiertos: ReadonlySet<string> = hidratado
     ? diasAbiertosPorDefecto(orderedDates, todayKey)
     : new Set(orderedDates)
+  // Vista por días de Destacados: los días plegados pasan a fila compacta y solo
+  // se ve una semana. No aplica con una fecha elegida, «En vivo», una competición
+  // o una búsqueda: ahí el usuario ya ha acotado y quiere verlo todo. Igual que
+  // el plegado, SOLO tras hidratar: el HTML del servidor trae todos los días.
+  const diasCompactos = hidratado && activeFilter === 'Destacados' && !activeComp && !selectedDate && !onlyLive && !search
+  const { visibles: diasVisibles, ocultos: diasOcultos } = diasCompactos && !verTodosLosDias
+    ? diasVisiblesDeArranque(orderedDates, todayKey)
+    : { visibles: orderedDates, ocultos: 0 }
 
   return (
     <main
@@ -1452,7 +1464,7 @@ export default function CalendarioContent({
                   no existía y el botón no hacía nada, en silencio. Con el plegado
                   por defecto eso pasaría de rareza a bug seguro. */}
               {(() => { anclaDirectoPuesta = false; return null })()}
-              {orderedDates.map(dateKey => {
+              {diasVisibles.map(dateKey => {
               // Orden cronológico de los partidos del día. En "Destacados" se respeta
               // la curación por relevancia (top del día); en el resto (Todo / deporte /
               // competición) se ordena por isoDate (instante real → sube de menor a
@@ -1543,7 +1555,28 @@ export default function CalendarioContent({
                 // key incluye el filtro/fecha/onlyLive: al cambiarlos la sección
                 // se re-monta y dispara la entrada en cascada (Fase B). No incluye
                 // search ni liveScores → no re-anima al teclear ni en cada poll.
-                <section ref={dateKey === todayKey ? todaySepRef : undefined} key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}>
+                <section
+                  ref={dateKey === todayKey ? todaySepRef : undefined}
+                  key={`${activeFilter}|${selectedDate ?? ''}|${onlyLive ? 'L' : ''}|${dateKey}`}
+                  // Las filas compactas van seguidas, como una lista: el hueco
+                  // de 40 px entre días (space-y-10) las convertía en islas.
+                  style={diasCompactos && !diaAbierto ? { marginBlockEnd: 0 } : undefined}
+                >
+                  {diasCompactos && !diaAbierto ? (
+                    <DayCompactRow
+                      dateKey={dateKey}
+                      count={dayEvents.length}
+                      curated
+                      liveCount={dayEvents.filter(e => liveScores.has(e.id) && isLiveStatus(liveScores.get(e.id)?.status ?? '')).length}
+                      mineCount={dayEvents.filter(e => eventHasFavorite(favorites, e)).length}
+                      // `rawDay` conserva el orden de la curación (favoritos y
+                      // nota primero): su cabeza es el partido estrella del día.
+                      star={rawDay[0]}
+                      tz={tz}
+                      hoy={todayKey}
+                      onExpand={() => toggleDay(dateKey, false)}
+                    />
+                  ) : (
                   <DaySeparator
                     collapsed={!diaAbierto}
                     onToggleCollapse={() => toggleDay(dateKey, diaAbierto)}
@@ -1556,6 +1589,7 @@ export default function CalendarioContent({
                     tz={tz}
                     hoy={todayKey}
                   />
+                  )}
                   {/* DESTACADOS: lista PLANA por hora, sin cabeceras de liga.
                       Agrupando por liga el reloj salta hacia atrás cada vez que
                       cambias de grupo (medido: 13 saltos en un día de 161
@@ -1595,6 +1629,17 @@ export default function CalendarioContent({
                 </section>
               )
               })}
+              {diasOcultos > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setVerTodosLosDias(true)}
+                  className="cal-press w-full flex items-center justify-center gap-1.5 py-3 mt-1 rounded-xl text-[11px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
+                  style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.28)', color: '#C4B5FD', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                >
+                  Ver {diasOcultos} {diasOcultos === 1 ? 'día' : 'días'} más
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              )}
             </>
           )}
 
