@@ -16,7 +16,7 @@ import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { useMounted } from '@/hooks/useMounted'
 import { SOURCE_TZ, convertEventTime } from '@/lib/timezone'
-import { COMPETITIONS } from '@/lib/calendar-competitions'
+import { compConfigForGroup } from '@/lib/calendar-competitions'
 import { accentForSport } from '@/lib/sports'
 import { isLiveStatus } from '@/lib/live-events'
 import { F1Icon, SportIcon, TennisIcon, TvIcon } from '@/components/icons/GameIcons'
@@ -280,18 +280,9 @@ export function BroadcastChip({ comp, sport, tz, fallback }: {
   )
 }
 
-// Config de competición (página + escudo) para un grupo del feed, si existe.
-// Match PRECISO (no substring) para no enlazar mal: nombre exacto de la comp
-// (ligas de fútbol) o deporte exacto (NBA/F1/UFC). Así "Premier Padel" no cae
-// en Premier League ni "LaLiga 2" en LaLiga.
-export function compConfigForGroup(comp: string, sport?: string) {
-  const cl = comp.trim().toLowerCase()
-  const sl = sport?.trim().toLowerCase()
-  return COMPETITIONS.find((c) =>
-    (c.matchComp && c.matchComp.toLowerCase() === cl) ||
-    (c.matchSport && sl && c.matchSport.toLowerCase() === sl)
-  ) ?? null
-}
+// Config de competición (página + escudo) para un grupo del feed: vive en
+// lib/calendar-competitions para que la use también la página de día (servidor).
+export { compConfigForGroup }
 
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y

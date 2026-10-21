@@ -358,6 +358,24 @@ export function matchesCompetition(
   return false
 }
 
+/**
+ * Config de competición (página + escudo) para un GRUPO del feed, si existe.
+ *
+ * Match PRECISO (no substring), a diferencia de `matchesCompetition`: aquí se
+ * decide a qué página ENLAZA un rótulo, y un enlace equivocado es peor que
+ * ninguno. Nombre exacto de la comp (ligas de fútbol) o deporte exacto
+ * (NBA/F1/UFC). Así «Premier Padel» no cae en Premier League ni «LaLiga 2» en
+ * LaLiga. Lo usan el calendario (cliente) y la página de día (servidor).
+ */
+export function compConfigForGroup(comp: string, sport?: string | null): CompetitionConfig | null {
+  const cl = comp.trim().toLowerCase()
+  const sl = sport?.trim().toLowerCase()
+  return COMPETITIONS.find((c) =>
+    (c.matchComp && c.matchComp.toLowerCase() === cl) ||
+    (c.matchSport && sl && c.matchSport.toLowerCase() === sl)
+  ) ?? null
+}
+
 // Nombre CORTO de la competición para espacios estrechos (escaparate de Inicio):
 // "UEFA Champions League" → "Champions". Sin match en la config → el comp original
 // (FASE 4, decisión de José Tomás: usar shortName; lo no listado cae al normal).
