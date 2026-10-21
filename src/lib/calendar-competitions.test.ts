@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { COMPETITIONS, getCompetition, matchesCompetition, FEATURED_COMPETITIONS, currentSeasonLabel, seasonLabelOf, eventNoun } from './calendar-competitions'
+import { COMPETITIONS, getCompetition, matchesCompetition, FEATURED_COMPETITIONS, currentSeasonLabel, seasonLabelOf, eventNoun, compConfigForGroup } from './calendar-competitions'
 
 // El Mundial usa matchComp 'Mundial' con matchExact: el substring laxo de las
 // demás competiciones haría que "Mundial de Clubes" cayera dentro de la ficha
@@ -132,5 +132,33 @@ describe('Premier League no es la Premiership escocesa', () => {
     expect(matchesCompetition(premier, { comp: 'Premiership', sport: 'Fútbol' })).toBe(false)
     expect(matchesCompetition(premier, { comp: 'Premier', sport: 'Fútbol' })).toBe(true)
     expect(matchesCompetition(premier, { comp: 'Premier League', sport: 'Fútbol' })).toBe(true)
+  })
+})
+
+// El rótulo de una competición en la página de día enlaza a /calendario/<slug>
+// solo cuando el nombre del grupo es EXACTAMENTE el de la competición: un
+// enlace a la página equivocada es peor que ningún enlace.
+describe('compConfigForGroup (rótulos enlazados)', () => {
+  it('enlaza las ligas por su nombre exacto en el feed', () => {
+    expect(compConfigForGroup('LaLiga', 'Fútbol')?.slug).toBe('laliga')
+    expect(compConfigForGroup('Premier', 'Fútbol')?.slug).toBe('premier-league')
+    expect(compConfigForGroup('Champions', 'Fútbol')?.slug).toBe('champions')
+  })
+
+  it('enlaza por deporte las que no tienen comp propia (NBA, F1, UFC)', () => {
+    expect(compConfigForGroup('NBA', 'NBA')?.slug).toBe('nba')
+    expect(compConfigForGroup('Fórmula 1', 'F1')?.slug).toBe('f1')
+  })
+
+  it('NO enlaza primas lejanas ni competiciones sin página', () => {
+    expect(compConfigForGroup('LaLiga 2', 'Fútbol')).toBeNull()
+    expect(compConfigForGroup('Premier Padel', 'Pádel')).toBeNull()
+    expect(compConfigForGroup('Championship', 'Fútbol')).toBeNull()
+    expect(compConfigForGroup('ATP Basel', 'Tenis')).toBeNull()
+  })
+
+  it('tolera mayúsculas, espacios y deporte ausente', () => {
+    expect(compConfigForGroup('  laliga ', undefined)?.slug).toBe('laliga')
+    expect(compConfigForGroup('MLS', null)).toBeNull()
   })
 })

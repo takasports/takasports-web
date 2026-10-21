@@ -33,6 +33,7 @@ import {
   longDayLabel, pickDayStars, relativeDayLabel, servableDays, shortDayLabel,
 } from '@/lib/calendar-day-page'
 import { getEventHighlightScore } from '@/lib/competitions'
+import { compConfigForGroup } from '@/lib/calendar-competitions'
 
 export const revalidate = 300
 
@@ -264,14 +265,48 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
           </p>
         ) : (
           <div className="flex flex-col gap-6">
-            {order.map((comp) => (
+            {order.map((comp) => {
+              const first = byComp.get(comp)![0]
+              const compColor = first.accent ?? '#A78BFA'
+              // Las competiciones con calendario propio enlazan a él: el día es
+              // la puerta de entrada de quien busca «partidos de hoy», y su
+              // siguiente pregunta suele ser «¿y cuándo vuelve a jugar LaLiga?».
+              // Sin prefetch: son páginas ISR pesadas y una página de día pinta
+              // hasta una docena de rótulos (ver el incidente del prefetch de
+              // /comparar).
+              const cfg = compConfigForGroup(comp, first.sport)
+              return (
               <section key={comp}>
-                <h2
-                  className="mb-2 text-[11px] font-black uppercase tracking-[0.14em]"
-                  style={{ color: byComp.get(comp)![0].accent ?? '#A78BFA', fontFamily: 'var(--font-sport)' }}
-                >
-                  {comp}
-                </h2>
+                {cfg ? (
+                  <h2 className="mb-2" style={{ fontFamily: 'var(--font-sport)' }}>
+                    <Link
+                      href={`/calendario/${cfg.slug}`}
+                      prefetch={false}
+                      aria-label={`${comp}: ver su calendario completo`}
+                      className="group flex items-center justify-between gap-3 no-underline"
+                    >
+                      <span
+                        className="truncate text-[11px] font-black uppercase tracking-[0.14em] group-hover:brightness-125"
+                        style={{ color: compColor }}
+                      >
+                        {comp}
+                      </span>
+                      <span
+                        className="flex-shrink-0 text-[10px] font-black uppercase tracking-[0.12em] transition-colors group-hover:text-[#C4B5FD]"
+                        style={{ color: '#8A8A9E' }}
+                      >
+                        Calendario →
+                      </span>
+                    </Link>
+                  </h2>
+                ) : (
+                  <h2
+                    className="mb-2 text-[11px] font-black uppercase tracking-[0.14em]"
+                    style={{ color: compColor, fontFamily: 'var(--font-sport)' }}
+                  >
+                    {comp}
+                  </h2>
+                )}
                 <ul className="flex flex-col gap-2">
                   {byComp.get(comp)!.map((e) => {
                     const stakes = matchStakes(e.homeStanding, e.awayStanding)
@@ -328,7 +363,8 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
                   })}
                 </ul>
               </section>
-            ))}
+              )
+            })}
           </div>
         )}
       </main>
