@@ -278,6 +278,18 @@ export const previaByMatchRefQuery = `*[_type == "article" && matchRef == $ref &
   ${LISTING_FIELDS}
 }`
 
+// Las notas de Taka de un partido (previa y crónica, la última de cada una), por su
+// matchRef exacto. Las pinta la pestaña «Notas» de la ficha /partido/[ref]; es UNA
+// consulta para las dos, la misma que antes hacía solo la previa del Resumen.
+export const notasByMatchRefQuery = `{
+  "previa": *[_type == "article" && matchRef == $ref && type == "previa"
+    && defined(headline) && !(_id in path('drafts.**'))
+  ] | order(publishedAt desc)[0] { ${LISTING_FIELDS} },
+  "cronica": *[_type == "article" && matchRef == $ref && type == "cronica"
+    && defined(headline) && !(_id in path('drafts.**'))
+  ] | order(publishedAt desc)[0] { ${LISTING_FIELDS} }
+}`
+
 // La otra nota del mismo partido (previa ↔ crónica), por matchRef exacto. La pinta la
 // nota para unir las dos (NotaHermanaLink).
 export const notaHermanaQuery = `*[_type == "article" && matchRef == $ref && type == $tipo

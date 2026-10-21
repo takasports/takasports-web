@@ -28,6 +28,7 @@ export default async function MatchNews({
   leagueSlug,
   startDate,
   limit = 4,
+  excludeSlugs = [],
 }: {
   homeTeam?: string
   awayTeam?: string
@@ -35,6 +36,8 @@ export default async function MatchNews({
   leagueSlug?: string
   startDate?: string
   limit?: number
+  /** Notas que ya salen en otra parte de la ficha (pestaña «Notas»). */
+  excludeSlugs?: string[]
 }) {
   // Sin equipos o sin deporte cubierto por la redacción: no hay bloque.
   const params = matchNewsParams({ homeTeam, awayTeam, sport, leagueSlug, startDate, limit })
@@ -44,8 +47,9 @@ export default async function MatchNews({
     .fetch<RelatedArticle[]>(articlesByMatchQuery, { ...params })
     .catch(() => [] as RelatedArticle[])
 
-  // La previa ya va destacada arriba del Resumen (PreviaPartido): aquí sobraría.
-  const lista = articles.filter((a) => a.type !== 'previa')
+  // Las previas no son noticia relacionada (la de este partido ya tiene su pestaña
+  // «Notas»), y la crónica de este partido tampoco se repite aquí.
+  const lista = articles.filter((a) => a.type !== 'previa' && !(a.slug && excludeSlugs.includes(a.slug)))
   if (lista.length === 0) return null
 
   return (
