@@ -16,7 +16,7 @@ import { getBroadcastForTz, isSplitBroadcast } from '@/lib/broadcasts'
 import { formatDateLabel, isoToLocalDate } from '@/lib/calendar'
 import { useMounted } from '@/hooks/useMounted'
 import { SOURCE_TZ, convertEventTime } from '@/lib/timezone'
-import { compConfigForGroup } from '@/lib/calendar-competitions'
+import { compConfigForGroup, shortCompName } from '@/lib/calendar-competitions'
 import { accentForSport } from '@/lib/sports'
 import { isLiveStatus } from '@/lib/live-events'
 import { F1Icon, SportIcon, TennisIcon, TvIcon } from '@/components/icons/GameIcons'
@@ -1112,6 +1112,95 @@ export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, m
         )}
       </div>
     </div>
+  )
+}
+
+// Día PLEGADO en Destacados: una fila de ~56 px en vez de la cabecera grande.
+// Izquierda, la fecha y cuántos partidos trae; derecha, su partido estrella y la
+// hora, que es lo que decide si merece la pena abrirlo. Tocar en cualquier parte
+// lo despliega (y entonces vuelve la cabecera normal, con su chevron para
+// plegar). Solo se pinta tras hidratar, como todo el plegado: el HTML del
+// servidor sigue trayendo los días abiertos.
+export function DayCompactRow({ dateKey, count, curated = false, liveCount = 0, mineCount = 0, star, tz, hoy, onExpand }: {
+  dateKey: string
+  count: number
+  curated?: boolean
+  liveCount?: number
+  mineCount?: number
+  /** El partido que encabeza el día (el primero de la curación de Destacados). */
+  star?: SportEvent
+  tz?: string
+  /** Día de hoy SELLADO POR EL SERVIDOR (ver DaySeparator). */
+  hoy: string
+  onExpand: () => void
+}) {
+  const isToday = dateKey === hoy
+  const past = dateKey < hoy
+  const label = formatDateLabel(dateKey, tz, hoy)
+  const accent = star ? accentForSport(star.sport, '#A78BFA') : '#A78BFA'
+  const hasScore = star?.homeScore != null && star?.awayScore != null
+  const clock = !star
+    ? ''
+    : hasScore
+      ? `${star.homeScore}-${star.awayScore}`
+      : star.timeTbd
+        ? '—'
+        : (tz && tz !== SOURCE_TZ ? convertEventTime(star.time, tz, star.isoDate) : star.time) || '—'
+  const comp = star ? shortCompName(star.comp, star.sport) : ''
+  const noun = curated ? (count === 1 ? 'destacado' : 'destacados') : count === 1 ? 'partido' : 'partidos'
+
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      aria-expanded={false}
+      aria-label={`Desplegar ${label}: ${count} ${noun}`}
+      className="cal-press w-full flex items-center gap-3 px-3 mb-1.5 rounded-xl text-left transition-colors hover:bg-white/[0.05]"
+      style={{
+        height: 56,
+        background: isToday ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${isToday ? 'rgba(124,58,237,0.28)' : 'rgba(255,255,255,0.07)'}`,
+        cursor: 'pointer',
+      }}
+    >
+      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 28, background: isToday ? '#7C3AED' : '#3A3A48' }} />
+      <span className="flex flex-col flex-shrink-0 min-w-0" style={{ width: 92 }}>
+        <span
+          className="font-black uppercase leading-none tracking-[0.12em] truncate"
+          style={{ fontFamily: 'var(--font-sport)', fontSize: 13, color: past ? '#B8B8C8' : '#F0F0FA' }}
+        >
+          {label}
+        </span>
+        <span className="mt-1 text-[10px] font-bold tabular-nums leading-none truncate" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+          {count} {noun}
+          {liveCount > 0 && <span style={{ color: '#FF6349' }}> · {liveCount} en vivo</span>}
+          {mineCount > 0 && liveCount === 0 && <span style={{ color: '#6EE7B7' }}> · {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>}
+        </span>
+      </span>
+      <span className="self-stretch my-2.5 flex-shrink-0" style={{ width: 1, background: 'rgba(255,255,255,0.07)' }} aria-hidden />
+      {star ? (
+        <span className="flex flex-col min-w-0 flex-1">
+          <span className="truncate text-[13px] font-semibold leading-tight" style={{ color: '#E8E8F4' }}>
+            {star.away ? `${star.home} – ${star.away}` : star.home}
+          </span>
+          {comp && (
+            <span className="truncate text-[10px] font-bold uppercase tracking-wider leading-tight mt-0.5" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+              {comp}
+            </span>
+          )}
+        </span>
+      ) : (
+        <span className="flex-1" />
+      )}
+      {clock && (
+        <span className="flex-shrink-0 text-[13px] font-black tabular-nums" style={{ color: hasScore ? '#E8E8F4' : accent, fontFamily: 'var(--font-sport)' }}>
+          {clock}
+        </span>
+      )}
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="flex-shrink-0" style={{ color: '#5A5A6E', transform: 'rotate(-90deg)' }}>
+        <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
   )
 }
 

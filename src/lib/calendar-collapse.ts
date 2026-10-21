@@ -83,3 +83,37 @@ export function estaAbierto(
 ): boolean {
   return overrides.get(clave) ?? porDefecto.has(clave)
 }
+
+/** Días (contando hoy) que se ven al llegar a Destacados antes de «Ver N días más». */
+export const DIAS_VISIBLES_DE_ARRANQUE = 7
+
+/**
+ * Qué días se PINTAN al llegar a Destacados: hoy y los seis siguientes que
+ * tengan partidos; el resto, detrás de «Ver N días más».
+ *
+ * Plegar ya no bastaba: cada día plegado seguía siendo una cabecera de ~80 px y
+ * el feed trae tres semanas, así que la lista seguía midiendo varias pantallas
+ * de cabeceras. Con filas compactas de 56 px y una semana a la vista, el resto
+ * está a un toque.
+ *
+ * · Los días PASADOS (solo existen si el usuario pulsó «Ver resultados
+ *   anteriores») se ven siempre: los pidió él.
+ * · `'unknown'` (sin fecha) cuenta como un día más de la cola.
+ * · Igual que el plegado, la regla solo se aplica tras hidratar (lo decide
+ *   quien llama): el HTML del servidor sigue trayendo todos los días.
+ */
+export function diasVisiblesDeArranque(
+  dias: readonly string[],
+  hoy: string,
+  n = DIAS_VISIBLES_DE_ARRANQUE,
+): { visibles: string[]; ocultos: number } {
+  const visibles: string[] = []
+  let futuros = 0
+  let ocultos = 0
+  for (const d of dias) {
+    if (d !== 'unknown' && d < hoy) { visibles.push(d); continue }
+    if (futuros < n) { visibles.push(d); futuros++ }
+    else ocultos++
+  }
+  return { visibles, ocultos }
+}
