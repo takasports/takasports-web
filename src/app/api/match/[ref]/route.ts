@@ -11,6 +11,7 @@ import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } fro
 import { tennisRoundLabel } from '@/lib/espn'
 import { getTennisContext, type TennisContext } from '@/lib/tennis-context'
 import { COMPETITION_LABELS } from '@/lib/competition-labels'
+import { matchCachePolicy, matchCacheHeaders } from '@/lib/match-cache'
 import { buildSoccerH2H } from '@/lib/espn-h2h'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
@@ -21,25 +22,12 @@ export type { StandingZone }
 export type { LeagueTableRow }
 
 // Caché de borde: el detalle del partido es PÚBLICO (datos de ESPN, sin cookies
-// ni usuario), así el sondeo del marcador (client-side cada 20s) y el self-fetch
-// de la página golpean el CDN en vez de re-ejecutar la función o llamar a ESPN.
-// La frescura se ADAPTA al estado: un partido EN VIVO necesita 15s, pero uno
-// TERMINADO no cambia (1h) y uno PROGRAMADO casi tampoco (5min). Conservador: si
-// el estado no es confiablemente final/programado, se queda en 15s → NUNCA se
-// sobre-cachea un partido en directo (no mostraría el marcador viejo).
-const FINAL_STATUSES = new Set([
-  'STATUS_FULL_TIME', 'STATUS_FINAL', 'STATUS_FINAL_PEN', 'STATUS_FINAL_AET',
-  'STATUS_POST_GAME', 'STATUS_END_OF_REGULATION',
-  'STATUS_CANCELED', 'STATUS_ABANDONED', 'STATUS_FORFEIT', 'STATUS_WALKOVER', 'STATUS_RETIRED',
-])
-const UPCOMING_STATUSES = new Set(['STATUS_SCHEDULED', 'STATUS_PRE_GAME'])
-
-function matchCache(status: string | undefined) {
-  const s = status ?? ''
-  const maxAge = FINAL_STATUSES.has(s) ? 3600 : UPCOMING_STATUSES.has(s) ? 300 : 15
-  const swr = maxAge === 15 ? 60 : maxAge * 4
-  const cc = `public, s-maxage=${maxAge}, stale-while-revalidate=${swr}`
-  return { headers: { 'Cache-Control': cc, 'CDN-Cache-Control': cc } }
+// ni usuario), así el sondeo del marcador y el self-fetch de la página golpean el
+// CDN en vez de re-ejecutar la función. La frescura se adapta al estado y a la
+// hora del saque — la tabla y el porqué (medido en producción) viven en
+// lib/match-cache.ts, con test.
+function matchCache(status: string | undefined, startDate: string | undefined) {
+  return { headers: matchCacheHeaders(matchCachePolicy(status, startDate)) }
 }
 
 export type SportKind = 'soccer' | 'basketball' | 'mma' | 'racing' | 'tennis' | 'golf' | 'other'
@@ -362,7 +350,14 @@ async function espnJson(url: string): Promise<Record<string, unknown> | null> {
     // Tope de 8 s: sin él, un ESPN lento colgaba la función hasta el límite de
     // 60 s de /api (82 cortes en la semana del 19/09/2026). Con él, ese bloque
     // simplemente no sale, que es lo que ya pasaba cuando ESPN respondía error.
-    const r = await fetch(url, { next: { revalidate: 15 }, signal: AbortSignal.timeout(8_000) })
+    //
+    // SIN Data Cache (antes `revalidate: 15`). Ese caché, al caducar, devuelve lo
+    // VIEJO y refresca por detrás, así que cada respuesta nueva que pedía el borde
+    // salía construida con el summary de la vez anterior: 15-30 s de retraso fijo
+    // en directo, sumados al s-maxage. No ahorraba ejecuciones (eso lo hace la
+    // caché del borde, que va delante) y ESPN es gratis y ya cachea 1-10 s en su
+    // propia CDN. Medido el 21/10/2026: ver lib/match-cache.ts.
+    const r = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8_000) })
     if (!r.ok) return null
     return await r.json()
   } catch {
@@ -1076,7 +1071,7 @@ async function conPrevia(detail: MatchDetail, ref: string): Promise<MatchDetail>
 }
 
 async function responder(detail: MatchDetail, ref: string) {
-  return NextResponse.json(await conPrevia(detail, decodeURIComponent(ref)), matchCache(detail.status))
+  return NextResponse.json(await conPrevia(detail, decodeURIComponent(ref)), matchCache(detail.status, detail.startDate))
 }
 
 export async function GET(

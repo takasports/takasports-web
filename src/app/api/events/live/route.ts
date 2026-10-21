@@ -4,6 +4,7 @@ import { normalizeTeam, normalizeRawTeam, normalizeAthlete, type NormalizedTeam 
 import { FOOTBALL_LEAGUES } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchExterno, fetchJsonExterno } from '@/lib/fetch-externo'
+import { LIVE_MEMORY_TTL_MS, IDLE_MEMORY_TTL_MS, liveCacheHeaders, scoreboardFetchInit } from '@/lib/live-cache'
 
 export interface LiveScore {
   id: string
@@ -39,8 +40,15 @@ let staleCache: CacheEntry | null = null
 // cliente) todas a ~20s → peor caso de ~60s a ~20s, sin infra nueva y a €0. El CDN
 // sigue colapsando a todos los clientes en un fetch de origen, así que el coste sube
 // poco; ESPN tolera de sobra (~2 req/s en su API que mueve espn.com). Idle intacto.
-const LIVE_TTL  = 20_000
-const IDLE_TTL  = 5 * 60_000
+// 21/10/2026: 20 s → 10 s y sin Data Cache en las ligas con partido en juego.
+// El porqué (medido) y el coste, en lib/live-cache.ts.
+const LIVE_TTL  = LIVE_MEMORY_TTL_MS
+const IDLE_TTL  = IDLE_MEMORY_TTL_MS
+
+// Ligas/circuitos (slug ESPN) que tenían algo EN JUEGO en la última vuelta: esos
+// scoreboards se piden sin Data Cache (ver scoreboardFetchInit). Por instancia,
+// igual que `cache`; si la instancia es nueva, la primera vuelta va con 20 s.
+let liveSlugs = new Set<string>()
 const STALE_MAX = 10 * 60_000
 
 // Estados terminales — usados para distinguir si hay partidos *realmente en
@@ -159,7 +167,7 @@ async function fetchTeamLeague(slug: string, sport: string, comp: string, league
   try {
     const json = await fetchJsonExterno<any>(
       `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
-      { next: { revalidate: 20 } },
+      scoreboardFetchInit(liveSlugs.has(slug)),
       { etiqueta: 'live', timeoutMs: 6000 },
     )
     if (!json) return []
@@ -295,7 +303,7 @@ async function fetchTennisLive(slug: string): Promise<LiveScore[]> {
     // si el cruce falla, se degrada a como estaba antes (sin matchRef, no una regresión).
     const [eventsRes, sbRes] = await Promise.all([
       fetchExterno(`https://site.api.espn.com/apis/site/v2/sports/${slug}/events?limit=50`,
-        { next: { revalidate: 20 } }, { etiqueta: 'live', timeoutMs: 6000 }),
+        scoreboardFetchInit(liveSlugs.has(slug)), { etiqueta: 'live', timeoutMs: 6000 }),
       fetchExterno(`https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard`,
         { next: { revalidate: 20 } }, { etiqueta: 'live', timeoutMs: 6000 }),
     ])
@@ -630,20 +638,10 @@ async function fetchApiSportsLive(): Promise<LiveScore[]> {
 
 // ── Handler ─────────────────────────────────────────────────────
 
-// Cache headers para CDN edge: todos los usuarios polleando comparten una sola
-// respuesta cacheada en el CDN en vez de invocar la función cada vez.
-// LIVE: 20s fresh + 40s stale-while-revalidate (alineado con el poll de cliente de
-//       20s; el swr sirve la respuesta al instante y refresca en segundo plano, así
-//       que el usuario nunca espera aunque caiga justo antes del refresco del CDN).
-// IDLE: 120s fresh + 300s stale (no urge si no hay partidos en vivo).
+// Cabeceras del borde: todos los que sondean comparten una respuesta cacheada en
+// vez de ejecutar la función cada vez. Valores y porqué en lib/live-cache.ts.
 function cacheHeaders(hasLive: boolean, extra: Record<string, string> = {}): Record<string, string> {
-  const sMax = hasLive ? 20 : 120
-  const swr  = hasLive ? 40 : 300
-  return {
-    'Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,
-    'CDN-Cache-Control': `public, s-maxage=${sMax}, stale-while-revalidate=${swr}`,
-    ...extra,
-  }
+  return { ...liveCacheHeaders(hasLive), ...extra }
 }
 
 export async function GET() {
@@ -664,8 +662,19 @@ export async function GET() {
     ])
 
     const scores: LiveScore[] = []
-    for (const r of leagueResults) { if (r.status === 'fulfilled') scores.push(...r.value) }
-    for (const r of tennisResults)  { if (r.status === 'fulfilled') scores.push(...r.value) }
+    const nextLive = new Set<string>()
+    const enJuego = (arr: LiveScore[]) => arr.some(s => !TERMINAL_STATUSES.has(s.status))
+    leagueResults.forEach((r, i) => {
+      if (r.status !== 'fulfilled') return
+      scores.push(...r.value)
+      if (enJuego(r.value)) nextLive.add(ESPN_TEAM_LEAGUES[i].slug)
+    })
+    tennisResults.forEach((r, i) => {
+      if (r.status !== 'fulfilled') return
+      scores.push(...r.value)
+      if (enJuego(r.value)) nextLive.add(TENNIS_SLUGS[i])
+    })
+    liveSlugs = nextLive
     scores.push(...ufcResults, ...f1Results)
 
     // Merge API-Sports
