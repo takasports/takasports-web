@@ -10,37 +10,23 @@
 // 404 real). Ver lib/calendar-day-page.ts.
 
 import type { Metadata } from 'next'
-import { cache } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import { fetchEspnEvents } from '@/lib/espn'
-import { fetchPadelEvents } from '@/lib/padel'
-import { sanityClient, eventsQuery } from '@/lib/sanity'
-import { normalizeEvent } from '@/lib/events'
-import { searchPastEvents, getArchivedDays, getArchivedDayEvents } from '@/lib/past-events'
-import { attachH2HNotes } from '@/lib/h2h-notes'
-import { conTope } from '@/lib/enriquecer-con-tope'
+import { ShareButton } from '@/components/ShareButton'
+import { getArchivedDays } from '@/lib/past-events'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
-import { getBroadcastForTz } from '@/lib/broadcasts'
-import { SOURCE_TZ } from '@/lib/timezone'
-import { isoToLocalDate } from '@/lib/calendar'
 import type { SportEvent } from '@/lib/types'
-import { SITE_URL, LOGO_URL } from '@/lib/constants'
+import { SITE_URL } from '@/lib/constants'
 import {
-  addDays, dayPageDescription, dayPageTitle, DAY_PAGE_FUTURE, isPastDay, isValidDayParam,
-  longDayLabel, pickDayStars, relativeDayLabel, servableDays, shortDayLabel,
+  addDays, dayPageDescription, dayPageTitle, dayShareTitle, isValidDayParam,
+  longDayLabel, relativeDayLabel, servableDays, shortDayLabel,
 } from '@/lib/calendar-day-page'
-import { getEventHighlightScore } from '@/lib/competitions'
+import { dayChannel, dayStars, loadDay, todayIso } from '@/lib/calendar-day-data'
 import { compConfigForGroup } from '@/lib/calendar-competitions'
 
 export const revalidate = 300
-
-/** Hoy en la zona base del producto (Europe/Madrid), igual que el calendario. */
-function todayIso(): string {
-  return isoToLocalDate(new Date().toISOString(), SOURCE_TZ)
-}
 
 // Enumeramos TODA la ventana servible y cerramos la puerta a lo demás.
 //
@@ -64,65 +50,6 @@ export async function generateStaticParams() {
 
 export const dynamicParams = false
 
-/** Eventos de ese día (futuros del feed + resultados archivados). Memoizado por
- *  request para que generateMetadata y la página no dupliquen los fetch. */
-const loadDay = cache(async (fecha: string): Promise<SportEvent[]> => {
-  // Un día ya jugado se resuelve ENTERO con el archivo: el feed de ESPN solo
-  // trae la ventana viva, así que pedírselo para el 12 de mayo es tráfico y
-  // espera a cambio de nada. Importa porque el archivo pasó de 30 días a ~130
-  // y cada uno se prerenderiza en el build: el scoreboard de tenis pesa 2,4 MB
-  // y no cabe en la caché de datos de Next (lo avisa el propio build), o sea
-  // que sería una descarga íntegra por página.
-  const archiveOnly = isPastDay(fecha, todayIso())
-
-  const [espnRes, sanityRes, padelRes, pastRes] = await Promise.allSettled([
-    // Tantos días de feed como días de ruta generamos. Iban por su cuenta: la
-    // ruta servía 45 días y el feed traía 21, así que 22 páginas que existían,
-    // se prerenderizaban y se anunciaban salían VACÍAS teniendo ESPN 711
-    // partidos para ellas. Atados al mismo número, no pueden volver a
-    // separarse. La ventana ancha se pide solo aquí: ver DIAS_VISTA_POR_DEFECTO.
-    archiveOnly ? Promise.resolve([]) : fetchEspnEvents({ diasVista: DAY_PAGE_FUTURE }),
-    archiveOnly ? Promise.resolve([]) : sanityClient.fetch(eventsQuery),
-    archiveOnly ? Promise.resolve([]) : fetchPadelEvents(),
-    // Un día cerrado se lee por la vía cacheada 24 h: su contenido ya no cambia
-    // y la ruta revalida cada 5 minutos, que para el archivo serían consultas a
-    // Supabase a cambio de nada. `to` es exclusivo → [fecha, fecha+1).
-    archiveOnly
-      ? getArchivedDayEvents(fecha).then(events => ({ events, nextCursor: null }))
-      : searchPastEvents({ from: fecha, to: addDays(fecha, 1), limit: 200 }),
-  ])
-  const espn = espnRes.status === 'fulfilled' ? espnRes.value : []
-  const padel = padelRes.status === 'fulfilled' ? padelRes.value : []
-  const sanity = sanityRes.status === 'fulfilled' && Array.isArray(sanityRes.value)
-    ? sanityRes.value.map(normalizeEvent)
-    : []
-  const past = pastRes.status === 'fulfilled' ? (pastRes.value?.events ?? []) : []
-
-  const sameDay = (e: SportEvent) => e.isoDate && isoToLocalDate(e.isoDate, SOURCE_TZ) === fecha
-
-  // El archivado manda sobre el feed (trae marcador); dedup por id y por pareja.
-  const out: SportEvent[] = []
-  const seenIds = new Set<string>()
-  const seenPairs = new Set<string>()
-  const pairKey = (e: SportEvent) =>
-    `${(e.sport ?? '').toLowerCase()}|${[e.home, e.away ?? ''].map(s => s.toLowerCase().trim()).sort().join('~')}`
-
-  for (const e of [...past, ...sanity, ...espn, ...padel].filter(sameDay)) {
-    if (seenIds.has(e.id)) continue
-    if (e.away) {
-      const k = pairKey(e)
-      if (seenPairs.has(k)) continue
-      seenPairs.add(k)
-    }
-    seenIds.add(e.id)
-    out.push(e)
-  }
-  out.sort((a, b) => (a.isoDate ?? '').localeCompare(b.isoDate ?? ''))
-  // Con tope: adorno de Supabase, no puede congelar el día entero.
-  await conTope('h2h', attachH2HNotes(out))
-  return out
-})
-
 export async function generateMetadata({
   params,
 }: {
@@ -138,20 +65,28 @@ export async function generateMetadata({
   const title = dayPageTitle(fecha, t)
   // Los partidos estrella con el MISMO ranking que Destacados y el mismo canal
   // que pinta la fila de abajo.
-  const stars = pickDayStars(
-    events,
-    e => getEventHighlightScore({ comp: e.comp, home: e.home, away: e.away, stage: e.stage, isoDate: e.isoDate }),
-    e => getBroadcastForTz(e.comp ?? '', e.sport ?? '', SOURCE_TZ) ?? e.broadcast,
-  )
-  const description = dayPageDescription(fecha, events.length, t, stars)
+  const description = dayPageDescription(fecha, events.length, t, dayStars(events))
   const url = `${SITE_URL}/calendario/dia/${fecha}`
+  // Lo que se ve al COMPARTIR lleva la fecha, nunca «hoy»: el enlace se abre
+  // horas o días después y el título de la página (pensado para Google, que lo
+  // recalcula cada 5 minutos) caducaría en el chat. La imagen la pone sola
+  // opengraph-image.tsx; el `twitter:image` hay que decírselo, porque el layout
+  // de /calendario hereda el logo.
+  const shareTitle = dayShareTitle(fecha, t)
   return {
     title: `${title} | TakaSports`,
     description,
     alternates: { canonical: url },
     // Un día sin un solo partido no aporta nada al índice.
     robots: events.length === 0 ? { index: false, follow: true } : undefined,
-    openGraph: { title, description, url, type: 'website', images: [{ url: LOGO_URL }] },
+    openGraph: { title: shareTitle, description, url, type: 'website', siteName: 'TakaSports', locale: 'es_ES' },
+    twitter: {
+      card: 'summary_large_image',
+      title: shareTitle,
+      description,
+      site: '@takasportsx',
+      images: [`${url}/opengraph-image`],
+    },
   }
 }
 
@@ -222,12 +157,21 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
         </nav>
 
         <header className="mb-6">
-          <h1
-            className="mb-1"
-            style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: '#F0F0FA', lineHeight: 1.05 }}
-          >
-            {rel ? `Partidos de ${rel.toLowerCase()}` : `Partidos del ${shortDayLabel(fecha)}`}
-          </h1>
+          {/* Compartir el día: el enlace se abre con su tarjeta (opengraph-image)
+              y el texto lleva la FECHA, no «hoy», para que no caduque en el chat.
+              Se comparte el enlace, no la imagen como archivo: así WhatsApp pinta
+              la vista previa con la tarjeta y el enlace sigue siendo clicable. */}
+          <div className="mb-1 flex items-start justify-between gap-3">
+            <h1
+              className="min-w-0"
+              style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 900, color: '#F0F0FA', lineHeight: 1.05 }}
+            >
+              {rel ? `Partidos de ${rel.toLowerCase()}` : `Partidos del ${shortDayLabel(fecha)}`}
+            </h1>
+            <div className="flex-shrink-0 pt-1">
+              <ShareButton title={dayShareTitle(fecha, t)} text={`${dayShareTitle(fecha, t)}: horarios y dónde verlos`} />
+            </div>
+          </div>
           <p className="text-sm first-letter:uppercase" style={{ color: 'var(--text-muted)' }}>
             {longDayLabel(fecha)} · {events.length} {events.length === 1 ? 'partido' : 'partidos'}
           </p>
@@ -282,7 +226,7 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
                     <Link
                       href={`/calendario/${cfg.slug}`}
                       prefetch={false}
-                      aria-label={`${comp}: ver su calendario completo`}
+                      aria-label={`Ver el calendario de ${cfg.displayName}`}
                       className="group flex items-center justify-between gap-3 no-underline"
                     >
                       <span
@@ -310,7 +254,7 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
                 <ul className="flex flex-col gap-2">
                   {byComp.get(comp)!.map((e) => {
                     const stakes = matchStakes(e.homeStanding, e.awayStanding)
-                    const channel = getBroadcastForTz(e.comp ?? '', e.sport ?? '', SOURCE_TZ) ?? e.broadcast
+                    const channel = dayChannel(e)
                     const meta = [e.stage, e.venue, channel].filter(Boolean).join(' · ')
                     const ranks = [standingLabel(e.homeStanding), standingLabel(e.awayStanding)]
                     const row = (

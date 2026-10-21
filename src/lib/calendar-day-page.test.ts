@@ -4,6 +4,7 @@ import {
   relativeDayLabel, addDays, dayPageTitle, DAY_PAGE_PAST, DAY_PAGE_FUTURE,
   isPastDay, dayPageDescription, servableDays, sitemapDays,
   pickDayStars, DAY_DESCRIPTION_MAX, DAY_STAR_MIN_SCORE, type DayStar,
+  dayShareTitle, dayShareHeadline,
 } from './calendar-day-page'
 
 describe('isValidDayParam', () => {
@@ -205,8 +206,8 @@ describe('pickDayStars', () => {
       ev('5', 'Lazio', 'Torino', 11),
     ], score, channel)
     expect(stars).toEqual([
-      { home: 'Barcelona', away: 'Real Madrid', time: '20:00', channel: 'DAZN' },
-      { home: 'Inter', away: 'Juventus', time: '20:00', channel: undefined },
+      { home: 'Barcelona', away: 'Real Madrid', time: '20:00', channel: 'DAZN', comp: 'X' },
+      { home: 'Inter', away: 'Juventus', time: '20:00', channel: undefined, comp: 'X' },
     ])
   })
 
@@ -226,7 +227,43 @@ describe('pickDayStars', () => {
       ev('1', 'Sinner', 'Alcaraz', 15, { timeTbd: true, time: '' }),
       ev('2', 'Alcaraz', 'Sinner', 15),
     ], score, channel)
-    expect(stars).toEqual([{ home: 'Sinner', away: 'Alcaraz', time: undefined, channel: undefined }])
+    expect(stars).toEqual([{ home: 'Sinner', away: 'Alcaraz', time: undefined, channel: undefined, comp: 'X' }])
+  })
+
+  it('la tarjeta de compartir rellena con el MISMO orden quitando el listón', () => {
+    const evs = [
+      ev('1', 'Mirandés', 'Eldense', 6),
+      ev('2', 'Barcelona', 'Real Madrid', 17),
+      ev('3', 'Racing', 'Cádiz', 7),
+      ev('4', 'Huesca', 'Burgos', 5),
+    ]
+    expect(pickDayStars(evs, score, channel, 3).map(s => s.home)).toEqual(['Barcelona'])
+    expect(pickDayStars(evs, score, channel, 3, -Infinity).map(s => s.home)).toEqual(['Barcelona', 'Racing', 'Mirandés'])
+  })
+
+  it('lleva escudos y marcador para la tarjeta, sin tocar la descripción', () => {
+    const [s] = pickDayStars([
+      { ...ev('1', 'Barcelona', 'Real Madrid', 17, { broadcast: 'DAZN' }), homeLogo: 'https://a/h.png', awayLogo: 'https://a/a.png', homeScore: 2, awayScore: 1 },
+    ], score, channel)
+    expect(s).toMatchObject({ homeLogo: 'https://a/h.png', awayLogo: 'https://a/a.png', score: '2 - 1' })
+    expect(dayPageDescription('2026-10-04', 10, '2026-10-02', [s])).toContain('Barcelona–Real Madrid (20:00, DAZN)')
+  })
+})
+
+describe('título para compartir', () => {
+  it('nunca es relativo: hoy, mañana y ayer salen con su fecha', () => {
+    expect(dayShareTitle('2026-10-21', '2026-10-21')).toBe('Partidos del miércoles 21 de octubre de 2026')
+    expect(dayShareTitle('2026-10-22', '2026-10-21')).toBe('Partidos del jueves 22 de octubre de 2026')
+    expect(dayShareTitle('2026-10-20', '2026-10-21')).not.toMatch(/hoy|ayer|mañana/i)
+  })
+
+  it('un día ya jugado se comparte como resultados', () => {
+    expect(dayShareTitle('2026-10-18', '2026-10-21')).toBe('Resultados del domingo 18 de octubre de 2026')
+  })
+
+  it('la tarjeta lo dice sin el año', () => {
+    expect(dayShareHeadline('2026-10-22', '2026-10-21')).toBe('Partidos del jueves 22 de octubre')
+    expect(dayShareHeadline('2026-10-18', '2026-10-21')).toBe('Resultados del domingo 18 de octubre')
   })
 })
 

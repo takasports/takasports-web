@@ -152,7 +152,9 @@ describe('nadie vuelve a pedirle un rango de fechas a ESPN', () => {
 // días. [18/09/2026]
 describe('la ventana ancha del feed no se le escapa a nadie', () => {
   const PERMITIDOS = [
-    'src/app/calendario/dia/[fecha]/page.tsx',
+    // La carga del día salió de la página a su lib para compartirla con la
+    // tarjeta de compartir (opengraph-image) de ese MISMO día. [21/10/2026]
+    'src/lib/calendar-day-data.ts',
     'src/app/sitemap.ts',
   ]
 
