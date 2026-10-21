@@ -59,6 +59,7 @@ import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { excludeCurrentArticle } from '@/lib/related-articles'
+import { tagHref } from '@/lib/tag-slug'
 
 export const revalidate = 3600
 
@@ -384,7 +385,7 @@ function ArticleSidebar({
               <Link
                 prefetch={false}
                 key={tag}
-                href={`/tag/${encodeURIComponent(tag)}`}
+                href={tagHref(tag) ?? '/tag'}
                 className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
                 style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
               >
@@ -1630,7 +1631,7 @@ export default async function NoticiaPage({
                     <Link
                       prefetch={false}
                       key={tag}
-                      href={`/tag/${encodeURIComponent(tag)}`}
+                      href={tagHref(tag) ?? '/tag'}
                       className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
                       style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
                     >

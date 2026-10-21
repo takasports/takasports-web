@@ -221,6 +221,13 @@ export const articlesByTagQuery = `*[_type == "article" && (status == "publicado
 // Todos los tags únicos — para el sitemap (legacy: generateStaticParams del tag)
 export const allTagsQuery = `array::unique(*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && defined(tags)].tags[])`
 
+// Lo mismo, pero con todas las grafías de una etiqueta («fútbol», «futbol»…),
+// que desde el paso a slug comparten página. Ver lib/tag-slug.ts.
+export const articlesByTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && count(coalesce(tags, [])[@ in $variantes]) > 0] | order(publishedAt desc)[0...40] {
+  ${LISTING_FIELDS},
+  "priority": select(defined(headline) => "destacado", priority)
+}`
+
 // Todos los tags CON repetición — para contar frecuencia y podar del sitemap los
 // tags finos (frases LLM de un solo uso). El sitemap solo indexa tags con >=3
 // artículos; el resto va a noindex,follow. (Fase 0 SEO, jun 2026)

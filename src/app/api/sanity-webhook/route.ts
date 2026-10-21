@@ -14,7 +14,8 @@
 // Variable de entorno requerida (opcional pero recomendada):
 //   SANITY_WEBHOOK_SECRET=<openssl rand -base64 32>
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { TAG_INDEX_CACHE_TAG } from '@/lib/tag-index'
 import { NextRequest, NextResponse, after } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { pingIndexNow, pathsToUrls } from '@/lib/indexnow'
@@ -112,6 +113,10 @@ export async function POST(req: NextRequest) {
       revalidated.push(path)
     }
   }
+
+  // Índice de etiquetas (slug → grafías): una nota con una etiqueta nueva tiene
+  // que poder abrir su /tag/<slug> sin esperar a la hora de caché.
+  if (docType === 'article') revalidateTag(TAG_INDEX_CACHE_TAG, 'max')
 
   // Revalidar el artículo concreto si tenemos slug
   if (slug && (docType === 'article')) {

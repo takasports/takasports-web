@@ -13,7 +13,7 @@ import { TrophyIcon, StarIcon, ClapIcon, FlexIcon, FireIcon, CountryFlag, AlertI
 import { ensureAudio, getSoundPref, winFanfare, fireConfetti } from '@/lib/game-feedback'
 import { recordPlay, currentDayISO, type GamePlay } from '@/lib/games-store'
 import { useMounted } from '@/hooks/useMounted'
-import TakaGridLoading from './loading'
+import TakaGridLoading from './TakaGridLoading'
 import { scoreTakagrid } from '@/lib/game-scoring'
 import { averageRarity, rarityFor, rarityLabel, type TakagridHeatmap } from '@/lib/takagrid-heatmap'
 import { madridParts, madridDayISO } from '@/lib/taka-time'

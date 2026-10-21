@@ -146,6 +146,7 @@ npm run rankings:sync   # Sincronizar rankings desde DB
 - No usar `<Image>` de Next.js directamente para imágenes de atletas (usar `<DynamicImage>`).
 - No llamar a the-odds-api en producción (cuota agotada).
 - No publicar en redes sociales automáticamente desde este repo.
+- No poner un `loading.tsx` por encima de una ruta que pueda llamar a `notFound()` o `redirect()`: en cuanto se pinta el esqueleto la respuesta sale con 200, y el 404 se convierte en soft 404 (y el redirect en `<meta refresh>`). Por eso la raíz, `/noticias`, `/rankings`, `/juegos` y `/takagrid` no tienen `loading.tsx` (son ISR: la navegación ya llega precargada), y las fichas (`jugador`, `equipo`, `partido`) deciden si existen en su `layout.tsx`, que queda fuera del `loading.tsx` del propio segmento. No mover una página a un grupo de rutas para darle su propio esqueleto: su `openGraph` taparía el `opengraph-image.tsx` de la carpeta.
 - No hacer capturas de pantalla para verificar cambios de texto/lógica — leer el código directamente.
 - No re-explorar `node_modules/`, `next-env.d.ts`, `.next/` ni archivos generados.
 - No commitear sin verificar que `npm run build` pasa.

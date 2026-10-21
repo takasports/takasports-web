@@ -13,6 +13,7 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { getMergedReels } from '@/lib/reels-feed'
 import { requireAdmin } from '@/lib/admin-auth'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { tagHref } from '@/lib/tag-slug'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -288,7 +289,7 @@ export default async function AdminDashboardPage() {
                 <Link
                 prefetch={false}
                   key={tag}
-                  href={`/tag/${encodeURIComponent(tag)}`}
+                  href={tagHref(tag) ?? '/tag'}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',

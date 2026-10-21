@@ -83,8 +83,8 @@ export async function generateMetadata(
   if (!entry) {
     // Entry no existe: marcar noindex Y self-canonical para evitar que Google
     // la trate como duplicada del hub /rankings (hereda layout-canonical si no
-    // sobrescribimos). Bug relacionado: notFound() de Next 16 con ISR no propaga
-    // 404 status, así que la página sigue siendo 200 + content "no encontrada".
+    // sobrescribimos). El 404 lo da notFound() en la página desde que el
+    // loading.tsx de /rankings envuelve solo al índice (antes daba un 200).
     return {
       title: 'Entry no encontrada — Ranking Taka',
       robots: { index: false, follow: true },

@@ -20,8 +20,8 @@ export const revalidate = 300
 // (claves de SLUG_TO_LABEL). Con `dynamicParams = false`, cualquier slug de
 // primer nivel que NO esté en generateStaticParams (p. ej. /motogp o
 // /esta-pagina-no-existe) devuelve un 404 REAL (HTTP 404 + app/not-found.tsx),
-// en lugar del soft-404 (HTTP 200) que daba `notFound()` en una ruta ISR —
-// Next 16 no propaga el 404 status desde `notFound()` en SSG/ISR. Verificado
+// en lugar del soft-404 (HTTP 200) que daba `notFound()` —el loading.tsx que
+// había en la raíz ya había enviado el 200 al pintar el esqueleto—. Verificado
 // que el sitemap y los enlaces internos (Footer) solo referencian estos slugs
 // válidos, así que ningún enlace existente se rompe. El `notFound()` del body
 // y la rama noindex de generateMetadata quedan como red de seguridad.
@@ -40,8 +40,8 @@ export async function generateMetadata({
   const { sport } = await params
   const label = SLUG_TO_LABEL[sport.toLowerCase()]
   if (!label) {
-    // Slug no reconocido: la page llama notFound() abajo pero Next 16 con ISR
-    // no propaga el 404 status. Sin override de canonical heredaríamos el de
+    // Slug no reconocido (red de seguridad: dynamicParams=false ya da el 404).
+    // Sin override de canonical heredaríamos el de
     // root layout (SITE_URL) → Google lo trataría como duplicado de la home.
     // Detectado el 31/5/2026 en /f1 y /lucha-libre (slugs alternativos no
     // mapeados en SLUG_TO_LABEL).

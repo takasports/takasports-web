@@ -12,6 +12,7 @@ import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import PlayerStatsRadar, { hasRadarData } from '@/components/PlayerStatsRadar'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { fetchPlayer } from './ficha'
 
 export const revalidate = 1800
 
@@ -19,23 +20,18 @@ export const revalidate = 1800
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const player = await fetchPlayer(slug)
-  // Jugador inexistente: noindex + self-canonical. Next 16 no propaga el 404 en
-  // ISR (la página sigue 200), pero esto evita lo peor —heredar el canonical del
-  // root (→ home) y un robots "index" contradictorio—. Patrón de rankings/[id].
+  // Jugador inexistente: el 404 lo da ya el layout del segmento. Esto queda de
+  // red por si la metadata llega a resolverse antes: noindex + self-canonical.
   if (!player) return {
     title: 'Jugador no encontrado',
     robots: { index: false, follow: true },
     alternates: { canonical: `${SITE_URL}/jugador/${slug}` },
   }
 
-  // Consolidación por canonical, NO por redirect. Se probó `permanentRedirect` tanto
-  // aquí como en el componente: en ambos casos Next no llega a emitir un 308 HTTP
-  // (la respuesta ya está streameando) y lo degrada a <meta http-equiv="refresh">,
-  // que además sirve la ficha entera con un 200 en la URL vieja y deja el canonical
-  // vacío. Un meta refresh es peor señal que no redirigir, así que la URL antigua
-  // responde 200 pero declara como canónica la nueva — que es la vía estándar para
-  // consolidar duplicados. Los enlaces internos y el sitemap ya apuntan solo a la
-  // nueva, así que la vieja se queda sin enlaces y sale del índice por su propio peso.
+  // Consolidación: las variantes del slug nuevo ya redirigen con un 308 desde el
+  // layout (aquí, con la respuesta ya streameando por el loading.tsx, Next lo
+  // degradaba a <meta refresh>). El histórico «soccer_esp.1_231388» no redirige
+  // —ver el layout— y consolida por este canonical.
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
   // El 94% de las impresiones de esta sección son el NOMBRE a secas, así que el
   // nombre va primero y el resto del rótulo tiene que decir qué ofrecemos que no
@@ -69,17 +65,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // es 200×200 y encaja limpio (no estirado como en summary_large_image). (Fix A3 SEO)
     twitter: { card: 'summary', title, description, images: [ogImageUrl] },
   }
-}
-
-// ── Fetch ─────────────────────────────────────────────────────────────
-async function fetchPlayer(slug: string): Promise<PlayerDetail | null> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL
-      ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
-    const res = await fetch(`${base}/api/jugador/${slug}`, { next: { revalidate: 1800 } })
-    if (!res.ok) return null
-    return res.json()
-  } catch { return null }
 }
 
 /** Lee un stat curado por label y lo convierte a número (formato es-ES tolerado). */

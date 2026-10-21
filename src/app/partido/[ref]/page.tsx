@@ -28,6 +28,7 @@ import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance }
 import { accentForSport } from '@/lib/sports'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { fetchMatchDetail } from './ficha'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -136,18 +137,6 @@ const FINISHED_STATUSES = new Set([
 const isFinished = (s: string) => FINISHED_STATUSES.has(s)
 
 // ── Server fetch ───────────────────────────────────────────────────
-async function fetchMatchDetail(ref: string): Promise<MatchDetail | null> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL
-      ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
-    const res  = await fetch(`${base}/api/match/${ref}`, { next: { revalidate: 15 } })
-    if (!res.ok) return null
-    return res.json()
-  } catch {
-    return null
-  }
-}
-
 // ── Shared primitives ──────────────────────────────────────────────
 function TeamLogo({ logo, name, size = 56 }: { logo?: string; name: string; size?: number }) {
   if (logo) {

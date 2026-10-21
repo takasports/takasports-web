@@ -10,6 +10,7 @@ import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { esTagIndexable, normalizarTag } from '@/lib/tag-policy'
+import { agruparTags } from '@/lib/tag-slug'
 import { getArchivedDays } from '@/lib/past-events'
 import { DAY_PAGE_FUTURE, isPastDay, sitemapDays } from '@/lib/calendar-day-page'
 import { fetchEspnEvents } from '@/lib/espn'
@@ -222,18 +223,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Poda de tags: cuenta cuántos artículos lleva cada tag y conserva en el sitemap
   // solo los que superan el umbral y no son slugs basura. Esto saca ~5.000 URLs
   // finas (frases LLM de un solo uso) que diluían el crawl budget. (Fase 0 SEO)
-  const tagCounts = new Map<string, number>()
-  for (const raw of flatTags) {
-    if (typeof raw !== 'string') continue
-    const tag = raw.trim()
-    if (!tag) continue
-    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1)
-  }
+  // Agrupadas por slug (lib/tag-slug): las variantes de una etiqueta suman sus
+  // artículos y salen una sola vez, con la URL buena.
   // Una etiqueta que ES el nombre de un jugador con ficha no se indexa: la ficha
   // responde mejor esa búsqueda y competían entre ellas.
-  const tags = [...tagCounts.entries()]
-    .filter(([tag, count]) => esTagIndexable(tag, count, nombresDeJugador.has(normalizarTag(tag))))
-    .map(([tag]) => tag)
+  const tags = [...agruparTags(flatTags).values()]
+    .filter(g => esTagIndexable(g.etiqueta, g.articulos, nombresDeJugador.has(normalizarTag(g.etiqueta))))
+    .map(g => g.slug)
 
   const hubLastMod = mostRecent(articles)
 
@@ -357,7 +353,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tagRoutes: MetadataRoute.Sitemap = (tags as string[])
     .filter(Boolean)
     .map(tag => ({
-      url: `${BASE_URL}/tag/${encodeURIComponent(tag)}`,
+      url: `${BASE_URL}/tag/${tag}`,
       lastModified: TAG_LASTMOD,
       changeFrequency: 'weekly' as const,
       priority: 0.5,

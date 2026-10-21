@@ -11,7 +11,11 @@ export const contentType = 'image/png'
 
 export default async function Image({ params }: { params: Promise<{ tag: string }> }) {
   const { tag } = await params
-  const decoded = decodeURIComponent(tag)
+  // El parámetro es ya el slug (`real-madrid`): se pinta con espacios. Y un
+  // `%` suelto hacía lanzar a decodeURIComponent (URIError, 500 en producción).
+  let decoded: string
+  try { decoded = decodeURIComponent(tag) } catch { decoded = tag }
+  decoded = decoded.replace(/-/g, ' ')
   const accent = '#38BDF8'
   // El hashtag se reduce de tamaño cuando la etiqueta es larga, para no desbordar.
   const label = `#${decoded}`

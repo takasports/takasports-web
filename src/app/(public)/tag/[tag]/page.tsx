@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
-import { sanityClient, articlesByTagQuery, tagCountQuery } from '@/lib/sanity'
+import { sanityClient, articlesByTagsQuery } from '@/lib/sanity'
 import { esTagIndexable } from '@/lib/tag-policy'
+import { getTagIndex } from '@/lib/tag-index'
+import { resolverTagParam, tagSlug, type GrupoTag } from '@/lib/tag-slug'
 import { adminSupabase } from '@/lib/supabase-admin'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { timeAgo } from '@/lib/timeAgo'
@@ -12,25 +14,20 @@ import ScrollToTop from '@/components/ScrollToTop'
 import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 
 /**
- * `decodeURIComponent` LANZA con una secuencia mal formada (`/tag/%E0%A4%A`), y
- * sin esto la página respondía 500: cuatro veces en septiembre de 2026, siempre
- * desde enlaces rotos de fuera. Una etiqueta que no se puede leer no existe, así
- * que es un 404.
+ * `decodeURIComponent` lanza con una secuencia mal formada (`/tag/%E0%A4%A`), y
+ * eso daba 500 cuatro veces en septiembre de 2026, siempre por enlaces rotos de
+ * fuera: ahora es un 404 (resolverTagParam devuelve null).
  */
-function decodificarTag(tag: string): string | null {
-  try { return decodeURIComponent(tag) } catch { return null }
+async function resolverTag(param: string): Promise<{ grupo: GrupoTag; redirigir: boolean } | null> {
+  return resolverTagParam(param, await getTagIndex())
 }
 
-// Los tags llevan texto humano crudo en la URL (a diferencia del resto del
-// sitio, que va slugificado en ASCII). Con ISR, Next emite la cabecera
-// `x-next-cache-tags` con el pathname dentro, y las cabeceras HTTP solo
-// admiten Latin-1: cualquier tag con un carácter fuera de ese rango (ć, €, ʻ…)
-// reventaba con 500 en producción — `/tag/luka modrić`, `/tag/edin terzić`,
-// `/tag/466m€`. Misma clase de caracteres que ya obligó a la tabla aparte de
-// `toNameSlug` en los slugs de jugador. Renderizando en dinámico no se genera
-// esa entrada de caché, así que la cabecera no llega a construirse.
-// Es contención, no la cura: la cura es slugificar la URL del tag (pendiente
-// de decidir, porque mueve URLs ya indexadas).
+// Render dinámico, a propósito. Cuando la URL llevaba el texto crudo de la
+// etiqueta, con ISR Next metía el pathname en la cabecera `x-next-cache-tags`,
+// y una cabecera HTTP solo admite Latin-1: `/tag/luka modrić`, `/tag/466m€`…
+// reventaban con 500. La URL buena ya es un slug ASCII (lib/tag-slug.ts), pero
+// las viejas siguen llegando y tienen que entrar aquí para redirigir, así que
+// la página sigue sin ISR. Lo caro —el índice de etiquetas— va cacheado.
 export const dynamic = 'force-dynamic'
 // Tags nuevos detectados en runtime también se renderizan (no 404).
 export const dynamicParams = true
@@ -58,35 +55,34 @@ export async function generateMetadata({
   params: Promise<{ tag: string }>
 }): Promise<Metadata> {
   const { tag } = await params
-  const decoded = decodificarTag(tag)
-  if (decoded === null) notFound()
+  // Sin redirect ni notFound aquí: los decide la página, que es la que puede
+  // emitir un 308/404 de verdad. Esto solo rellena la cabecera.
+  const resuelto = await resolverTag(tag).catch(() => null)
+  if (!resuelto) return { title: 'Etiqueta no encontrada', robots: { index: false, follow: true } }
+  const { grupo } = resuelto
+  const decoded = grupo.etiqueta
   const title = `#${decoded} — noticias y artículos`
   const description = `Todos los artículos etiquetados con #${decoded} en TakaSports. Noticias, análisis y cobertura deportiva.`
-  const canonical = `${SITE_URL}/tag/${tag}`
+  const canonical = `${SITE_URL}/tag/${grupo.slug}`
 
   // Tags finos (frases de un solo uso) o basura → noindex,follow: no merecen
   // indexarse y son la mayor fuente de "Descubierta sin indexar" y soft-404,
   // pero conservamos follow para no perder el paso de enlaces. (Fase 0 SEO)
-  const [count, duplicaFicha] = await Promise.all([
-    sanityClient
-      .fetch<number>(tagCountQuery, { tag: decoded } as Record<string, string>)
-      .catch(() => 0),
-    // ¿La etiqueta ES un jugador con ficha? `ilike` sin comodines compara sin
-    // distinguir mayúsculas, que es justo lo que hace falta: las etiquetas se
-    // guardan en minúscula y los nombres como los publica ESPN.
-    (async () => {
-      const db = adminSupabase()
-      if (!db) return false
-      const { data } = await db
-        .from('sport_entities')
-        .select('id')
-        .eq('type', 'player')
-        .ilike('name', decoded)
-        .limit(1)
-      return (data?.length ?? 0) > 0
-    })().catch(() => false),
-  ])
-  const thin = !esTagIndexable(decoded, count, duplicaFicha)
+  // ¿La etiqueta ES un jugador con ficha? `ilike` sin comodines compara sin
+  // distinguir mayúsculas, que es justo lo que hace falta: las etiquetas se
+  // guardan en minúscula y los nombres como los publica ESPN.
+  const duplicaFicha = await (async () => {
+    const db = adminSupabase()
+    if (!db) return false
+    const { data } = await db
+      .from('sport_entities')
+      .select('id')
+      .eq('type', 'player')
+      .ilike('name', decoded)
+      .limit(1)
+    return (data?.length ?? 0) > 0
+  })().catch(() => false)
+  const thin = !esTagIndexable(decoded, grupo.articulos, duplicaFicha)
 
   return {
     title,
@@ -110,21 +106,27 @@ export async function generateMetadata({
   }
 }
 
-const relatedTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && $tag in coalesce(tags, [])][0...80] { tags }`
+const relatedTagsQuery = `*[_type == "article" && (status == "publicado" || (defined(headline) && !(_id in path('drafts.**'))))${REPORTAJE_GROQ_FILTER} && count(coalesce(tags, [])[@ in $variantes]) > 0][0...80] { tags }`
 
-function topRelatedTags(rows: Array<{ tags?: string[] | null }>, currentTag: string, limit = 8): Array<{ tag: string; count: number }> {
+/** Etiquetas que más acompañan a esta, agrupadas por slug como las páginas. */
+function topRelatedTags(
+  rows: Array<{ tags?: string[] | null }>,
+  index: Record<string, GrupoTag>,
+  currentSlug: string,
+  limit = 8,
+): Array<{ slug: string; tag: string; count: number }> {
   const counter = new Map<string, number>()
-  const currentLower = currentTag.toLowerCase()
   for (const row of rows) {
     if (!Array.isArray(row.tags)) continue
     for (const t of row.tags) {
       if (!t || typeof t !== 'string') continue
-      if (t.toLowerCase() === currentLower) continue
-      counter.set(t, (counter.get(t) ?? 0) + 1)
+      const slug = tagSlug(t)
+      if (!slug || slug === currentSlug) continue
+      counter.set(slug, (counter.get(slug) ?? 0) + 1)
     }
   }
   return Array.from(counter.entries())
-    .map(([tag, count]) => ({ tag, count }))
+    .map(([slug, count]) => ({ slug, tag: index[slug]?.etiqueta ?? slug, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit)
 }
@@ -135,23 +137,28 @@ export default async function TagPage({
   params: Promise<{ tag: string }>
 }) {
   const { tag } = await params
-  const decoded = decodificarTag(tag)
-  if (decoded === null) notFound()
+  const resuelto = await resolverTag(tag)
+  if (!resuelto) notFound()
+  const { grupo, redirigir } = resuelto
+  if (redirigir) permanentRedirect(`/tag/${grupo.slug}`)
+  const decoded = grupo.etiqueta
+  const variantes = { variantes: grupo.variantes }
 
-  const [articles, relatedRows] = await Promise.all([
+  // Sin .catch en los artículos: si Sanity falla es un 500 (Google reintenta),
+  // no una lista vacía que acabe en un 404 de una etiqueta que sí existe.
+  const [articles, relatedRows, index] = await Promise.all([
+    sanityClient.fetch<Article[]>(articlesByTagsQuery, variantes),
     sanityClient
-      .fetch<Article[]>(articlesByTagQuery, { tag: decoded } as Record<string, string>)
-      .catch(() => [] as Article[]),
-    sanityClient
-      .fetch<Array<{ tags?: string[] | null }>>(relatedTagsQuery, { tag: decoded } as Record<string, string>)
+      .fetch<Array<{ tags?: string[] | null }>>(relatedTagsQuery, variantes)
       .catch(() => [] as Array<{ tags?: string[] | null }>),
+    getTagIndex(),
   ])
 
   if (articles.length === 0) notFound()
 
-  const relatedTags = topRelatedTags(relatedRows, decoded)
+  const relatedTags = topRelatedTags(relatedRows, index, grupo.slug)
 
-  const tagUrl = `${SITE_URL}/tag/${tag}`
+  const tagUrl = `${SITE_URL}/tag/${grupo.slug}`
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -223,11 +230,11 @@ export default async function TagPage({
               <span className="section-label">Tags relacionados</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {relatedTags.map(({ tag: rt, count }) => (
+              {relatedTags.map(({ slug: rs, tag: rt, count }) => (
                 <Link
-                  key={rt}
+                  key={rs}
                   prefetch={false}
-                  href={`/tag/${encodeURIComponent(rt)}`}
+                  href={`/tag/${rs}`}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
