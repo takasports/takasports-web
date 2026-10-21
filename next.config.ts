@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
       // Alias naturales de hubs de deporte → slug canónico (antes daban 404)
       { source: '/f1', destination: '/formula1', permanent: true },
       { source: '/mma', destination: '/ufc', permanent: true },
+      // La quiniela pasó a /predicciones. Antes lo hacía un redirect() dentro de
+      // la página, que en una ruta prerenderizada sale como HTML con 200 (ver
+      // /reportajes más abajo): Google veía una página y no una redirección.
+      { source: '/quiniela', destination: '/predicciones', permanent: true },
       { source: '/lucha-libre', destination: '/wwe', permanent: true },
       // Estadísticas: las landings pasaron de ?sport=X (no cacheable) a rutas de
       // path /estadisticas/X (cacheables). Reenviamos 308 las direcciones viejas

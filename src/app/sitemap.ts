@@ -18,6 +18,14 @@ import { SOURCE_TZ } from '@/lib/timezone'
 
 const BASE_URL = SITE_URL
 
+// Revalidate EXPLÍCITO. Sin él, el ritmo se deducía de los fetch() de dentro y
+// en producción no funcionaba: el 21/10/2026 Vercel servía como HIT (fresco, ni
+// siquiera STALE) un sitemap con 5,6 días de antigüedad cuyo contenido era el
+// del build del 10/10, sin ninguna noticia de esos 11 días. Los sitemaps con
+// revalidate declarado (news-sitemap) sí se regeneraban. Una hora basta: lo
+// urgente (últimas 72 h) va en /news-sitemap.xml.
+export const revalidate = 3600
+
 // Fechas deterministas por sección. Google ignora <lastmod> cuando ve que cambia
 // en cada build sin razón. Bumpear estas constantes solo al hacer cambios reales.
 const STATIC_LASTMOD = new Date('2026-05-28T00:00:00Z')
@@ -267,7 +275,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/mundial`, lastModified: hubLastMod, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/mundial/fixture`, lastModified: hubLastMod, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE_URL}/juegos`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.75 },
-    { url: `${BASE_URL}/quiniela`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/crackquiz`, lastModified: STATIC_LASTMOD, changeFrequency: 'daily', priority: 0.65 },
     { url: `${BASE_URL}/sopa-cracks`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.65 },
     { url: `${BASE_URL}/mionce`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.65 },

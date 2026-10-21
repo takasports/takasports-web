@@ -3,7 +3,7 @@ import CookieConsentControl from '@/components/CookieConsentControl'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Política de privacidad — TakaSports',
+  title: 'Política de privacidad',
   description: 'Política de privacidad de TakaSports: qué datos recopilamos, cómo los usamos y tus derechos.',
   alternates: { canonical: `${SITE_URL}/privacidad` },
   robots: { index: true, follow: true },

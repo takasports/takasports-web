@@ -20,7 +20,7 @@ import { SITE_URL } from '@/lib/constants'
 const EMAIL = 'contacto@takasportsmedia.com'
 
 export const metadata: Metadata = {
-  title: 'Contacto — TakaSports',
+  title: 'Contacto',
   description:
     'Cómo contactar con TakaSports: correcciones de artículos, derechos de imagen, colaboraciones y prensa. Respondemos por correo.',
   alternates: { canonical: `${SITE_URL}/contacto` },

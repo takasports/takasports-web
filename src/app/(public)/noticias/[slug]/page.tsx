@@ -13,7 +13,7 @@ import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, notaHermanaQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, accentTexto } from '@/lib/sports'
+import { getSportStyle, getSportLabel, accentTexto, SLUG_TO_LABEL } from '@/lib/sports'
 import NewsletterSection from '@/components/NewsletterSection'
 import ShareButton from '@/app/article/[id]/ShareButton'
 import BackButton from '@/app/article/[id]/BackButton'
@@ -688,18 +688,23 @@ export default async function NoticiaPage({
 
   const sportSlug = article.sport ?? null
   const sportLabel = sportSlug ? getSportLabel(sportSlug, article.category) : null
+  // Hub al que enlaza la miga de pan: `sport` viene crudo de Sanity, y un `f1`
+  // llevaba a /f1 (redirección) y un deporte sin hub a un 404 (los hubs van con
+  // dynamicParams=false). Solo se enlaza un hub que existe.
+  const hubSlug = sportSlug === 'f1' ? 'formula1' : sportSlug && SLUG_TO_LABEL[sportSlug] ? sportSlug : null
+  const hubLabel = hubSlug ? sportLabel : null
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${SITE_URL}/noticias` },
-      ...(sportSlug && sportLabel
-        ? [{ '@type': 'ListItem', position: 3, name: sportLabel, item: `${SITE_URL}/${sportSlug}` }]
+      ...(hubSlug && hubLabel
+        ? [{ '@type': 'ListItem', position: 3, name: hubLabel, item: `${SITE_URL}/${hubSlug}` }]
         : []),
       {
         '@type': 'ListItem',
-        position: sportSlug ? 4 : 3,
+        position: hubSlug && hubLabel ? 4 : 3,
         name: article.title,
         item: canonical,
       },
@@ -1289,14 +1294,14 @@ export default async function NoticiaPage({
               allí va como botón de icono al principio de la fila de metadatos. */}
           <div className="hidden sm:flex pt-6 pb-5 lg:col-span-2 items-center gap-3">
             <BackButton />
-            {sportSlug && sportLabel && (
+            {hubSlug && hubLabel && (
               <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
                 <Link href="/" className="hover:opacity-70 transition-opacity flex-shrink-0" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>
                   TakaSports
                 </Link>
                 <span style={{ color: 'var(--text-faint)' }}>/</span>
-                <Link href={`/${sportSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
-                  {sportLabel}
+                <Link href={`/${hubSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
+                  {hubLabel}
                 </Link>
                 <span style={{ color: 'var(--text-faint)' }}>/</span>
                 <span className="truncate" style={{ color: 'var(--text-muted)' }}>{article.title}</span>
@@ -1892,10 +1897,10 @@ export default async function NoticiaPage({
           <MasLeidas excluirSlug={article.slug ?? id} />
         </div>
 
-        {sportSlug && sportLabel && (
+        {hubSlug && hubLabel && (
           <div className="mx-auto mt-10 mb-4" style={{ maxWidth: 1160 }}>
             <Link
-              href={`/${sportSlug}`}
+              href={`/${hubSlug}`}
               className="group flex items-center justify-between gap-4 rounded-2xl px-6 py-4 transition-all hover:brightness-110"
               style={{ background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}06)`, border: `1px solid ${badgeBorder}`, textDecoration: 'none' }}
             >

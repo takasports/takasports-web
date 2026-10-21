@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Términos de uso — TakaSports',
+  title: 'Términos de uso',
   description: 'Términos y condiciones de uso de TakaSports.',
   alternates: { canonical: `${SITE_URL}/terminos` },
   robots: { index: true, follow: true },

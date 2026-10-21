@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Eliminar tu cuenta — TakaSports',
+  title: 'Eliminar tu cuenta',
   description:
     'Cómo eliminar tu cuenta de TakaSports y todos los datos asociados: desde la aplicación, desde la web o por correo electrónico.',
   alternates: { canonical: `${SITE_URL}/eliminar-cuenta` },

@@ -28,13 +28,13 @@ export async function generateMetadata({ params }: PageProps) {
   const meta = META[game as GameId]
   if (!meta) {
     return {
-      title: 'Ranking · TakaSports',
+      title: 'Ranking',
       robots: { index: false, follow: true },
       alternates: { canonical: `${SITE_URL}/juegos/leaderboard/${game}` },
     }
   }
   return {
-    title: `Ranking ${meta.label} · TakaSports`,
+    title: `Ranking ${meta.label}`,
     description: `Top 100 jugadores de ${meta.label} en TakaSports.`,
     // Self-canonical sobrescribe el de juegos/layout.tsx que apunta a /juegos
     alternates: { canonical: `${SITE_URL}/juegos/leaderboard/${game}` },

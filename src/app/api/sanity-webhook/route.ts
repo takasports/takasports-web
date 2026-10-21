@@ -37,9 +37,14 @@ const CONTENT_PATHS = [
 ] as const
 
 // Mapeo tipo Sanity → rutas adicionales específicas
+// Los feeds de artículos también: sin esto, el news-sitemap y el RSS solo se
+// regeneraban por su revalidate de 1 h, y como ISR sirve la copia vieja a la
+// primera visita tras caducar, Googlebot leía una lista de varias horas atrás
+// (medido el 21/10/2026: servido a las 12:26 un news-sitemap generado a las 01:51).
 const TYPE_EXTRA_PATHS: Record<string, string[]> = {
-  reel:  ['/'],
-  event: ['/calendario'],
+  reel:    ['/'],
+  event:   ['/calendario'],
+  article: ['/news-sitemap.xml', '/rss.xml', '/image-sitemap.xml'],
 }
 
 function verifySignature(body: string, signature: string | null, secret: string): boolean {

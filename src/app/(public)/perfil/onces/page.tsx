@@ -3,7 +3,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import OncesClient from './OncesClient'
 
 export const metadata: Metadata = {
-  title: 'Tus onces · TakaSports',
+  title: 'Tus onces',
   description: 'Onces que has guardado desde Mi Once. Hasta 12, gratis y sin perderse.',
 }
 

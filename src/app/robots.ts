@@ -52,14 +52,26 @@ const AI_SEARCH_BOTS = [
 // No se pierde nada en buscadores: estas páginas nunca se indexaron.
 const CRAWLER_TRAPS = ['/comparar', '/rankings/comparar']
 
+// Imágenes que servimos desde /api/ y que NOSOTROS damos a Google como imagen de
+// la noticia: la placa de previas, crónicas y columnas (NewsArticle.image,
+// og:image e image-sitemap) y la portada de los reels cuando no hay otra
+// (VideoObject.thumbnailUrl y video-sitemap). Con `/api/` cerrado Googlebot no
+// podía bajarlas, y una noticia sin imagen rastreable no sale con miniatura en
+// Top Stories ni en Discover. La regla más larga gana, así que esto abre solo
+// estas rutas y el resto de /api/ sigue cerrado.
+const API_IMAGES = ['/api/og/', '/api/instagram/thumbnail']
+
+const ALLOW = ['/', ...API_IMAGES]
+const DISALLOW = ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS]
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       // Búsqueda + APIs + áreas privadas: nadie debe crawlearlas.
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS],
+        allow: ALLOW,
+        disallow: DISALLOW,
       },
       // Scrapers SEO: bloqueo total.
       ...SEO_SCRAPERS.map(userAgent => ({ userAgent, disallow: '/' })),
@@ -68,8 +80,8 @@ export default function robots(): MetadataRoute.Robots {
       // Bots de búsqueda IA con citación: mismo acceso que un crawler normal.
       ...AI_SEARCH_BOTS.map(userAgent => ({
         userAgent,
-        allow: '/',
-        disallow: ['/api/', '/perfil/', '/admin/', '/buscar', '/buscar/', ...CRAWLER_TRAPS],
+        allow: ALLOW,
+        disallow: DISALLOW,
       })),
     ],
     sitemap: [
