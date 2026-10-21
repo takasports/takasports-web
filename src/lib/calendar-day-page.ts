@@ -168,6 +168,25 @@ export function dayPageTitle(iso: string, todayIso: string): string {
   return rel ? `Partidos de ${rel.toLowerCase()}, ${fecha}` : `Partidos del ${fecha}: horarios y TV`
 }
 
+/**
+ * Título para COMPARTIR el día (og:title, la tarjeta y el botón Compartir).
+ *
+ * Nunca relativo: un enlace se abre horas o días después de mandarlo, y «Partidos
+ * de hoy» enviado el martes y leído el miércoles miente. La fecha no caduca.
+ * «Partidos del miércoles 22 de octubre de 2026» / «Resultados del …».
+ */
+export function dayShareTitle(iso: string, todayIso: string): string {
+  return `${isPastDay(iso, todayIso) ? 'Resultados' : 'Partidos'} del ${searchDayLabel(iso)}`
+}
+
+/** Igual que `dayShareTitle` pero sin el año, para la tarjeta, donde sobra:
+ *  «Partidos del miércoles 22 de octubre». */
+export function dayShareHeadline(iso: string, todayIso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const wd = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]
+  return `${isPastDay(iso, todayIso) ? 'Resultados' : 'Partidos'} del ${wd} ${d} de ${MONTHS[m - 1]}`
+}
+
 /** Un partido estrella del día, ya resuelto para el texto (sin marcador). */
 export interface DayStar {
   home: string
@@ -178,6 +197,14 @@ export interface DayStar {
   /** Partido de una liga femenina: el nombre solo («Barcelona–Real Madrid») se
    *  lee como el Clásico masculino, y quien busca ese y entra se va. */
   femenino?: boolean
+  // ── Solo para la tarjeta de compartir (opengraph-image) ──
+  // La descripción no los usa: no cambian ni un carácter del texto de Google.
+  /** Competición tal y como la agrupa el feed («LaLiga», «Champions»…). */
+  comp?: string
+  homeLogo?: string
+  awayLogo?: string
+  /** «2 - 1» si el partido ya tiene marcador (días jugados). */
+  score?: string
 }
 
 /** Competiciones femeninas tal y como las nombra el feed («Liga F», «WSL»…). */
@@ -206,6 +233,10 @@ interface StarCandidate {
   time: string
   timeTbd?: boolean
   broadcast?: string
+  homeLogo?: string
+  awayLogo?: string
+  homeScore?: number | null
+  awayScore?: number | null
 }
 
 /**
@@ -215,17 +246,22 @@ interface StarCandidate {
  *
  * `score` y `channel` llegan inyectados para que esto siga siendo puro y
  * testeable sin arrastrar las tablas de ligas y de televisiones.
+ *
+ * `minScore` existe para la tarjeta de compartir: allí un día sin cartel
+ * grande también necesita sus tres filas, y se rellenan con el MISMO orden en
+ * vez de inventar otro (pasando `-Infinity`).
  */
 export function pickDayStars<E extends StarCandidate>(
   events: readonly E[],
   score: (e: E) => number,
   channel: (e: E) => string | undefined,
   n = 2,
+  minScore = DAY_STAR_MIN_SCORE,
 ): DayStar[] {
   const ranked = events
     .filter(e => e.away && e.home)
     .map(e => ({ e, s: score(e) }))
-    .filter(x => x.s >= DAY_STAR_MIN_SCORE)
+    .filter(x => x.s >= minScore)
     .sort((a, b) => b.s - a.s || (a.e.isoDate ?? '').localeCompare(b.e.isoDate ?? ''))
   const out: DayStar[] = []
   const seen = new Set<string>()
@@ -240,6 +276,10 @@ export function pickDayStars<E extends StarCandidate>(
       time: e.timeTbd ? undefined : (e.time || undefined),
       channel: channel(e) || undefined,
       ...(COMP_FEMENINA.test(e.comp) ? { femenino: true } : {}),
+      ...(e.comp ? { comp: e.comp } : {}),
+      ...(e.homeLogo ? { homeLogo: e.homeLogo } : {}),
+      ...(e.awayLogo ? { awayLogo: e.awayLogo } : {}),
+      ...(e.homeScore != null && e.awayScore != null ? { score: `${e.homeScore} - ${e.awayScore}` } : {}),
     })
   }
   return out
