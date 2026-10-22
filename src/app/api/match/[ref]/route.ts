@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { parseMatchRef } from '@/lib/match-ref'
-import { sanityClient, previaByMatchRefQuery } from '@/lib/sanity'
+import { sanityClient, previaByMatchRefQuery, cronicaByMatchRefQuery } from '@/lib/sanity'
 import { buildPlayerIndex, lookupPlayerId } from '@/lib/match-player-index'
 import type { StandingZone } from '@/lib/league-zones'
 import { getSpanishBroadcast } from '@/lib/broadcasts'
@@ -159,6 +159,8 @@ export interface MatchDetail {
   id: string
   /** La previa de Taka de este partido (solo fútbol/NBA con previa publicada). */
   previa?: PreviaDePartido | null
+  /** La crónica de Taka de este partido, si se publicó (misma forma que la previa). */
+  cronica?: PreviaDePartido | null
   sport: SportKind
   leagueSlug: string
   leagueLabel: string
@@ -1057,17 +1059,23 @@ async function buildGolf(eventId: string): Promise<{ golf: MatchDetail['golf']; 
 }
 
 // ── Route handler ───────────────────────────────────────────────────
-// La previa de Taka del partido, si existe (por matchRef exacto). Viaja en la
-// respuesta para que la APP la enlace desde su ficha sin consultar Sanity por su
-// cuenta (la app es cliente delgado de esta API). Solo fútbol y NBA tienen previa.
+// La previa y la crónica de Taka del partido, si existen (por matchRef exacto).
+// Viajan en la respuesta para que la APP las pinte en la pestaña «Notas» sin
+// consultar Sanity por su cuenta (la app es cliente delgado de esta API). Solo
+// fútbol y NBA tienen notas con ficha.
+type NotaSanity = { slug?: string; title?: string; imageUrl?: string | null } | null
+const aNota = (n: NotaSanity): PreviaDePartido | null =>
+  n?.slug && n.title ? { slug: n.slug, title: n.title, imageUrl: n.imageUrl ?? null } : null
+
 async function conPrevia(detail: MatchDetail, ref: string): Promise<MatchDetail> {
   if (!/^(soccer|basketball)_/.test(ref)) return detail
-  const previa = await sanityClient
-    .fetch<{ slug?: string; title?: string; imageUrl?: string | null } | null>(previaByMatchRefQuery, { ref })
-    .catch(() => null)
-  return previa?.slug && previa.title
-    ? { ...detail, previa: { slug: previa.slug, title: previa.title, imageUrl: previa.imageUrl ?? null } }
-    : detail
+  const [previa, cronica] = await Promise.all([
+    sanityClient.fetch<NotaSanity>(previaByMatchRefQuery, { ref }).catch(() => null),
+    sanityClient.fetch<NotaSanity>(cronicaByMatchRefQuery, { ref }).catch(() => null),
+  ])
+  const p = aNota(previa)
+  const c = aNota(cronica)
+  return p || c ? { ...detail, ...(p ? { previa: p } : {}), ...(c ? { cronica: c } : {}) } : detail
 }
 
 async function responder(detail: MatchDetail, ref: string) {
