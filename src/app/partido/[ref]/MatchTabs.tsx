@@ -6,6 +6,9 @@ export interface TabDef {
   id: string
   label: string
   available: boolean
+  /** Sin botón en la fila (p. ej. «Notas» en un partido sin notas). El panel se
+   *  sigue pintando para no romper el emparejamiento por posición con los hijos. */
+  hidden?: boolean
 }
 
 export function MatchTabs({
@@ -81,6 +84,7 @@ export function MatchTabs({
           }}
         >
           {tabs.map((tab, i) => {
+            if (tab.hidden) return null
             const isActive   = activeIdx === i
             const isDisabled = !tab.available
             return (

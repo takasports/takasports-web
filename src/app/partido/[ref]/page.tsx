@@ -1838,7 +1838,9 @@ function MatchContent({ match, h2h, forms, matchRef, notas }: { match: MatchDeta
     { id: 'alineacion',   label: 'Alineaciones',    available: hasLineups },
     { id: 'estadisticas', label: 'Estadísticas',    available: hasStats },
     { id: 'clasificacion',label: 'Tabla',           available: hasTable },
-    { id: 'notas',        label: 'Notas',           available: hasNotas },
+    // Sin notas no se enseña (como en la app): casi ningún partido tiene, y
+    // apagada se confundía con una pestaña inactiva.
+    { id: 'notas',        label: 'Notas',           available: hasNotas, hidden: !hasNotas },
     { id: 'h2h',          label: 'H2H',             available: hasH2H },
   ]
 
