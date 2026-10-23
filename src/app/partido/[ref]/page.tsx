@@ -24,6 +24,10 @@ import { SITE_URL, SITE_NAME, TWITTER_HANDLE, LOGO_URL, ICON_URL } from '@/lib/c
 import { isSplitBroadcast } from '@/lib/broadcasts'
 import { GoalIcon, YellowCardIcon, RedCardIcon } from '@/components/icons/GameIcons'
 import { fetchH2H, fetchRecentFormByTeams, type H2HResult, type FormResult } from '@/lib/past-events'
+import {
+  resumenH2H, competicionCortaH2H, esCopaH2H, marcadorH2H, decimalH2H, fechaCortaH2H, fechaLargaH2H,
+  type EquipoH2H, type FichaH2H, type LadoH2H, type PartidoH2H, type ResultadoH2H, type TramoH2H,
+} from '@/lib/h2h-resumen'
 import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance } from '@/lib/match-estimate'
 import { accentForSport } from '@/lib/sports'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
@@ -1563,120 +1567,236 @@ function FormGuide({ homeTeam, awayTeam, forms }: { homeTeam?: string; awayTeam?
   )
 }
 
-function H2HBlock({ h2h, homeTeam, awayTeam }: { h2h: H2HResult; homeTeam: string; awayTeam: string }) {
-  if (h2h.matches.length === 0) {
+// ── Cara a cara ────────────────────────────────────────────────────
+// Con los enfrentamientos que ya trae /api/match (hoy, los 5 últimos de ESPN).
+// Todo el cálculo vive en `lib/h2h-resumen` (pura, con pruebas y copia idéntica
+// en la app): balance, goles, «según dónde se juega», racha y fichas, con las
+// reglas de qué se enseña cuando hay pocos partidos. Aquí solo se pinta.
+const H2H_HOME = '#A78BFA'
+const H2H_AWAY = '#F59E0B'
+const H2H_DRAW = '#7C7C8C'
+const H2H_RES: Record<ResultadoH2H, string> = { G: '#86EFAC', E: '#FBBF24', P: '#FCA5A5' }
+
+function H2HCard({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="tk-glass rounded-xl p-4 mb-4">
+      <div className="flex items-baseline justify-between gap-3 mb-4">
+        <p className="text-[9px] font-black uppercase tracking-widest"
+          style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          {title}
+        </p>
+        {aside ? (
+          <span className="text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{aside}</span>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function H2HBar({ g, e, p }: { g: number; e: number; p: number }) {
+  const t = g + e + p || 1
+  return (
+    <div className="flex rounded-full overflow-hidden h-1.5 gap-[2px]" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      {g > 0 && <div style={{ width: `${(g / t) * 100}%`, background: H2H_HOME }} />}
+      {e > 0 && <div style={{ width: `${(e / t) * 100}%`, background: H2H_DRAW }} />}
+      {p > 0 && <div style={{ width: `${(p / t) * 100}%`, background: H2H_AWAY }} />}
+    </div>
+  )
+}
+
+function H2HBlock({ h2h, home, away, sport }: { h2h: H2HResult; home: EquipoH2H; away: EquipoH2H; sport: string }) {
+  const basket = sport === 'basketball'
+  const r = resumenH2H(h2h.matches, home, away, { umbralGoleada: basket ? 10 : 2 })
+  if (r.filas.length === 0) {
     return <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
   }
 
-  const total = h2h.wins + h2h.draws + h2h.losses || 1
-  const pctH = (h2h.wins / total) * 100
-  const pctD = (h2h.draws / total) * 100
-  const pctA = (h2h.losses / total) * 100
+  const homeShort = home.abbr || home.nombre
+  const awayShort = away.abbr || away.nombre
+  const corto = (lado: LadoH2H) => (lado === 'local' ? homeShort : awayShort)
+  const nombre = (lado: LadoH2H) => (lado === 'local' ? home.nombre : away.nombre)
+  const colorDe = (lado: LadoH2H | null) => (lado === 'local' ? H2H_HOME : lado === 'visitante' ? H2H_AWAY : 'var(--text-primary)')
+  const partidosTxt = (n: number) => `${n} partido${n === 1 ? '' : 's'}`
+  const tituloN = r.n === 1 || (r.n === 0 && r.filas.length === 1) ? 'último partido' : `últimos ${r.n || r.filas.length} partidos`
+  const pie = (m: PartidoH2H) => [fechaLargaH2H(m.isoDate), competicionCortaH2H(m.comp)].filter(Boolean).join(' · ')
+  const unidad = basket ? 'puntos' : 'goles'
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso)
-    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-    return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`
+  const Counter = ({ label, value, color, align, foot }: { label: string; value: number; color: string; align: 'start' | 'center' | 'end'; foot?: string }) => (
+    <div className={`flex flex-col min-w-0 ${align === 'start' ? 'items-start' : align === 'end' ? 'items-end' : 'items-center'}`}>
+      <span className="text-[10px] font-bold uppercase tracking-widest truncate max-w-full" style={{ color, fontFamily: 'var(--font-sport)' }}>{label}</span>
+      <span className="text-[34px] font-black tabular-nums leading-none mt-1" style={{ color, fontFamily: 'var(--font-headline)' }}>{value}</span>
+      {foot ? <span className="text-[10px] mt-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{foot}</span> : null}
+    </div>
+  )
+
+  const Tramo = ({ titulo, t, barra }: { titulo: string; t: TramoH2H; barra: boolean }) => (
+    <div>
+      <div className="flex items-baseline justify-between gap-3 mb-2">
+        <span className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>{titulo}</span>
+        <span className="text-[11px] font-black tabular-nums whitespace-nowrap" style={{ fontFamily: 'var(--font-sport)' }}>
+          <span style={{ color: H2H_HOME }}>{t.g}G</span>
+          <span style={{ color: 'var(--text-muted)' }}> · {t.e}E · </span>
+          <span style={{ color: H2H_AWAY }}>{t.p}P</span>
+        </span>
+      </div>
+      {barra && <H2HBar g={t.g} e={t.e} p={t.p} />}
+      <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{partidosTxt(t.n)}</p>
+    </div>
+  )
+
+  const Ficha = ({ f, ancha }: { f: FichaH2H; ancha: boolean }) => {
+    let label = ''; let big = ''; let foot = ''; let color: string = 'var(--text-primary)'
+    if (f.tipo === 'racha') {
+      const { racha } = f
+      label = 'Racha'
+      big = racha.tipo === 'victorias' ? `${racha.n} victorias seguidas`
+        : racha.tipo === 'empates' ? `${racha.n} empates seguidos`
+        : `${racha.n} sin perder`
+      if (racha.equipo) {
+        const otro: LadoH2H = racha.equipo === 'local' ? 'visitante' : 'local'
+        foot = `${nombre(racha.equipo)} ante ${nombre(otro)}`
+        if (racha.tipo === 'sinPerder') {
+          foot += ` (${racha.victorias} ${racha.victorias === 1 ? 'victoria' : 'victorias'} y ${racha.empates} ${racha.empates === 1 ? 'empate' : 'empates'})`
+        }
+        color = colorDe(racha.equipo)
+      } else {
+        foot = 'Ninguno gana desde entonces'
+      }
+    } else if (f.tipo === 'ultimaVictoria') {
+      label = `Última de ${corto(f.equipo)}`
+      big = marcadorH2H(f.partido); foot = pie(f.partido); color = colorDe(f.equipo)
+    } else if (f.tipo === 'mayorGoleada') {
+      label = basket ? 'Mayor diferencia' : 'Mayor goleada'
+      big = marcadorH2H(f.partido); foot = pie(f.partido); color = colorDe(f.equipo)
+    } else {
+      label = 'Último duelo'
+      big = marcadorH2H(f.partido); foot = pie(f.partido); color = colorDe(f.ganador)
+    }
+    return (
+      <div className={`rounded-lg p-3 min-w-0 ${ancha ? 'col-span-2' : ''}`}
+        style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)' }}>
+        <p className="text-[9px] font-bold uppercase tracking-widest truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{label}</p>
+        <p className="text-[16px] font-black leading-tight mt-1.5" style={{ color, fontFamily: 'var(--font-headline)' }}>{big}</p>
+        {foot ? <p className="text-[10px] mt-1 leading-snug" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{foot}</p> : null}
+      </div>
+    )
   }
 
   return (
     <>
-      <Section title={`Balance · últimos ${h2h.matches.length}`}>
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div className="flex flex-col items-start">
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
-              {homeTeam}
-            </span>
-            <span className="text-[28px] font-black tabular-nums leading-none"
-              style={{ color: '#A78BFA', fontFamily: 'var(--font-headline)' }}>
-              {h2h.wins}
-            </span>
+      {r.mostrar.balance && (
+        <H2HCard title="Cara a cara" aside={tituloN}>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <Counter label={home.nombre} value={r.victoriasLocal} color={H2H_HOME} align="start" foot={r.victoriasLocal === 1 ? 'victoria' : 'victorias'} />
+            <Counter label="Empates" value={r.empates} color="var(--text-secondary)" align="center" />
+            <Counter label={away.nombre} value={r.victoriasVisitante} color={H2H_AWAY} align="end" foot={r.victoriasVisitante === 1 ? 'victoria' : 'victorias'} />
           </div>
-          <div className="flex flex-col items-center">
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-              Empates
-            </span>
-            <span className="text-[28px] font-black tabular-nums leading-none"
-              style={{ color: '#9090A4', fontFamily: 'var(--font-headline)' }}>
-              {h2h.draws}
-            </span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase tracking-widest" style={{ color: '#F59E0B', fontFamily: 'var(--font-sport)' }}>
-              {awayTeam}
-            </span>
-            <span className="text-[28px] font-black tabular-nums leading-none"
-              style={{ color: '#F59E0B', fontFamily: 'var(--font-headline)' }}>
-              {h2h.losses}
-            </span>
-          </div>
-        </div>
-        <div className="flex rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.06)' }}>
-          <div style={{ width: `${pctH}%`, background: '#A78BFA' }} />
-          <div style={{ width: `${pctD}%`, background: '#5A5A6A' }} />
-          <div style={{ width: `${pctA}%`, background: '#F59E0B' }} />
-        </div>
-      </Section>
+          {r.mostrar.barra && <H2HBar g={r.victoriasLocal} e={r.empates} p={r.victoriasVisitante} />}
+          {r.mostrar.goles && (
+            <div className="grid grid-cols-3 gap-2 mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="flex flex-col items-start">
+                <span className="text-[18px] font-black tabular-nums leading-none" style={{ fontFamily: 'var(--font-headline)' }}>
+                  <span style={{ color: H2H_HOME }}>{r.golesLocal}</span>
+                  <span style={{ color: 'var(--text-muted)' }}> – </span>
+                  <span style={{ color: H2H_AWAY }}>{r.golesVisitante}</span>
+                </span>
+                <span className="text-[9px] uppercase tracking-widest mt-1.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{unidad}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[18px] font-black tabular-nums leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-headline)' }}>{decimalH2H(r.golesPorPartido)}</span>
+                <span className="text-[9px] uppercase tracking-widest mt-1.5 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{unidad} por partido</span>
+              </div>
+              {!basket ? (
+                <div className="flex flex-col items-end">
+                  <span className="text-[18px] font-black tabular-nums leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-headline)' }}>
+                    {r.ambosMarcan}<span style={{ color: 'var(--text-muted)' }}>/{r.n}</span>
+                  </span>
+                  <span className="text-[9px] uppercase tracking-widest mt-1.5 text-right" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>marcan los dos</span>
+                </div>
+              ) : <div />}
+            </div>
+          )}
+        </H2HCard>
+      )}
 
-      <Section title="Histórico">
+      {r.mostrar.segunDonde && (
+        <H2HCard title="Según dónde se juega">
+          <div className="flex flex-col gap-4">
+            <Tramo titulo={`${home.nombre} en casa`} t={r.enCasa} barra={r.mostrar.barraCasa} />
+            <Tramo titulo={`${home.nombre} fuera`} t={r.fuera} barra={r.mostrar.barraFuera} />
+          </div>
+        </H2HCard>
+      )}
+
+      {r.mostrar.datos && (
+        <H2HCard title="Datos">
+          <div className="grid grid-cols-2 gap-2">
+            {r.fichas.map((f, i) => (
+              <Ficha key={`${f.tipo}-${i}`} f={f} ancha={r.fichas.length % 2 === 1 && i === r.fichas.length - 1} />
+            ))}
+          </div>
+        </H2HCard>
+      )}
+
+      <H2HCard title={r.mostrar.balance ? 'Partidos' : `Cara a cara · ${tituloN}`} aside={r.mostrar.balance ? 'más reciente arriba' : undefined}>
         <div className="flex flex-col gap-1.5">
-          {h2h.matches.map(m => {
-            const aIsHome = m.home === homeTeam
-            const left = aIsHome ? m.homeScore : m.awayScore
-            const right = aIsHome ? m.awayScore : m.homeScore
-            let result: 'W' | 'D' | 'L' | '?' = '?'
-            if (left != null && right != null) {
-              result = left > right ? 'W' : left < right ? 'L' : 'D'
-            }
-            const resultColor = result === 'W' ? '#86EFAC' : result === 'L' ? '#FCA5A5' : result === 'D' ? '#FBBF24' : '#7C7C8C'
+          {r.filas.map(({ partido: m, resultado, localEnCasa }) => {
+            const comp = competicionCortaH2H(m.comp)
+            const copa = esCopaH2H(m.comp)
+            const rc = resultado ? H2H_RES[resultado] : H2H_DRAW
+            const abbrColor = (esLocalHoy: boolean | null) =>
+              esLocalHoy == null ? 'var(--text-secondary)' : esLocalHoy ? H2H_HOME : 'var(--text-secondary)'
             const row = (
-              <div className="grid items-center gap-2 px-3 py-2 rounded-lg transition-colors hover:brightness-110"
+              <div className="grid items-center gap-2 px-3 py-2.5 rounded-lg transition-colors hover:brightness-110"
                 style={{
                   background: 'rgba(255,255,255,0.025)',
-                  border: '1px solid rgba(255,255,255,0.04)',
-                  gridTemplateColumns: 'auto minmax(0,1fr) auto minmax(0,1fr) auto',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  gridTemplateColumns: '54px auto minmax(0,1fr) auto',
                 }}>
                 <span className="text-[9px] font-bold tabular-nums uppercase tracking-wider"
-                  style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)', minWidth: 50 }}>
-                  {formatDate(m.isoDate)}
+                  style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  {fechaCortaH2H(m.isoDate)}
                 </span>
-                <span className="text-[12px] font-bold truncate text-right pr-1"
-                  style={{ color: aIsHome ? '#E8E8F4' : '#9090A4', fontFamily: 'var(--font-sport)' }}>
-                  {m.homeAbbr ?? m.home}
+                <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded truncate max-w-[92px]"
+                  title={m.comp}
+                  style={copa
+                    ? { color: '#FBBF24', background: 'rgba(251,191,36,0.12)', fontFamily: 'var(--font-sport)' }
+                    : { color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}>
+                  {comp || '—'}
                 </span>
-                <span className="flex items-center gap-1.5 tabular-nums font-black px-2"
-                  style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)', fontSize: 14 }}>
-                  <span>{m.homeScore ?? '-'}</span>
-                  <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>·</span>
-                  <span>{m.awayScore ?? '-'}</span>
+                <span className="flex items-center justify-end gap-2 tabular-nums min-w-0" style={{ fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[12px] font-bold truncate" style={{ color: abbrColor(localEnCasa) }}>{m.homeAbbr || m.home}</span>
+                  <span className="font-black text-[15px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                    {m.homeScore ?? '-'}<span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> · </span>{m.awayScore ?? '-'}
+                  </span>
+                  <span className="text-[12px] font-bold truncate" style={{ color: abbrColor(localEnCasa == null ? null : !localEnCasa) }}>{m.awayAbbr || m.away}</span>
                 </span>
-                <span className="text-[12px] font-bold truncate pl-1"
-                  style={{ color: !aIsHome ? '#E8E8F4' : '#9090A4', fontFamily: 'var(--font-sport)' }}>
-                  {m.awayAbbr ?? m.away}
-                </span>
-                <span className="inline-flex items-center justify-center font-black tabular-nums text-[10px]"
+                <span className="inline-flex items-center justify-center font-black text-[10px]"
+                  aria-label={resultado === 'G' ? `Gana ${home.nombre}` : resultado === 'P' ? `Pierde ${home.nombre}` : resultado === 'E' ? 'Empate' : 'Sin resultado'}
                   style={{
-                    width: 18, height: 18, borderRadius: 4,
-                    background: `${resultColor}22`,
-                    color: resultColor,
-                    border: `1px solid ${resultColor}40`,
+                    width: 20, height: 20, borderRadius: 5,
+                    background: `${rc}22`, color: rc, border: `1px solid ${rc}40`,
                     fontFamily: 'var(--font-sport)',
                   }}>
-                  {result}
+                  {resultado ?? '?'}
                 </span>
               </div>
             )
-            return m.matchRef ? (
-              <Link key={m.id} href={`/partido/${m.matchRef}`} prefetch={false} className="block no-underline">{row}</Link>
+            // Las filas son los mismos objetos que llegaron (H2HMatch): el
+            // archivo propio trae `matchRef` y entonces la fila enlaza a su ficha.
+            const matchRef = (m as H2HResult['matches'][number]).matchRef
+            return matchRef ? (
+              <Link key={m.id} href={`/partido/${matchRef}`} prefetch={false} className="block no-underline">{row}</Link>
             ) : (
               <div key={m.id}>{row}</div>
             )
           })}
         </div>
         <p className="text-[10px] mt-3 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-          W = victoria local · L = victoria visitante · D = empate
+          G / E / P = gana, empata o pierde {home.nombre} · fuente ESPN
         </p>
-      </Section>
+      </H2HCard>
     </>
   )
 }
@@ -2057,7 +2177,12 @@ function MatchContent({ match, h2h, forms, matchRef, notas }: { match: MatchDeta
         {/* ── Tab 6: H2H ───────────────────────────────── */}
         <div>
           {hasH2H && match.homeTeam && match.awayTeam ? (
-            <H2HBlock h2h={h2h!} homeTeam={match.homeTeam} awayTeam={match.awayTeam} />
+            <H2HBlock
+              h2h={h2h!}
+              home={{ nombre: match.homeTeam, abbr: match.homeAbbr, id: match.homeTeamId }}
+              away={{ nombre: match.awayTeam, abbr: match.awayAbbr, id: match.awayTeamId }}
+              sport={match.sport}
+            />
           ) : (
             <EmptyState message="Sin enfrentamientos previos registrados" kind="h2h" />
           )}
