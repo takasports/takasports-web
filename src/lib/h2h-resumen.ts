@@ -1,10 +1,11 @@
 // Balance del CARA A CARA a partir de los enfrentamientos que ya da la API
 // (`/api/match/[ref]` → headToHead.matches, hoy los 5 últimos de ESPN).
 //
-// Función PURA y sin dependencias: la app tiene una copia IDÉNTICA en
-// `takasports-app/src/lib/h2h-resumen.ts` (el paquete shared va por tarball
-// vendorizado y no se toca para esto). Si cambias una, cambia la otra y sus
-// pruebas — las dos baterías comprueban los mismos casos.
+// Función PURA y sin dependencias, con dos copias IDÉNTICAS:
+// `takasports-web/src/lib/h2h-resumen.ts` y `takasports-app/src/lib/h2h-resumen.ts`
+// (el paquete shared va por tarball vendorizado y no se toca para esto). Si
+// cambias una, cambia la otra y sus pruebas: las dos baterías (vitest en la
+// web, jest en la app) comprueban los mismos casos.
 //
 // Todo se cuenta desde el punto de vista del LOCAL DE HOY (G/E/P = gana,
 // empata o pierde el local del partido que se está mirando), sea cual sea el

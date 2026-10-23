@@ -1664,7 +1664,7 @@ function H2HBlock({ h2h, home, away, sport }: { h2h: H2HResult; home: EquipoH2H;
         foot = 'Ninguno gana desde entonces'
       }
     } else if (f.tipo === 'ultimaVictoria') {
-      label = `Última de ${corto(f.equipo)}`
+      label = `Última victoria · ${corto(f.equipo)}`
       big = marcadorH2H(f.partido); foot = pie(f.partido); color = colorDe(f.equipo)
     } else if (f.tipo === 'mayorGoleada') {
       label = basket ? 'Mayor diferencia' : 'Mayor goleada'
