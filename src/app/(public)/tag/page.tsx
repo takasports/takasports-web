@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { sanityClient, allTagsFlatQuery, MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
+import { MIN_TAG_ARTICLES, isJunkTag } from '@/lib/sanity'
+import { getTagIndex } from '@/lib/tag-index'
 import { SITE_URL } from '@/lib/constants'
 import ScrollToTop from '@/components/ScrollToTop'
 
@@ -24,18 +25,13 @@ export const metadata: Metadata = {
 // Devuelve los tags indexables (>=3 artículos, no basura) ordenados por frecuencia.
 // Es el hub que da enlaces internos rastreables a las páginas /tag/[tag] —antes
 // huérfanas— y reemplaza el soft-404 que devolvía /tag. (Fase 1 SEO, jun 2026)
-async function getIndexableTags(): Promise<Array<{ tag: string; count: number }>> {
-  const flat = await sanityClient.fetch<string[]>(allTagsFlatQuery).catch(() => [] as string[])
-  const counts = new Map<string, number>()
-  for (const raw of flat) {
-    if (typeof raw !== 'string') continue
-    const tag = raw.trim()
-    if (!tag) continue
-    counts.set(tag, (counts.get(tag) ?? 0) + 1)
-  }
-  return [...counts.entries()]
-    .filter(([tag, count]) => count >= MIN_TAG_ARTICLES && !isJunkTag(tag))
-    .map(([tag, count]) => ({ tag, count }))
+async function getIndexableTags(): Promise<Array<{ slug: string; tag: string; count: number }>> {
+  // Agrupadas por slug: «fútbol» y «futbol» son una sola etiqueta con la suma
+  // de sus artículos, igual que en la página de la etiqueta y en el sitemap.
+  const index = await getTagIndex().catch(() => ({}))
+  return Object.values(index)
+    .filter(g => g.articulos >= MIN_TAG_ARTICLES && !isJunkTag(g.etiqueta))
+    .map(g => ({ slug: g.slug, tag: g.etiqueta, count: g.articulos }))
     .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
 }
 
@@ -79,11 +75,11 @@ export default async function TagIndexPage() {
 
         {tags.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {tags.map(({ tag, count }) => (
+            {tags.map(({ slug, tag, count }) => (
               <Link
                 prefetch={false}
-                key={tag}
-                href={`/tag/${encodeURIComponent(tag)}`}
+                key={slug}
+                href={`/tag/${slug}`}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

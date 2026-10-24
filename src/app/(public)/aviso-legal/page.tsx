@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Aviso legal — TakaSports',
+  title: 'Aviso legal',
   description: 'Datos identificativos del titular de takasportsmedia.com y condiciones de uso del sitio, conforme al artículo 10 de la Ley 34/2002 (LSSI-CE).',
   alternates: { canonical: `${SITE_URL}/aviso-legal` },
   robots: { index: true, follow: true },

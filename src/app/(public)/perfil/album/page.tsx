@@ -3,7 +3,7 @@ import ScrollToTop from '@/components/ScrollToTop'
 import AlbumClient from './AlbumClient'
 
 export const metadata: Metadata = {
-  title: 'Tu álbum · TakaSports',
+  title: 'Tu álbum',
   description: 'Todos los cracks que has colocado correctamente en TakaGrid y Mi Once.',
 }
 

@@ -14,7 +14,8 @@
 // Variable de entorno requerida (opcional pero recomendada):
 //   SANITY_WEBHOOK_SECRET=<openssl rand -base64 32>
 
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { TAG_INDEX_CACHE_TAG } from '@/lib/tag-index'
 import { NextRequest, NextResponse, after } from 'next/server'
 import { createHmac, timingSafeEqual } from 'crypto'
 import { pingIndexNow, pathsToUrls } from '@/lib/indexnow'
@@ -37,9 +38,14 @@ const CONTENT_PATHS = [
 ] as const
 
 // Mapeo tipo Sanity → rutas adicionales específicas
+// Los feeds de artículos también: sin esto, el news-sitemap y el RSS solo se
+// regeneraban por su revalidate de 1 h, y como ISR sirve la copia vieja a la
+// primera visita tras caducar, Googlebot leía una lista de varias horas atrás
+// (medido el 21/10/2026: servido a las 12:26 un news-sitemap generado a las 01:51).
 const TYPE_EXTRA_PATHS: Record<string, string[]> = {
-  reel:  ['/'],
-  event: ['/calendario'],
+  reel:    ['/'],
+  event:   ['/calendario'],
+  article: ['/news-sitemap.xml', '/rss.xml', '/image-sitemap.xml'],
 }
 
 function verifySignature(body: string, signature: string | null, secret: string): boolean {
@@ -107,6 +113,10 @@ export async function POST(req: NextRequest) {
       revalidated.push(path)
     }
   }
+
+  // Índice de etiquetas (slug → grafías): una nota con una etiqueta nueva tiene
+  // que poder abrir su /tag/<slug> sin esperar a la hora de caché.
+  if (docType === 'article') revalidateTag(TAG_INDEX_CACHE_TAG, 'max')
 
   // Revalidar el artículo concreto si tenemos slug
   if (slug && (docType === 'article')) {

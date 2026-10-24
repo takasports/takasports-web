@@ -66,7 +66,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const comp = getCompetition(slug)
-  if (!comp) return { title: 'Calendario | TakaSports' }
+  if (!comp) return { title: 'Calendario' }
   const season = seasonLabelOf(comp)
   // «resultados» entra en el rótulo porque la página ya los tiene: antes solo
   // enseñaba próximos partidos y prometía solo horarios.

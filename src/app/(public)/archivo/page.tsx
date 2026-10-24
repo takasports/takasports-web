@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (sport) parts.push(sport)
   if (sp.from || sp.to) parts.push(`${sp.from ?? '…'} → ${sp.to ?? '…'}`)
   const suffix = parts.length ? ` — ${parts.join(' · ')}` : ''
-  const title = `Archivo de noticias${suffix} | TakaSports`
+  const title = `Archivo de noticias${suffix}`
   const description = q || sport
     ? `Resultados del archivo de noticias deportivas filtrados${q ? ` por "${q}"` : ''}${sport ? ` en ${sport}` : ''}.`
     : 'Busca y filtra todo el archivo histórico de noticias deportivas de TakaSports por palabra clave, deporte y rango de fechas.'

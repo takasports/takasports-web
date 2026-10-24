@@ -5,8 +5,8 @@ import { EstadisticasView, SPORT_META, getSportMeta } from '../StatsView'
 
 // Landings de estadísticas por deporte como RUTA DE PATH (params SÍ se cachean, a
 // diferencia de ?sport=). `dynamicParams = false` → cualquier slug fuera de la
-// lista da 404 REAL (Next 16 no propaga el 404 desde notFound() en ISR, así que
-// esto es lo que evita el soft-404). `revalidate = 300` regenera los datos en
+// lista da 404 REAL antes de renderizar, sin depender de que ningún loading.tsx
+// haya enviado ya un 200. `revalidate = 300` regenera los datos en
 // segundo plano cada 5 min; hereda FAST_CACHE del middleware.
 //
 // SSG/ISR (no force-dynamic): el 2026-07-19 se puso force-dynamic creyendo que SSG

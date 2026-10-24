@@ -56,7 +56,7 @@ export async function generateMetadata({
   params: Promise<{ fecha: string }>
 }): Promise<Metadata> {
   const { fecha } = await params
-  if (!isValidDayParam(fecha)) return { title: 'Calendario | TakaSports' }
+  if (!isValidDayParam(fecha)) return { title: 'Calendario' }
   const t = todayIso()
   // Con dynamicParams=false solo llegan aquí fechas que enumeró el build, así
   // que se carga sin más: el guardia de ventana descartaba justo los días del
@@ -74,7 +74,9 @@ export async function generateMetadata({
   // de /calendario hereda el logo.
   const shareTitle = dayShareTitle(fecha, t)
   return {
-    title: `${title} | TakaSports`,
+    // Sin « | TakaSports»: ya lo pone la plantilla del layout raíz, y con los
+    // dos el título salía con la marca repetida y Google lo cortaba antes.
+    title,
     description,
     alternates: { canonical: url },
     // Un día sin un solo partido no aporta nada al índice.

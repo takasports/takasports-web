@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import RankingsClient from './RankingsClient'
+import RankingsLoading from './RankingsLoading'
 import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 import { getAllRankings, getLastIngestTime, type RankingCategory } from '@/lib/rankings-data'
 
@@ -192,7 +194,12 @@ export default async function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BreadcrumbJsonLd items={[{ name: 'TakaSports', path: '' }, { name: 'Rankings', path: '/rankings' }]} />
-      <RankingsClient dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
+      {/* RankingsClient lee useSearchParams: sin esta frontera el prerender
+          falla. Antes la ponía el loading.tsx de la carpeta, que se quitó
+          porque también envolvía a /rankings/[id] y convertía sus 404 en 200. */}
+      <Suspense fallback={<RankingsLoading />}>
+        <RankingsClient dbData={dbData} lastUpdated={lastUpdated ?? undefined} />
+      </Suspense>
     </>
   )
 }

@@ -13,7 +13,7 @@ import { EmbeddedTweet } from 'react-tweet'
 import { getTweet, type Tweet } from 'react-tweet/api'
 import { sanityClient, articleDetailQuery, relatedArticlesQuery, nextArticleQuery, notaHermanaQuery, urlFor } from '@/lib/sanity'
 import { timeAgo } from '@/lib/timeAgo'
-import { getSportStyle, getSportLabel, accentTexto } from '@/lib/sports'
+import { getSportStyle, getSportLabel, accentTexto, SLUG_TO_LABEL } from '@/lib/sports'
 import NewsletterSection from '@/components/NewsletterSection'
 import ShareButton from '@/app/article/[id]/ShareButton'
 import BackButton from '@/app/article/[id]/BackButton'
@@ -59,8 +59,21 @@ import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { excludeCurrentArticle } from '@/lib/related-articles'
+import { tagHref } from '@/lib/tag-slug'
+import { imagenPrincipal, type ImagenPrincipal } from '@/lib/imagen-noticia'
 
 export const revalidate = 3600
+
+/**
+ * La imagen que se da a Google y a las redes (og:image, NewsArticle.image): la
+ * misma que pinta el hero —`imageUrl` si la hay, si no la foto de Sanity—. Ver
+ * lib/imagen-noticia.
+ */
+function imagenDeLaNoticia(article: Pick<Article, 'imageUrl' | 'image'>): ImagenPrincipal | null {
+  if (article.imageUrl) return imagenPrincipal(article.imageUrl, SITE_URL)
+  if (article.image?.asset) return { url: urlFor(article.image).width(1200).height(675).url(), esPlaca: false }
+  return null
+}
 
 // Pre-build los 12 artículos más recientes para LCP/INP estables en CrUX.
 // Los demás se generan ISR on-demand.
@@ -180,7 +193,7 @@ export async function generateMetadata({
     alternates: { canonical: `${SITE_URL}/noticias/${slug}` },
   }
 
-  const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1200).height(630).url() : undefined)
+  const imagen = imagenDeLaNoticia(article)
   const canonical = `${SITE_URL}/noticias/${article.slug ?? slug}`
   // Reportajes con varias versiones: hreflang entre ellas (cada una se autoreferencia).
   const idioma = esIdioma(article.language) ? article.language : 'es'
@@ -216,9 +229,12 @@ export async function generateMetadata({
       title: metaTitle,
       description: article.short_summary ?? article.subtitle,
       url: canonical,
-      // No se especifican images para que Next.js use automáticamente
-      // el opengraph-image.tsx de esta ruta, que genera una tarjeta
-      // con branding, título y foto del artículo (mejor CTR en redes).
+      // La FOTO, no la tarjeta con el titular: Google toma la imagen de Discover
+      // de aquí o del NewsArticle, y desaconseja los gráficos cargados de texto.
+      // La tarjeta sigue para X en twitter-image.tsx. Sin imagen, la del sitio.
+      images: [imagen
+        ? { url: imagen.url, alt: article.imageAlt ?? article.title }
+        : { url: `${SITE_URL}/opengraph-image` }],
       type: 'article',
       publishedTime: article.publishedAt,
       modifiedTime: article._updatedAt ?? article.publishedAt,
@@ -229,7 +245,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: metaTitle,
       description: article.short_summary ?? article.subtitle,
-      // twitter:image se genera automáticamente desde opengraph-image.tsx
+      // twitter:image: la tarjeta con titular de twitter-image.tsx (en X rinde).
       site: '@takasportsx',
       creator: '@takasportsx',
     },
@@ -384,7 +400,7 @@ function ArticleSidebar({
               <Link
                 prefetch={false}
                 key={tag}
-                href={`/tag/${encodeURIComponent(tag)}`}
+                href={tagHref(tag) ?? '/tag'}
                 className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
                 style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
               >
@@ -583,31 +599,22 @@ export default async function NoticiaPage({
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const esPlaca = Boolean(imgUrl && /\/api\/og\//.test(imgUrl))
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
-  // Imagen para datos estructurados / Discover. Orden: imagen líder real del
-  // artículo (la misma que publica el image-sitemap, resuelve 200) → tarjeta OG
-  // ESTÁTICA del home como último recurso. Antes se apuntaba a
-  // `${canonical}/opengraph-image`, pero Next.js NO sirve la tarjeta OG dinámica
-  // en su ruta sin hash → daba 404 en los ~1.157 artículos (la `image` es
-  // propiedad obligatoria de NewsArticle: un 404 inhabilita la miniatura en
-  // Google News / Top Stories). El fix definitivo (auto-alojar la imagen líder)
-  // es la tarea A8. (Fix C1 SEO, jun 2026)
+  // Imagen para datos estructurados / Discover: la misma que og:image (Google
+  // pide que coincidan). Foto de Sanity → en 16:9, 4:3 y 1:1, que es lo que
+  // prioriza Top Stories; foto de un medio → por nuestro proxy a 1200 px (ver
+  // lib/imagen-noticia); sin nada → la tarjeta estática del sitio, que siempre
+  // resuelve (la dinámica de esta ruta no se sirve sin su hash: daba 404 y la
+  // `image` es obligatoria en NewsArticle).
+  const imagen = imagenDeLaNoticia(article)
   const ogCardFallback = `${SITE_URL}/opengraph-image`
-  const ogCardUrl = article.imageUrl ?? ogCardFallback
-
-  // Google News / Top Stories prioriza artículos con imágenes en 16:9, 4:3 y 1:1
-  function multiRatioImages(): string[] {
-    if (article.image?.asset) {
-      return [
+  const ogCardUrl = imagen?.url ?? ogCardFallback
+  const articleImages = !article.imageUrl && article.image?.asset
+    ? [
         urlFor(article.image).width(1200).height(675).url(), // 16:9
         urlFor(article.image).width(1200).height(900).url(), // 4:3
         urlFor(article.image).width(1200).height(1200).url(), // 1:1
       ]
-    }
-    // Sin asset propio en Sanity → imagen líder real (image-sitemap) o, en su
-    // defecto, la tarjeta OG estática del home. Siempre resuelve 200.
-    return [ogCardUrl]
-  }
-  const articleImages = multiRatioImages()
+    : [ogCardUrl]
 
   function bodyWordCount(): number | undefined {
     // typeof: `bodyText` solo es string cuando el cuerpo viene en texto plano.
@@ -660,7 +667,7 @@ export default async function NoticiaPage({
       }
       return undefined
     })(),
-    thumbnailUrl: article.image?.asset ? urlFor(article.image).width(320).height(180).url() : ogCardUrl,
+    thumbnailUrl: !article.imageUrl && article.image?.asset ? urlFor(article.image).width(320).height(180).url() : ogCardUrl,
     isAccessibleForFree: true,
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -688,18 +695,23 @@ export default async function NoticiaPage({
 
   const sportSlug = article.sport ?? null
   const sportLabel = sportSlug ? getSportLabel(sportSlug, article.category) : null
+  // Hub al que enlaza la miga de pan: `sport` viene crudo de Sanity, y un `f1`
+  // llevaba a /f1 (redirección) y un deporte sin hub a un 404 (los hubs van con
+  // dynamicParams=false). Solo se enlaza un hub que existe.
+  const hubSlug = sportSlug === 'f1' ? 'formula1' : sportSlug && SLUG_TO_LABEL[sportSlug] ? sportSlug : null
+  const hubLabel = hubSlug ? sportLabel : null
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'TakaSports', item: SITE_URL },
       { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${SITE_URL}/noticias` },
-      ...(sportSlug && sportLabel
-        ? [{ '@type': 'ListItem', position: 3, name: sportLabel, item: `${SITE_URL}/${sportSlug}` }]
+      ...(hubSlug && hubLabel
+        ? [{ '@type': 'ListItem', position: 3, name: hubLabel, item: `${SITE_URL}/${hubSlug}` }]
         : []),
       {
         '@type': 'ListItem',
-        position: sportSlug ? 4 : 3,
+        position: hubSlug && hubLabel ? 4 : 3,
         name: article.title,
         item: canonical,
       },
@@ -1289,14 +1301,14 @@ export default async function NoticiaPage({
               allí va como botón de icono al principio de la fila de metadatos. */}
           <div className="hidden sm:flex pt-6 pb-5 lg:col-span-2 items-center gap-3">
             <BackButton />
-            {sportSlug && sportLabel && (
+            {hubSlug && hubLabel && (
               <nav className="hidden sm:flex items-center gap-1.5 text-[11px] min-w-0" aria-label="Breadcrumb">
                 <Link href="/" className="hover:opacity-70 transition-opacity flex-shrink-0" style={{ color: 'var(--text-faint)', textDecoration: 'none' }}>
                   TakaSports
                 </Link>
                 <span style={{ color: 'var(--text-faint)' }}>/</span>
-                <Link href={`/${sportSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
-                  {sportLabel}
+                <Link href={`/${hubSlug}`} className="hover:opacity-70 transition-opacity flex-shrink-0 font-semibold" style={{ color: accent, textDecoration: 'none' }}>
+                  {hubLabel}
                 </Link>
                 <span style={{ color: 'var(--text-faint)' }}>/</span>
                 <span className="truncate" style={{ color: 'var(--text-muted)' }}>{article.title}</span>
@@ -1625,7 +1637,7 @@ export default async function NoticiaPage({
                     <Link
                       prefetch={false}
                       key={tag}
-                      href={`/tag/${encodeURIComponent(tag)}`}
+                      href={tagHref(tag) ?? '/tag'}
                       className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
                       style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
                     >
@@ -1892,10 +1904,10 @@ export default async function NoticiaPage({
           <MasLeidas excluirSlug={article.slug ?? id} />
         </div>
 
-        {sportSlug && sportLabel && (
+        {hubSlug && hubLabel && (
           <div className="mx-auto mt-10 mb-4" style={{ maxWidth: 1160 }}>
             <Link
-              href={`/${sportSlug}`}
+              href={`/${hubSlug}`}
               className="group flex items-center justify-between gap-4 rounded-2xl px-6 py-4 transition-all hover:brightness-110"
               style={{ background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}06)`, border: `1px solid ${badgeBorder}`, textDecoration: 'none' }}
             >

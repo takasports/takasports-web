@@ -14,6 +14,7 @@ import BreadcrumbsNav from '@/components/BreadcrumbsNav'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { fetchTeamDetail } from './ficha'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 
 // Solo estas 5 ligas tienen página /liga/[id]. team.leagueSlug llega como
@@ -64,17 +65,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     // es 200×200 y encaja limpio. (Fix A3 SEO)
     twitter: { card: 'summary', title, description, images: [ogImageUrl] },
   }
-}
-
-// ── Fetch ─────────────────────────────────────────────────────────────
-async function fetchTeamDetail(slug: string): Promise<TeamDetail | null> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL
-      ?? (process.env.NODE_ENV === 'production' ? SITE_URL : 'http://localhost:3000')
-    const res = await fetch(`${base}/api/team/${slug}`, { next: { revalidate: 300 } })
-    if (!res.ok) return null
-    return res.json()
-  } catch { return null }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────

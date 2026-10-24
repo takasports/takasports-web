@@ -33,6 +33,7 @@ const MAX_SIZE = 25 * 1024 * 1024 // 25 MB (entrada)
 // quien necesite más (el hero del artículo) pide su `w` explícito vía srcSet.
 const MAX_WIDTH = 640             // ancho por defecto servido (px) — evita fotos 2-3 MB en móvil
 const WEBP_QUALITY = 72           // calidad WebP (nítida en tarjetas grandes a todo el ancho)
+const JPEG_QUALITY = 82           // og:image / Discover: la ven a 1200 px, merece algo más
 const TIMEOUT_MS = 8_000
 const MAX_HOPS = 3
 
@@ -171,16 +172,22 @@ export async function GET(request: NextRequest) {
       !contentType.includes('svg') &&
       !contentType.includes('gif')
 
+    // `f=jpeg`: la imagen que damos como og:image / NewsArticle.image
+    // (lib/imagen-noticia). WebP no lo pintan todos los clientes que generan la
+    // vista previa de un enlace; JPEG sí. El resto de la web sigue en WebP.
+    const jpeg = request.nextUrl.searchParams.get('f') === 'jpeg'
+
     let outBuffer: Buffer = buffer
     let outType = contentType || 'image/jpeg'
     if (transcodable) {
       try {
-        outBuffer = await sharp(buffer)
+        const resized = sharp(buffer)
           .rotate() // auto-orienta según EXIF antes de redimensionar
           .resize({ width: maxW, withoutEnlargement: true })
-          .webp({ quality: WEBP_QUALITY })
-          .toBuffer()
-        outType = 'image/webp'
+        outBuffer = jpeg
+          ? await resized.jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toBuffer()
+          : await resized.webp({ quality: WEBP_QUALITY }).toBuffer()
+        outType = jpeg ? 'image/jpeg' : 'image/webp'
       } catch {
         outBuffer = buffer
         outType = contentType || 'image/jpeg'

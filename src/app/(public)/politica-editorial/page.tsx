@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: 'Política editorial — TakaSports',
+  title: 'Política editorial',
   description:
     'Política editorial de TakaSports Media: estándares de verificación, uso de herramientas automatizadas, política de correcciones, transparencia y separación entre información y opinión.',
   alternates: { canonical: `${SITE_URL}/politica-editorial` },
