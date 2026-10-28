@@ -176,18 +176,27 @@ function runStep([label, script], incidencias) {
     return 'skip'
   }
   console.log(`\n▶ ${label}...`)
-  try {
-    // 25 min por paso: el mediático de Wikipedia tarda ~19 con la caché
-    // caliente (cientos de artículos × 2 idiomas, con el rate-limit de
-    // Wikimedia). Con el límite anterior de 15 se perdía entero cada semana.
-    execFileSync(NODE, DRY ? [p] : [p, '--apply'], { cwd: PROJECT, stdio: 'inherit', timeout: 25 * 60 * 1000 })
-    console.log('  → ok')
-    return 'ok'
-  } catch (e) {
-    console.error(`  → fallo: ${e.message || e}`)
-    incidencias.push(`❌ ${label}`)
-    return 'fail'
+  // Un reintento a los 10 min: el 26/10/2026 tres pasos fallaron a la vez por
+  // un corte de red de madrugada (ETIMEDOUT), no por un fallo suyo.
+  for (let intento = 1; intento <= 2; intento++) {
+    try {
+      // 25 min por paso: el mediático de Wikipedia tarda ~19 con la caché
+      // caliente (cientos de artículos × 2 idiomas, con el rate-limit de
+      // Wikimedia). Con el límite anterior de 15 se perdía entero cada semana.
+      execFileSync(NODE, DRY ? [p] : [p, '--apply'], { cwd: PROJECT, stdio: 'inherit', timeout: 25 * 60 * 1000 })
+      console.log(intento === 1 ? '  → ok' : '  → ok (al reintentar)')
+      if (intento > 1) console.error(`  → ok al reintentar: ${script}`)
+      return 'ok'
+    } catch (e) {
+      console.error(`  → fallo${intento > 1 ? ' (también al reintentar)' : ''}: ${e.message || e}`)
+      if (intento === 1 && !DRY) {
+        console.error('  → reintento en 10 minutos')
+        execFileSync('sleep', ['600'])
+      } else break
+    }
   }
+  incidencias.push(`❌ ${label}`)
+  return 'fail'
 }
 
 console.log('================================================')
