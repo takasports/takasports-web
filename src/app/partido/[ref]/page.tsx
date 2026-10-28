@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { categoriaLiderNBA } from '@/lib/nba-lideres'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import UiEmptyState from '@/components/ui/EmptyState'
@@ -650,7 +651,7 @@ function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSl
         <p className="text-[11px] font-black truncate" style={{ color: '#E0E0F0', fontFamily: 'var(--font-sport)' }}>
           <PlayerName name={leader.player} playerId={leader.playerId} leagueSlug={leagueSlug} />
         </p>
-        <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{leader.category}</p>
+        <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{categoriaLiderNBA(leader.category)}</p>
       </div>
       <div className="text-right">
         <p className="font-black tabular-nums" style={{ color: accent, fontFamily: 'var(--font-display)', fontSize: 20, lineHeight: 1 }}>{leader.value}</p>
