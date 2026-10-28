@@ -43,7 +43,15 @@ const VERBOSE = process.argv.includes('--verbose')
 if (!SUPABASE_URL || !SUPABASE_KEY) { console.error('Missing SUPABASE keys'); process.exit(1) }
 
 const URL_RANKINGS = 'https://www.ufc.com/rankings'
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'
+// Un UA honesto, no uno de navegador falso. ufc.com/rankings redirige por
+// geolocalización a ufcespanol.com, y ese dominio devuelve 403 a los User-Agent que
+// fingen ser Chrome —un navegador real llegaría con Accept-Language y las cabeceras
+// Sec-Fetch, así que el disfraz se nota— mientras deja pasar sin problema a los que
+// se identifican. Con el UA de Chrome el paso de UFC llevaba fallando desde el
+// 02/09/2026 y tumbaba el código de salida de todo weekly-rankings (25 de 26 pasos
+// iban bien). Comprobado el 03/09/2026: este UA devuelve 200 y 272 KB de HTML con
+// los marcadores `view-grouping` que espera el parser.
+const UA = 'TakaSportsBot/1.0 (+https://www.takasportsmedia.com; contactotakasports@gmail.com)'
 
 function rankToRendimiento(rank, isChamp, isP4P) {
   if (isChamp) return 95
