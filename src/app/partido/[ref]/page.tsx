@@ -1618,7 +1618,8 @@ function H2HBlock({ h2h, home, away, sport }: { h2h: H2HResult; home: EquipoH2H;
   const nombre = (lado: LadoH2H) => (lado === 'local' ? home.nombre : away.nombre)
   const colorDe = (lado: LadoH2H | null) => (lado === 'local' ? H2H_HOME : lado === 'visitante' ? H2H_AWAY : 'var(--text-primary)')
   const partidosTxt = (n: number) => `${n} partido${n === 1 ? '' : 's'}`
-  const tituloN = r.n === 1 || (r.n === 0 && r.filas.length === 1) ? 'último partido' : `últimos ${r.n || r.filas.length} partidos`
+  // El título cuenta los partidos que se LISTAN (antes contaba solo los de lados reconocidos).
+  const tituloN = r.filas.length === 1 ? 'último partido' : `últimos ${r.filas.length} partidos`
   const pie = (m: PartidoH2H) => [fechaLargaH2H(m.isoDate), competicionCortaH2H(m.comp)].filter(Boolean).join(' · ')
   const unidad = basket ? 'puntos' : 'goles'
 

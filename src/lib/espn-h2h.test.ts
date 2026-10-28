@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { buildSoccerH2H } from './espn-h2h'
+import { buildSoccerH2H, buildBasketballH2H } from './espn-h2h'
+import nba from '@/lib/espn-h2h-nba.fixture.json'
 
 const team = (id: string, displayName: string, abbreviation: string) =>
   ({ id, displayName, abbreviation, logo: `https://a.espncdn.com/i/teamlogos/soccer/500/${id}.png` })
@@ -86,5 +87,44 @@ describe('buildSoccerH2H · headToHeadGames (forma antigua, por si vuelve)', () 
     expect(r.matches).toHaveLength(1)
     expect(r.matches[0]).toMatchObject({ home: 'Levante', away: 'Athletic Club', homeScore: 2, awayScore: 1, comp: 'LaLiga' })
     expect(r.wins).toBe(1)
+  })
+})
+
+// ── Baloncesto ──────────────────────────────────────────────────────
+
+describe('buildBasketballH2H · serie de la temporada (fixture REAL CHI @ BOS)', () => {
+  it('solo cuenta el partido JUGADO: ni los por jugar (0-0) ni el de la ficha', () => {
+    // La serie trae 4 cruces: 1 terminado (BOS 134-99 CHI), el propio partido
+    // (401909278, por jugar) y 2 más por jugar. Todos los pendientes vienen 0-0.
+    expect(nba.seasonseries[0].events).toHaveLength(4)
+    const r = buildBasketballH2H(nba, '2')!   // 2 = Boston Celtics (local)
+    expect(r.matches).toHaveLength(1)
+    expect(r.matches[0]).toMatchObject({
+      id: '401909870', home: 'Boston Celtics', away: 'Chicago Bulls',
+      homeScore: 134, awayScore: 99, homeAbbr: 'BOS', awayAbbr: 'CHI',
+    })
+    expect(r.matches.some(m => m.id === nba.header.id)).toBe(false)
+    expect({ wins: r.wins, draws: r.draws, losses: r.losses }).toEqual({ wins: 1, draws: 0, losses: 0 })
+  })
+
+  it('el balance se cuenta desde el local del partido actual', () => {
+    const r = buildBasketballH2H(nba, '4')!   // 4 = Chicago Bulls
+    expect({ wins: r.wins, draws: r.draws, losses: r.losses }).toEqual({ wins: 0, draws: 0, losses: 1 })
+  })
+
+  it('una serie sin ningún partido jugado no da cara a cara (antes: cuatro 0-0)', () => {
+    const sinJugar = {
+      header: nba.header,
+      seasonseries: [{ ...nba.seasonseries[0], events: nba.seasonseries[0].events.slice(1) }],
+    }
+    expect(buildBasketballH2H(sinJugar, '2')).toBeUndefined()
+  })
+
+  it('no se fía del marcador: un 0-0 «completed: false» no entra aunque traiga score', () => {
+    const futuro = nba.seasonseries[0].events[2]
+    expect(futuro.statusType.completed).toBe(false)
+    expect(futuro.competitors.map(c => c.score)).toEqual(['0', '0'])
+    const r = buildBasketballH2H({ header: { id: 'otro' }, seasonseries: nba.seasonseries }, '2')!
+    expect(r.matches.map(m => m.id)).toEqual(['401909870'])
   })
 })

@@ -9,6 +9,7 @@ import {
   decimalH2H,
   fechaCortaH2H,
   fechaLargaH2H,
+  esPartidoJugadoH2H,
   type PartidoH2H,
   type ResultadoH2H,
 } from './h2h-resumen'
@@ -155,11 +156,46 @@ describe('resumenH2H · reglas para pocos partidos', () => {
     expect(soloCasa.mostrar.segunDonde).toBe(false)
   })
 
-  it('partidos sin marcador se listan pero no cuentan', () => {
+  it('partidos sin marcador ni se listan ni cuentan (son partidos por jugar)', () => {
     const r = resumenH2H([p('x', '2026-05-01', 'LaLiga', LEV, null, ATH, null), ...LEV_ATH.slice(0, 1)], LEV, ATH)
-    expect(r.filas).toHaveLength(2)
-    expect(r.filas[0].resultado).toBeNull()
+    expect(r.filas).toHaveLength(1)
+    expect(r.filas[0].partido.id).toBe('748373')
     expect(r.n).toBe(1)
+  })
+})
+
+describe('resumenH2H · salvaguarda de partidos por jugar', () => {
+  const AHORA = Date.parse('2026-10-28T12:00:00Z')
+  // Lo que mandaba la API con la serie de la NBA: el jugado y los por jugar a 0-0.
+  const CHI = { nombre: 'Chicago Bulls', abbr: 'CHI', id: '4' }
+  const BOS = { nombre: 'Boston Celtics', abbr: 'BOS', id: '2' }
+  const serie: PartidoH2H[] = [
+    p('401909870', '2026-10-26T23:30:00Z', 'Regular Season Series', BOS, 134, CHI, 99),
+    p('401909278', '2026-10-30T23:30:00Z', 'Regular Season Series', BOS, 0, CHI, 0),
+    p('401910222', '2026-12-31T01:00:00Z', 'Regular Season Series', CHI, 0, BOS, 0),
+  ]
+
+  it('descarta los de fecha futura aunque traigan un 0-0', () => {
+    const r = resumenH2H(serie, BOS, CHI, { ahora: AHORA, umbralGoleada: 10 })
+    expect(r.filas.map((f) => f.partido.id)).toEqual(['401909870'])
+    expect(r.n).toBe(1)
+    expect(r.empates).toBe(0)
+  })
+
+  it('acepta un Date como «ahora» y deja pasar lo que ya se jugó', () => {
+    const r = resumenH2H(serie, BOS, CHI, { ahora: new Date('2027-01-01T00:00:00Z') })
+    expect(r.filas).toHaveLength(3)
+  })
+
+  it('esPartidoJugadoH2H: futuro no, sin marcador no, fecha ilegible sí', () => {
+    expect(esPartidoJugadoH2H(serie[0], AHORA)).toBe(true)
+    expect(esPartidoJugadoH2H(serie[1], AHORA)).toBe(false)
+    expect(esPartidoJugadoH2H({ ...serie[0], awayScore: null }, AHORA)).toBe(false)
+    expect(esPartidoJugadoH2H({ ...serie[0], isoDate: '' }, AHORA)).toBe(true)
+  })
+
+  it('si todo está por jugar, no hay filas (la ficha enseña su estado vacío)', () => {
+    expect(resumenH2H(serie.slice(1), BOS, CHI, { ahora: AHORA }).filas).toHaveLength(0)
   })
 })
 
@@ -250,6 +286,31 @@ describe('formato', () => {
     expect(competicionCortaH2H('2024 Liga Profesional Argentina')).toBe('Liga Profesional Argentina')
     expect(competicionCortaH2H('UEFA Champions League')).toBe('Champions')
     expect(competicionCortaH2H('LaLiga')).toBe('LaLiga')
+  })
+  it('nombres cortos de lo que manda ESPN (temporada y país fuera)', () => {
+    expect(competicionCortaH2H('2025-26 English Premier League')).toBe('Premier')
+    expect(competicionCortaH2H('Premier League')).toBe('Premier')
+    expect(competicionCortaH2H('2014-15 English League Championship')).toBe('Championship')
+    expect(competicionCortaH2H('2025-26 German Bundesliga')).toBe('Bundesliga')
+    expect(competicionCortaH2H('2025-26 Italian Serie A')).toBe('Serie A')
+    expect(competicionCortaH2H('2025-26 French Ligue 1')).toBe('Ligue 1')
+    expect(competicionCortaH2H('2025-26 Ligue 1')).toBe('Ligue 1')
+    expect(competicionCortaH2H('2024-25 French Coupe de France')).toBe('Copa de Francia')
+    expect(competicionCortaH2H('2024-25 English FA Cup')).toBe('FA Cup')
+    expect(competicionCortaH2H('2024-25 English Carabao Cup')).toBe('Copa de la Liga')
+    expect(competicionCortaH2H('EFL Cup')).toBe('Copa de la Liga')
+    expect(competicionCortaH2H('2021-22 German DFB Pokal')).toBe('Copa de Alemania')
+    expect(competicionCortaH2H('2024-25 Coppa Italia')).toBe('Copa de Italia')
+    expect(competicionCortaH2H('2025-26 UEFA Europa League')).toBe('Europa League')
+    expect(competicionCortaH2H('2025-26 UEFA Conference League')).toBe('Conference')
+    expect(competicionCortaH2H('2008/09 UEFA Champions League')).toBe('Champions')
+    expect(competicionCortaH2H('2008/09 UEFA Cup')).toBe('Copa de la UEFA')
+    expect(competicionCortaH2H('NBA')).toBe('NBA')
+    expect(competicionCortaH2H('NBA Cup')).toBe('Copa NBA')
+    expect(competicionCortaH2H('Regular Season Series')).toBe('Temporada regular')
+    expect(competicionCortaH2H('Playoffs')).toBe('Playoffs')
+    // Lo que no está en el diccionario sale tal cual (sin temporada ni país).
+    expect(competicionCortaH2H('2025-26 Scottish Premiership')).toBe('Premiership')
   })
   it('copas frente a ligas', () => {
     expect(esCopaH2H('2020-21 Spanish Copa del Rey')).toBe(true)

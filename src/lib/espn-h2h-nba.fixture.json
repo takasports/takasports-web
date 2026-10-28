@@ -1,0 +1,359 @@
+{
+ "_nota": "Recorte REAL del summary de ESPN de CHI @ BOS (401909278), descargado el 28/10/2026 antes del partido: header + seasonseries tal cual. Se quitan solo links/logos de los equipos para aligerar.",
+ "header": {
+  "id": "401909278",
+  "competitions": [
+   {
+    "id": "401909278",
+    "date": "2026-10-30T23:30Z",
+    "status": {
+     "type": {
+      "id": "1",
+      "name": "STATUS_SCHEDULED",
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "detail": "Fri, October 30th at 7:30 PM EDT",
+      "shortDetail": "10/30 - 7:30 PM EDT"
+     }
+    },
+    "competitors": [
+     {
+      "id": "2",
+      "homeAway": "home",
+      "team": {
+       "id": "2",
+       "abbreviation": "BOS",
+       "displayName": "Boston Celtics"
+      }
+     },
+     {
+      "id": "4",
+      "homeAway": "away",
+      "team": {
+       "id": "4",
+       "abbreviation": "CHI",
+       "displayName": "Chicago Bulls"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "seasonseries": [
+  {
+   "type": "season",
+   "title": "Regular Season Series",
+   "description": "Regular Season Series",
+   "summary": "BOS leads series 1-0",
+   "completed": false,
+   "totalCompetitions": 4,
+   "seriesLabel": "Regular Season",
+   "seriesScore": "1-0",
+   "shortSummary": "BOS leads season",
+   "events": [
+    {
+     "id": "401909870",
+     "uid": "s:40~l:46~e:401909870~c:401909870",
+     "date": "2026-10-26T23:30:00Z",
+     "timeValid": true,
+     "status": "post",
+     "statusType": {
+      "id": "3",
+      "name": "STATUS_FINAL",
+      "state": "post",
+      "completed": true,
+      "description": "Final",
+      "detail": "Final",
+      "shortDetail": "Final"
+     },
+     "neutralSite": false,
+     "competitors": [
+      {
+       "homeAway": "home",
+       "winner": true,
+       "team": {
+        "id": "2",
+        "uid": "s:40~l:46~t:2",
+        "displayName": "Boston Celtics",
+        "abbreviation": "BOS",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+       },
+       "score": "134"
+      },
+      {
+       "homeAway": "away",
+       "winner": false,
+       "team": {
+        "id": "4",
+        "uid": "s:40~l:46~t:4",
+        "displayName": "Chicago Bulls",
+        "abbreviation": "CHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+       },
+       "score": "99"
+      }
+     ],
+     "links": [
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "desktop",
+        "event"
+       ],
+       "href": "https://www.espn.com/nba/game/_/gameId/401909870/bulls-celtics",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      },
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "sportscenter",
+        "app",
+        "event"
+       ],
+       "href": "sportscenter://x-callback-url/showGame?sportName=basketball&leagueAbbrev=nba&gameId=401909870",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      }
+     ]
+    },
+    {
+     "id": "401909278",
+     "uid": "s:40~l:46~e:401909278~c:401909278",
+     "date": "2026-10-30T23:30:00Z",
+     "timeValid": true,
+     "status": "pre",
+     "statusType": {
+      "id": "1",
+      "name": "STATUS_SCHEDULED",
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "detail": "Fri, October 30th at 7:30 PM EDT",
+      "shortDetail": "10/30 - 7:30 PM EDT"
+     },
+     "neutralSite": false,
+     "broadcasts": [
+      {
+       "type": {
+        "id": "6",
+        "shortName": "Subscription Package"
+       },
+       "market": {
+        "id": "3",
+        "type": "Away"
+       },
+       "media": {
+        "shortName": "NBA League Pass"
+       },
+       "lang": "en",
+       "region": "us"
+      }
+     ],
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "2",
+        "uid": "s:40~l:46~t:2",
+        "displayName": "Boston Celtics",
+        "abbreviation": "BOS",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+       },
+       "score": "0"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "4",
+        "uid": "s:40~l:46~t:4",
+        "displayName": "Chicago Bulls",
+        "abbreviation": "CHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+       },
+       "score": "0"
+      }
+     ],
+     "links": [
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "desktop",
+        "event"
+       ],
+       "href": "https://www.espn.com/nba/game/_/gameId/401909278/bulls-celtics",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      },
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "sportscenter",
+        "app",
+        "event"
+       ],
+       "href": "sportscenter://x-callback-url/showGame?sportName=basketball&leagueAbbrev=nba&gameId=401909278",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      }
+     ]
+    },
+    {
+     "id": "401910222",
+     "uid": "s:40~l:46~e:401910222~c:401910222",
+     "date": "2026-12-31T01:00:00Z",
+     "timeValid": true,
+     "status": "pre",
+     "statusType": {
+      "id": "1",
+      "name": "STATUS_SCHEDULED",
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "detail": "Wed, December 30th at 8:00 PM EST",
+      "shortDetail": "12/30 - 8:00 PM EST"
+     },
+     "neutralSite": false,
+     "broadcasts": [],
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "4",
+        "uid": "s:40~l:46~t:4",
+        "displayName": "Chicago Bulls",
+        "abbreviation": "CHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+       },
+       "score": "0"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "2",
+        "uid": "s:40~l:46~t:2",
+        "displayName": "Boston Celtics",
+        "abbreviation": "BOS",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+       },
+       "score": "0"
+      }
+     ],
+     "links": [
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "desktop",
+        "event"
+       ],
+       "href": "https://www.espn.com/nba/game/_/gameId/401910222/celtics-bulls",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      },
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "sportscenter",
+        "app",
+        "event"
+       ],
+       "href": "sportscenter://x-callback-url/showGame?sportName=basketball&leagueAbbrev=nba&gameId=401910222",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      }
+     ]
+    },
+    {
+     "id": "401910692",
+     "uid": "s:40~l:46~e:401910692~c:401910692",
+     "date": "2027-03-10T01:00:00Z",
+     "timeValid": true,
+     "status": "pre",
+     "statusType": {
+      "id": "1",
+      "name": "STATUS_SCHEDULED",
+      "state": "pre",
+      "completed": false,
+      "description": "Scheduled",
+      "detail": "Tue, March 9th at 8:00 PM EST",
+      "shortDetail": "3/9 - 8:00 PM EST"
+     },
+     "neutralSite": false,
+     "broadcasts": [],
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "4",
+        "uid": "s:40~l:46~t:4",
+        "displayName": "Chicago Bulls",
+        "abbreviation": "CHI",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png"
+       },
+       "score": "0"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "2",
+        "uid": "s:40~l:46~t:2",
+        "displayName": "Boston Celtics",
+        "abbreviation": "BOS",
+        "logo": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
+       },
+       "score": "0"
+      }
+     ],
+     "links": [
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "desktop",
+        "event"
+       ],
+       "href": "https://www.espn.com/nba/game/_/gameId/401910692/celtics-bulls",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      },
+      {
+       "language": "en-US",
+       "rel": [
+        "summary",
+        "sportscenter",
+        "app",
+        "event"
+       ],
+       "href": "sportscenter://x-callback-url/showGame?sportName=basketball&leagueAbbrev=nba&gameId=401910692",
+       "text": "Gamecast",
+       "shortText": "Summary",
+       "isExternal": false,
+       "isPremium": false
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

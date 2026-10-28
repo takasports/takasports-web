@@ -11,6 +11,12 @@
 // empata o pierde el local del partido que se está mirando), sea cual sea el
 // campo en el que se jugó cada enfrentamiento.
 //
+// Salvaguarda: solo entran partidos YA JUGADOS. Se descartan los que tienen
+// fecha posterior a `ahora` y los que no traen marcador: la serie de la NBA
+// mandaba los partidos por jugar con 0-0 y el cara a cara pintaba empates
+// inventados. El arreglo de verdad está en la API; esto es la red por si otra
+// fuente vuelve a colarlos.
+//
 // Reglas para pocos partidos (N = enfrentamientos con marcador y lados
 // reconocibles). Con 5 hay de todo; con menos se apaga lo que no dice nada:
 //   · N = 0 → nada (la ficha enseña su estado vacío).
@@ -51,7 +57,7 @@ export type LadoH2H = 'local' | 'visitante'
 
 export interface FilaH2H {
   partido: PartidoH2H
-  /** Desde el local de hoy. null = sin marcador o sin lados reconocibles. */
+  /** Desde el local de hoy. null = sin lados reconocibles. */
   resultado: ResultadoH2H | null
   /** ¿El local de hoy jugó ese partido en su campo? null = no se sabe. */
   localEnCasa: boolean | null
@@ -112,6 +118,19 @@ export interface OpcionesH2H {
   umbralGoleada?: number
   /** Máximo de fichas en «Datos». */
   maxFichas?: number
+  /** «Ahora» (ms o Date) para descartar partidos futuros. Por defecto, Date.now(). Inyectable en pruebas. */
+  ahora?: number | Date
+}
+
+/**
+ * ¿Es un enfrentamiento ya jugado? Con marcador y sin fecha futura. Una fecha
+ * ilegible no descarta (no se puede saber), el marcador ausente sí.
+ */
+export function esPartidoJugadoH2H(m: PartidoH2H, ahora: number | Date = Date.now()): boolean {
+  if (m.homeScore == null || m.awayScore == null) return false
+  const t = Date.parse(m.isoDate)
+  const ref = typeof ahora === 'number' ? ahora : ahora.getTime()
+  return Number.isNaN(t) || t <= ref
 }
 
 const norm = (s: string | undefined) =>
@@ -193,8 +212,11 @@ export function resumenH2H(
   const umbral = opciones.umbralGoleada ?? 2
   const maxFichas = opciones.maxFichas ?? 4
 
+  // Fuera los partidos por jugar (fecha futura o sin marcador).
+  const jugados = partidos.filter((m) => esPartidoJugadoH2H(m, opciones.ahora))
+
   // Más reciente primero, pase lo que pase con el orden de entrada.
-  const ordenados = [...partidos].sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
+  const ordenados = [...jugados].sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
 
   const filas: FilaH2H[] = ordenados.map((partido) => {
     const localEnCasa = localJugoEnCasa(partido, local, visitante)
@@ -313,20 +335,63 @@ export function fechaLargaH2H(iso: string): string {
 }
 
 const PAISES = /^(spanish|english|italian|german|french|portuguese|dutch|scottish|turkish|belgian|argentine|argentinian|brazilian|mexican|japanese|saudi|us)\s+/i
+// Claves ya normalizadas (minúsculas, sin tildes) y SIN el país delante: ESPN
+// manda «2025-26 English Premier League», «2021-22 German DFB Pokal», «2024-25
+// Coppa Italia», «2008/09 UEFA Cup»; la temporada y el país se quitan antes.
+// Las de país van también enteras por si llegan sin temporada.
 const CORTAS: Record<string, string> = {
   laliga: 'LaLiga',
   'laliga ea sports': 'LaLiga',
   'laliga hypermotion': 'LaLiga 2',
+  'premier league': 'Premier',
+  'english premier league': 'Premier',
+  'league championship': 'Championship',
+  'english league championship': 'Championship',
+  bundesliga: 'Bundesliga',
+  'german bundesliga': 'Bundesliga',
+  'serie a': 'Serie A',
+  'italian serie a': 'Serie A',
+  'ligue 1': 'Ligue 1',
+  'french ligue 1': 'Ligue 1',
+  'coupe de france': 'Copa de Francia',
+  'french coupe de france': 'Copa de Francia',
+  'fa cup': 'FA Cup',
+  'english fa cup': 'FA Cup',
+  'carabao cup': 'Copa de la Liga',
+  'english carabao cup': 'Copa de la Liga',
+  'efl cup': 'Copa de la Liga',
+  'english efl cup': 'Copa de la Liga',
+  'league cup': 'Copa de la Liga',
+  'english league cup': 'Copa de la Liga',
+  'dfb pokal': 'Copa de Alemania',
+  'dfb-pokal': 'Copa de Alemania',
+  'german dfb pokal': 'Copa de Alemania',
+  'coppa italia': 'Copa de Italia',
+  'italian coppa italia': 'Copa de Italia',
+  'copa del rey': 'Copa del Rey',
+  'spanish copa del rey': 'Copa del Rey',
   'uefa champions league': 'Champions',
   'uefa europa league': 'Europa League',
   'uefa europa conference league': 'Conference',
   'uefa conference league': 'Conference',
+  'uefa cup': 'Copa de la UEFA',
   'uefa super cup': 'Supercopa UEFA',
   'supercopa de espana': 'Supercopa',
   'super cup': 'Supercopa',
   'club friendly': 'Amistoso',
   'club friendlies': 'Amistoso',
   'international friendly': 'Amistoso',
+  // Baloncesto: la serie de la temporada de ESPN se llama así, no «NBA».
+  nba: 'NBA',
+  'nba cup': 'Copa NBA',
+  'emirates nba cup': 'Copa NBA',
+  'regular season': 'Temporada regular',
+  'regular season series': 'Temporada regular',
+  playoffs: 'Playoffs',
+  'playoff series': 'Playoffs',
+  'postseason series': 'Playoffs',
+  preseason: 'Pretemporada',
+  'preseason series': 'Pretemporada',
 }
 
 /** «2020-21 Spanish Copa del Rey» → «Copa del Rey»; «2025-26 LALIGA» → «LaLiga». */

@@ -143,3 +143,62 @@ export function buildSoccerH2H(
 ): H2HResult | undefined {
   return fromHeadToHeadGames(json, homeTeamId, translate) ?? fromSeasonSeries(json, homeTeamId, translate)
 }
+
+// ── BALONCESTO ──────────────────────────────────────────────────────
+// El summary de NBA no trae headToHeadGames, pero sí `seasonseries` (Regular
+// Season + Playoffs) con los enfrentamientos directos de la temporada. Misma
+// forma H2HResult → un render (pestaña H2H) sirve para ambos deportes.
+//
+// OJO: la serie trae TODA la temporada, también los partidos por jugar, y ESPN
+// los manda con marcador «0»-«0». Antes entraban todos en `matches` y el cara a
+// cara pintaba empates 0-0 inventados (y el propio partido de la ficha). Ahora
+// solo entran los COMPLETADOS según el estado de ESPN —no el marcador— y nunca
+// el evento actual (header.id). Comprobado con el CHI @ BOS del 30/10/2026:
+// la serie trae 4 cruces y solo uno jugado (BOS 134-99 CHI).
+export function buildBasketballH2H(json: J, homeTeamId?: string): H2HResult | undefined {
+  const series = arr(json.seasonseries) as J[]
+  if (!series.length) return undefined
+  const currentId = str(obj(json.header)?.id)
+  const seen = new Set<string>()
+  const matches: H2HMatch[] = []
+  const t: Tally = { wins: 0, draws: 0, losses: 0 }
+  for (const s of series) {
+    for (const ev of arr(s.events) as J[]) {
+      const id = str(ev.id) ?? ''
+      if (id && (seen.has(id) || id === currentId)) continue
+      if (id) seen.add(id)
+      if (!isCompleted(ev)) continue
+      const cs = arr(ev.competitors) as J[]
+      const homeC = cs.find(c => str(c.homeAway) === 'home') ?? cs[0]
+      const awayC = cs.find(c => str(c.homeAway) === 'away') ?? cs[1]
+      if (!homeC || !awayC) continue
+      const hT = obj(homeC.team), aT = obj(awayC.team)
+      const hScore = numOrNull(homeC.score), aScore = numOrNull(awayC.score)
+      if (hScore == null || aScore == null) continue
+      matches.push({
+        id: id || `${str(hT?.id)}-${str(aT?.id)}-${str(ev.date) ?? ''}`,
+        isoDate: str(ev.date) ?? '',
+        comp: str(s.title) ?? '',
+        home: str(hT?.displayName) ?? str(hT?.abbreviation) ?? '—',
+        away: str(aT?.displayName) ?? str(aT?.abbreviation) ?? '—',
+        homeScore: hScore,
+        awayScore: aScore,
+        homeLogo: str(hT?.logo),
+        awayLogo: str(aT?.logo),
+        homeAbbr: str(hT?.abbreviation),
+        awayAbbr: str(aT?.abbreviation),
+      })
+      tally(t, homeTeamId, str(hT?.id), hScore, aScore)
+    }
+  }
+  return finish(matches, t)
+}
+
+/** Partido terminado según ESPN: `statusType.completed`, nombre FINAL o estado `post`. */
+function isCompleted(ev: J): boolean {
+  const st = obj(ev.statusType)
+  if (st?.completed === true) return true
+  if (st?.completed === false) return false
+  const name = str(st?.name) ?? ''
+  return name === 'STATUS_FINAL' || name.startsWith('STATUS_FINAL') || str(st?.state) === 'post' || str(ev.status) === 'post'
+}

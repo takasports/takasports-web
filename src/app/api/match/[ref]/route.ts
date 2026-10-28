@@ -7,12 +7,12 @@ import { getSpanishBroadcast } from '@/lib/broadcasts'
 import { LEAGUE_LABEL_BY_SLUG } from '@/lib/football-leagues'
 import { NATIONAL_TEAM_COMPS, toSpanishNation } from '@/lib/nation-names'
 import { fetchLeagueTableRows, fetchTournamentGroups, byGroup, groupLabel, type LeagueTableRow } from '@/lib/espn-standings'
-import { getPastEventByRef, type H2HResult, type H2HMatch, type FormResult } from '@/lib/past-events'
+import { getPastEventByRef, type H2HResult, type FormResult } from '@/lib/past-events'
 import { tennisRoundLabel } from '@/lib/espn'
 import { getTennisContext, type TennisContext } from '@/lib/tennis-context'
 import { COMPETITION_LABELS } from '@/lib/competition-labels'
 import { matchCachePolicy, matchCacheHeaders } from '@/lib/match-cache'
-import { buildSoccerH2H } from '@/lib/espn-h2h'
+import { buildSoccerH2H, buildBasketballH2H } from '@/lib/espn-h2h'
 import {
   normalizeScoringType, commentaryLabelFor, SOCCER_STAT_ORDER, SOCCER_LABELS,
 } from '@/lib/espn-soccer'
@@ -542,56 +542,8 @@ function buildSoccerCommentary(
 // lastFiveGames: array por equipo con sus últimos 5 partidos (gameResult W/D/L).
 // Ambos vienen GRATIS en el summary → coste 0, sin tocar Supabase.
 
-// H2H de BALONCESTO: el summary de NBA no trae headToHeadGames, pero sí
-// `seasonseries` (Regular Season + Playoffs) con los enfrentamientos directos de
-// la temporada. Misma forma H2HResult → un render (H2H tab) sirve para ambos.
-function buildBasketballH2H(json: Record<string, unknown>, homeTeamId?: string): H2HResult | undefined {
-  const series = asArr(json.seasonseries) as Record<string, unknown>[]
-  if (!series.length) return undefined
-  const seen = new Set<string>()
-  const matches: H2HMatch[] = []
-  let wins = 0, draws = 0, losses = 0
-  for (const s of series) {
-    for (const ev of asArr(s.events) as Record<string, unknown>[]) {
-      const id = asString(ev.id) ?? ''
-      if (id && seen.has(id)) continue
-      if (id) seen.add(id)
-      const comps = asArr(ev.competitors) as Record<string, unknown>[]
-      const homeC = comps.find(c => asString(c.homeAway) === 'home') ?? comps[0]
-      const awayC = comps.find(c => asString(c.homeAway) === 'away') ?? comps[1]
-      if (!homeC || !awayC) continue
-      const hTeam = asObj(homeC.team), aTeam = asObj(awayC.team)
-      const hScore = numOrNull(homeC.score), aScore = numOrNull(awayC.score)
-      matches.push({
-        id: id || `${asString(hTeam?.id)}-${asString(aTeam?.id)}-${asString(ev.date) ?? ''}`,
-        isoDate: asString(ev.date) ?? '',
-        comp: asString(s.title) ?? '',
-        home: asString(hTeam?.displayName) ?? asString(hTeam?.abbreviation) ?? '—',
-        away: asString(aTeam?.displayName) ?? asString(aTeam?.abbreviation) ?? '—',
-        homeScore: hScore,
-        awayScore: aScore,
-        homeLogo: asString(hTeam?.logo),
-        awayLogo: asString(aTeam?.logo),
-        homeAbbr: asString(hTeam?.abbreviation),
-        awayAbbr: asString(aTeam?.abbreviation),
-      })
-      // Balance desde la óptica del equipo LOCAL del partido actual (solo jugados).
-      const stName = asString(asObj(ev.statusType)?.name)
-      const completed = asObj(ev.statusType)?.completed === true || stName === 'STATUS_FINAL'
-      if (homeTeamId && completed && hScore != null && aScore != null) {
-        const hIsCurrent = asString(hTeam?.id) === homeTeamId
-        const cur = hIsCurrent ? hScore : aScore
-        const opp = hIsCurrent ? aScore : hScore
-        if (cur > opp) wins++
-        else if (cur < opp) losses++
-        else draws++
-      }
-    }
-  }
-  if (!matches.length) return undefined
-  matches.sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''))
-  return { matches, wins, draws, losses }
-}
+// H2H de BALONCESTO → lib/espn-h2h.ts (buildBasketballH2H): solo partidos
+// COMPLETADOS de la serie de la temporada y nunca el propio partido.
 
 function buildRecentForm(json: Record<string, unknown>, homeTeamId?: string, awayTeamId?: string): MatchDetail['recentForm'] {
   const groups = asArr(json.lastFiveGames) as Record<string, unknown>[]
