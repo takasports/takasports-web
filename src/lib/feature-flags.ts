@@ -32,4 +32,11 @@ export const avisosEquipoEnabled = (): boolean => {
   const v = (process.env.AVISOS_EQUIPO_ENABLED ?? '').trim().toLowerCase()
   return !(v === 'false' || v === '0')
 }
+// Aviso de cada noche («los partidos de mañana», /api/cron/agenda-noche).
+// ENCENDIDO el 29/10/2026 con el visto bueno del editor; se apaga con
+// AGENDA_NOCHE_ENABLED=false (o 0) en Vercel.
+export const agendaNocheEnabled = (): boolean => {
+  const v = (process.env.AGENDA_NOCHE_ENABLED ?? '').trim().toLowerCase()
+  return !(v === 'false' || v === '0')
+}
 export const avisosNoticiasEnabled = (): boolean => envActivo('AVISOS_NOTICIAS_ENABLED')

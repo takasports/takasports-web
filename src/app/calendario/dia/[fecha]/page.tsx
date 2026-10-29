@@ -10,11 +10,13 @@
 // 404 real). Ver lib/calendar-day-page.ts.
 
 import type { Metadata } from 'next'
+import { Fragment } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { ShareButton } from '@/components/ShareButton'
+import AgendaNoche from '@/components/AgendaNoche'
 import { getArchivedDays } from '@/lib/past-events'
 import { matchStakes, standingLabel } from '@/lib/match-stakes'
 import type { SportEvent } from '@/lib/types'
@@ -209,7 +211,7 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
           </p>
         ) : (
           <div className="flex flex-col gap-6">
-            {order.map((comp) => {
+            {order.map((comp, i) => {
               const first = byComp.get(comp)![0]
               const compColor = first.accent ?? '#A78BFA'
               // Las competiciones con calendario propio enlazan a él: el día es
@@ -219,8 +221,12 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
               // hasta una docena de rótulos (ver el incidente del prefetch de
               // /comparar).
               const cfg = compConfigForGroup(comp, first.sport)
+              // El aviso de cada noche va tras la segunda competición (o la
+              // única): se ve al primer deslizamiento sin tapar los partidos.
+              const conAviso = i === Math.min(1, order.length - 1)
               return (
-              <section key={comp}>
+              <Fragment key={comp}>
+              <section>
                 {cfg ? (
                   <h2 className="mb-2" style={{ fontFamily: 'var(--font-sport)' }}>
                     <Link
@@ -307,6 +313,8 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
                   })}
                 </ul>
               </section>
+              {conAviso && <AgendaNoche />}
+              </Fragment>
               )
             })}
           </div>

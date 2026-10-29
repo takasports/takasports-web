@@ -4,6 +4,8 @@
 
 'use client'
 
+import { getStoredTZ } from '@/lib/timezone'
+
 export interface PushStatus {
   supported: boolean
   configured: boolean
@@ -75,6 +77,8 @@ export async function subscribeToPush(topics: string[] = ['games']): Promise<Sub
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
         topics,
+        // Para los avisos que salen a una hora local (el de cada noche).
+        timezone: (() => { try { return getStoredTZ() } catch { return undefined } })(),
       }),
     })
     if (!res.ok) return { ok: false, error: `server ${res.status}` }
@@ -97,6 +101,50 @@ export async function unsubscribeFromPush(): Promise<{ ok: boolean }> {
       }).catch(() => {})
       await sub.unsubscribe().catch(() => {})
     }
+    return { ok: true }
+  } catch {
+    return { ok: false }
+  }
+}
+
+/** Temas de la suscripción de este navegador ([] si no hay ninguna). */
+export async function getPushTopics(): Promise<string[]> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return []
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return []
+    const res = await fetch('/api/push/topics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint }),
+    })
+    if (!res.ok) return []
+    const j = await res.json() as { topics?: string[] }
+    return Array.isArray(j.topics) ? j.topics : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Quita UN tema sin tocar los demás. Si era el último, la suscripción sobra y
+ * se da de baja también en el navegador.
+ */
+export async function removePushTopic(topic: string): Promise<{ ok: boolean }> {
+  if (!isPushSupported()) return { ok: false }
+  try {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return { ok: true }
+    const res = await fetch('/api/push/topics', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: sub.endpoint, quitar: topic }),
+    })
+    if (!res.ok) return { ok: false }
+    const j = await res.json() as { borrada?: boolean }
+    if (j.borrada) await sub.unsubscribe().catch(() => {})
     return { ok: true }
   } catch {
     return { ok: false }

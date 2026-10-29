@@ -4,11 +4,14 @@ import { adminSupabase } from '@/lib/supabase-admin'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
+import { zonaValida } from '@/lib/avisos-equipo'
 
 interface PushSubscriptionInput {
   endpoint: string
   keys: { p256dh: string; auth: string }
   topics?: string[]
+  /** Zona IANA del lector (la que usa la web para los horarios). */
+  timezone?: string
 }
 
 // Fallback in-memory cuando Supabase no está disponible (dev local sin tablas)
@@ -50,12 +53,20 @@ export async function POST(req: NextRequest) {
       // un anónimo leer ni tocar las suscripciones sin dueño (migración 135), y
       // el user_id lo fija el servidor a partir de la sesión, no el cliente.
       const writer = adminSupabase() ?? sb
+      // Un navegador tiene UNA suscripción y cada oferta le añade su tema: los
+      // temas se suman a los que ya tenía. Antes se reemplazaban, y aceptar el
+      // aviso del calendario borraba en silencio el de noticias (y al revés).
+      const { data: previa } = await writer
+        .from('push_subscriptions').select('topics').eq('endpoint', sub.endpoint).maybeSingle()
+      const anteriores = Array.isArray(previa?.topics) ? (previa.topics as string[]) : []
       const { error } = await writer.from('push_subscriptions').upsert({
         endpoint: sub.endpoint,
         user_id: user?.id ?? null,
         p256dh: sub.keys.p256dh,
         auth: sub.keys.auth,
-        topics,
+        topics: [...new Set([...anteriores, ...topics])].slice(0, 20),
+        // Zona del lector: el aviso de cada noche sale a SUS 22:00.
+        ...(zonaValida(sub.timezone) === sub.timezone ? { timezone: sub.timezone } : {}),
       }, { onConflict: 'endpoint' })
       if (error) {
         // Si la tabla no existe aún, fallback memoria con warning
