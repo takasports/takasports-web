@@ -45,15 +45,13 @@ export async function GET(request: Request) {
   }
 
   // 2. Canjear por token de larga duración (60 días)
-  // El secret va en el body, no en la URL, para evitar que quede en logs de Meta
-  const longRes = await fetch('https://graph.instagram.com/access_token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      grant_type:   'ig_exchange_token',
-      client_secret: process.env.INSTAGRAM_APP_SECRET!,
-      access_token:  shortData.access_token,
-    }),
-  })
+  // Meta solo admite GET en este endpoint (con POST responde «Unsupported post
+  // request», code 100 / subcode 33). La llamada va de servidor a Meta por HTTPS.
+  const longUrl = new URL('https://graph.instagram.com/access_token')
+  longUrl.searchParams.set('grant_type', 'ig_exchange_token')
+  longUrl.searchParams.set('client_secret', process.env.INSTAGRAM_APP_SECRET!)
+  longUrl.searchParams.set('access_token', shortData.access_token)
+  const longRes = await fetch(longUrl.toString(), { signal: AbortSignal.timeout(10_000) })
   const longData = await longRes.json()
   if (longData.error) {
     return html(`<h2 style="color:#ef4444">❌ Error al extender token</h2><pre>${esc(JSON.stringify(longData, null, 2))}</pre>`)
