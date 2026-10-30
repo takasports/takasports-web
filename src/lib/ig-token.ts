@@ -123,11 +123,29 @@ export async function refreshIgToken(tokenOverride?: string): Promise<{ ok: bool
 // se mandó cada aviso, para no repetirlo cada hora.
 
 const STATUS_KEY = 'ig_sync_status'
+const INSIGHTS_KEY = 'ig_insights'
 
-export async function readSyncStatus<T extends object>(): Promise<Partial<T>> {
+export function readSyncStatus<T extends object>(): Promise<Partial<T>> {
+  return readJsonKey<T>(STATUS_KEY)
+}
+
+export function writeSyncStatus(status: object): Promise<boolean> {
+  return writeJsonKey(STATUS_KEY, status)
+}
+
+// Estadísticas de cada reel (las escribe la sincronización cada 6 h como mucho).
+export function readIgInsights<T extends object>(): Promise<Partial<T>> {
+  return readJsonKey<T>(INSIGHTS_KEY)
+}
+
+export function writeIgInsights(value: object): Promise<boolean> {
+  return writeJsonKey(INSIGHTS_KEY, value)
+}
+
+async function readJsonKey<T extends object>(key: string): Promise<Partial<T>> {
   if (!SUPA || !SVCKEY) return {}
   try {
-    const res = await fetch(`${SUPA}/rest/v1/app_secrets?key=eq.${STATUS_KEY}&select=value`, {
+    const res = await fetch(`${SUPA}/rest/v1/app_secrets?key=eq.${key}&select=value`, {
       headers: restHeaders(), signal: AbortSignal.timeout(5000), cache: 'no-store',
     })
     if (!res.ok) return {}
@@ -138,13 +156,13 @@ export async function readSyncStatus<T extends object>(): Promise<Partial<T>> {
   }
 }
 
-export async function writeSyncStatus(status: object): Promise<boolean> {
+async function writeJsonKey(key: string, value: object): Promise<boolean> {
   if (!SUPA || !SVCKEY) return false
   try {
     const res = await fetch(`${SUPA}/rest/v1/app_secrets`, {
       method: 'POST',
       headers: { ...restHeaders(), Prefer: 'resolution=merge-duplicates' },
-      body: JSON.stringify({ key: STATUS_KEY, value: JSON.stringify(status), updated_at: new Date().toISOString() }),
+      body: JSON.stringify({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() }),
       signal: AbortSignal.timeout(6000),
     })
     return res.ok

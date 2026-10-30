@@ -18,7 +18,7 @@
 // Escribe reels.json SOLO si cambia, y nunca lo deja vacío.
 
 import { adminSupabase } from './supabase-admin'
-import { readIgTokenRecord, refreshIgToken, readSyncStatus, writeSyncStatus } from './ig-token'
+import { readIgTokenRecord, refreshIgToken, readSyncStatus, writeSyncStatus, readIgInsights, writeIgInsights } from './ig-token'
 import { fetchIgImage, fetchThumbByShortcode } from './ig-media'
 import { igUrlExpired, shortcodeOf, thumbBySc } from './reel-thumbs'
 import { detectSport, extractTitle } from './instagram'
@@ -70,6 +70,8 @@ export interface SyncReport {
   alerts: AlertKind[]
   alertsSent: AlertKind[]
   errors: string[]
+  /** Estadísticas: cuántos reels se midieron, 'sin_permiso' si falta volver a autorizar, o 'no_toca'. */
+  insights?: number | 'sin_permiso' | 'no_toca'
 }
 
 // ── Graph API ────────────────────────────────────────────────────────────────
@@ -92,6 +94,75 @@ async function fetchGraphMedia(token: string): Promise<
   } catch (e) {
     return { ok: false, auth: false, error: e instanceof Error ? e.message : String(e) }
   }
+}
+
+// ── Estadísticas de cada reel (permiso instagram_business_manage_insights) ──
+// Se guardan en la tabla privada (`app_secrets`, clave `ig_insights`), no en el
+// bucket público. Si falta el permiso, no rompe nada: queda 'sin_permiso'.
+
+const INSIGHTS_EVERY_MS = 6 * 3_600_000
+const INSIGHTS_MAX = 25
+const INSIGHT_METRICS = 'views,reach,saved,shares,likes,comments,total_interactions'
+
+export interface ReelInsights {
+  shortcode: string
+  timestamp: string
+  title: string
+  values: Record<string, number>
+}
+
+interface InsightsStore {
+  updatedAt: string
+  reels: ReelInsights[]
+  permiso: boolean
+}
+
+async function fetchReelInsights(token: string, mediaId: string): Promise<
+  { ok: true; values: Record<string, number> } | { ok: false; permission: boolean; error: string }
+> {
+  try {
+    const url = new URL(`https://graph.instagram.com/${mediaId}/insights`)
+    url.searchParams.set('metric', INSIGHT_METRICS)
+    url.searchParams.set('access_token', token)
+    const res = await fetch(url.toString(), { cache: 'no-store', signal: AbortSignal.timeout(8000) })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.error) {
+      const err = data.error as { code?: number; message?: string } | undefined
+      const permission = err?.code === 10 || err?.code === 200 || /permission/i.test(err?.message ?? '')
+      return { ok: false, permission, error: err?.message ?? `HTTP ${res.status}` }
+    }
+    const values: Record<string, number> = {}
+    const rows = (Array.isArray(data.data) ? data.data : []) as { name?: string; values?: { value?: number }[]; total_value?: { value?: number } }[]
+    for (const m of rows) {
+      const v = m.values?.[0]?.value ?? m.total_value?.value
+      if (m.name && typeof v === 'number') values[m.name] = v
+    }
+    return { ok: true, values }
+  } catch (e) {
+    return { ok: false, permission: false, error: e instanceof Error ? e.message : String(e) }
+  }
+}
+
+async function syncInsights(
+  token: string, reels: { id: string; shortcode: string; timestamp: string; title: string }[], deadline: number,
+): Promise<number | 'sin_permiso' | 'no_toca'> {
+  const prev = await readIgInsights<InsightsStore>()
+  if (prev.updatedAt && Date.now() - new Date(prev.updatedAt).getTime() < INSIGHTS_EVERY_MS) return 'no_toca'
+  const out: ReelInsights[] = []
+  for (const r of reels.slice(0, INSIGHTS_MAX)) {
+    if (Date.now() > deadline) break
+    const i = await fetchReelInsights(token, r.id)
+    if (!i.ok) {
+      if (i.permission) {
+        await writeIgInsights({ updatedAt: new Date().toISOString(), reels: prev.reels ?? [], permiso: false })
+        return 'sin_permiso'
+      }
+      continue
+    }
+    out.push({ shortcode: r.shortcode, timestamp: r.timestamp, title: r.title, values: i.values })
+  }
+  if (out.length) await writeIgInsights({ updatedAt: new Date().toISOString(), reels: out, permiso: true })
+  return out.length
 }
 
 // ── Storage ──────────────────────────────────────────────────────────────────
@@ -276,6 +347,13 @@ export async function syncInstagramReels(opts: { dry?: boolean; notify?: boolean
     else wroteReelsJson = true
   }
 
+  // 5b) Estadísticas de los reels más nuevos (cada 6 h como mucho; si falta el
+  //     permiso, se apunta y no afecta a la sincronización ni a los avisos).
+  let insights: SyncReport['insights']
+  if (rec && graphReels && !dry && Date.now() < deadline) {
+    insights = await syncInsights(rec.value, candidates, deadline)
+  }
+
   // 6) Estado y avisos.
   const now = Date.now()
   const prev = await readSyncStatus<SyncStatus>()
@@ -335,5 +413,6 @@ export async function syncInstagramReels(opts: { dry?: boolean; notify?: boolean
     alerts,
     alertsSent,
     errors,
+    insights,
   }
 }

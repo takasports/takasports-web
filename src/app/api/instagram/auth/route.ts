@@ -20,7 +20,9 @@ export async function GET(req: NextRequest) {
   const params = new URLSearchParams({
     client_id:     process.env.INSTAGRAM_APP_ID!,
     redirect_uri:  process.env.INSTAGRAM_REDIRECT_URI!,
-    scope:         'instagram_business_basic',
+    // basic: leer los reels · manage_insights: sus estadísticas (visualizaciones,
+    // alcance, guardados, envíos), que guarda la sincronización en `ig_insights`.
+    scope:         'instagram_business_basic,instagram_business_manage_insights',
     response_type: 'code',
     state,
   })
