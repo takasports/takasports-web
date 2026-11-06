@@ -32,14 +32,14 @@ export default function RankBlock({
           <span className="font-black text-xs" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
             {open ? '▲' : '▼'}
           </span>
-          <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#9B7CF6', fontFamily: 'var(--font-sport)' }}>
             {label}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           {notesCount > 0 && (
             <span
-              className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+              className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full inline-flex items-center gap-1"
               style={{
                 color: 'var(--purple-light)',
                 background: 'rgba(124,58,237,0.12)',
@@ -52,7 +52,7 @@ export default function RankBlock({
               {notesCount} {notesCount === 1 ? 'nota' : 'notas'}
             </span>
           )}
-          <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full"
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
             style={{ color: '#A78BFA', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)', fontFamily: 'var(--font-sport)' }}>
             {entries.length} entradas
           </span>

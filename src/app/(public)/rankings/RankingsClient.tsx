@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
 import {
@@ -99,12 +99,12 @@ function ColumnHeader() {
   return (
     <div className="flex items-center gap-3 px-4 pb-2 mb-1">
       <span className="w-7 flex-shrink-0" /><span className="w-9 flex-shrink-0" />
-      <span className="flex-1 text-[9px] font-black uppercase tracking-widest"
+      <span className="flex-1 text-[11px] font-bold uppercase tracking-[0.08em]"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Nombre
       </span>
       <span className="hidden xl:block max-w-[260px] flex-shrink-0" />
-      <span className="text-[9px] font-black uppercase tracking-widest ml-auto"
+      <span className="text-[11px] font-bold uppercase tracking-[0.08em] ml-auto"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
         Puntos
       </span>
@@ -154,7 +154,6 @@ export default function RankingsClient({
   // Helper: DB data si tiene entries, si no el estático
   const db = (cat: string, fallback: RankingEntry[]): RankingEntry[] =>
     (dbData[cat] && dbData[cat]!.length > 0) ? dbData[cat]! : fallback
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   const trackParam = searchParams.get('track')
@@ -173,6 +172,7 @@ export default function RankingsClient({
   const [cantera, setCantera]               = useState(initialCantera)
   const [sortMode, setSortMode]             = useState<'score' | 'hot'>('score')
   const [toolsOpen, setToolsOpen]           = useState(false)
+  const [searchOpen, setSearchOpen]         = useState(Boolean(initialQuery))
   const [searchQuery, setSearchQuery]       = useState(initialQuery)
   // Ordena los podios de «Todos»: lo tuyo primero. Llega vacío en el primer
   // render (localStorage solo existe tras hidratar) → el HTML del servidor y el
@@ -181,7 +181,6 @@ export default function RankingsClient({
 
   const isCreador = track === 'creador'
   const sportAccent = activeSport && !isCreador ? getSportStyle(activeSport).accent : (isCreador ? '#f59e0b' : '#7C3AED')
-  const sportBackdrop = ({ futbol: 'futbol', baloncesto: 'nba', formula1: 'f1', tenis: 'tenis', ufc: 'ufc', wwe: 'wwe' } as Record<string, string>)[activeSport] ?? null
 
   const isFemenino = gender === 'f' && !isCreador && (
     (track === 'deportista' && GENDER_SPORTS.includes(activeSport)) ||
@@ -279,8 +278,16 @@ export default function RankingsClient({
     if (cantera) params.set('cantera', '1')
     if (searchQuery.trim()) params.set('q', searchQuery.trim())
     const query = params.toString()
-    router.replace(query ? `?${query}` : '?', { scroll: false })
-  }, [track, activeSport, ligaFilter, gender, cantera, searchQuery, router])
+    // `history.replaceState` y no `router.replace`: la navegación suave volvía a
+    // pedir el segmento y pintaba `rankings/loading.tsx` ENTERO —toda la
+    // página sustituida por un esqueleto en cada pestaña (V-23). Next sincroniza
+    // useSearchParams con la History API, así que los enlaces compartidos siguen
+    // funcionando igual y solo cambia el bloque de la lista.
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.pathname}${query ? `?${query}` : ''}`
+      if (url !== `${window.location.pathname}${window.location.search}`) window.history.replaceState(null, '', url)
+    }
+  }, [track, activeSport, ligaFilter, gender, cantera, searchQuery])
 
   // ── Handlers ─────────────────────────────────────────────────────
   const handleTrackChange = (t: Track) => {
@@ -373,122 +380,72 @@ export default function RankingsClient({
 
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-24">
 
-        {/* ── HERO ─────────────────────────────────────────────── */}
-        <div className="relative pt-6 pb-4 overflow-hidden">
-          {sportBackdrop && (
-            <>
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 pointer-events-none"
-                style={{ backgroundImage: `url(/banners/signal/${sportBackdrop}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center 32%', opacity: 0.4 }}
-              />
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: 'linear-gradient(180deg, rgba(9,9,15,0.45) 0%, rgba(9,9,15,0.72) 60%, var(--bg-base) 100%)' }}
-              />
-            </>
-          )}
-          <div
-            className="absolute -top-12 left-1/2 -translate-x-1/2 w-[600px] h-[280px] pointer-events-none"
-            style={{ background: `radial-gradient(ellipse at 50% 30%, ${sportAccent}18 0%, transparent 65%)`, filter: 'blur(20px)', transition: 'all 0.4s ease' }}
-          />
-          <div className="relative text-center">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <span className="text-[9px] font-black uppercase tracking-[0.18em] px-3 py-1.5 rounded-full"
-                style={{ background: 'rgba(124,58,237,0.12)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.28)', fontFamily: 'var(--font-sport)' }}>
-                {(() => {
-                  if (lastUpdated) {
-                    const d = new Date(lastUpdated)
-                    const now = new Date()
-                    // Días de CALENDARIO, no milisegundos entre medias: el
-                    // pipeline corre a las 22:00 y a las 23:45, así que a la una
-                    // de la madrugada del día siguiente habían pasado 3 horas
-                    // —cero días redondeando hacia abajo— y el sello decía
-                    // «Actualizado hoy · 5 ago 2026» un 6 de agosto,
-                    // contradiciéndose a sí mismo en la misma línea.
-                    const soloFecha = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
-                    const diffDays = Math.round((soloFecha(now) - soloFecha(d)) / 86400000)
-                    const label = diffDays <= 0 ? 'hoy' : diffDays === 1 ? 'ayer' : `hace ${diffDays} días`
-                    // Decir cuándo vuelve a cambiar es lo único que le faltaba
-                    // a la cabecera para tener calendario: el ranking se
-                    // recalcula solo, pero no lo contaba en ninguna parte.
-                    return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · próxima ${proximaActualizacion(now)}`
-                  }
-                  const now = new Date()
-                  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-                  const fmt = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
-                  return `Edición ${fmt(now)} · vs ${fmt(prev)}`
-                })()}
-              </span>
-            </div>
-            <h1 className="font-black mb-3"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.2rem, 5vw, 3.8rem)', color: '#F8F8FF', letterSpacing: '-0.03em', lineHeight: 1 }}>
-              Ranking <span style={{ color: '#9B7CF6' }}>Taka</span>
-            </h1>
-            <p className="text-sm max-w-xl mx-auto leading-relaxed"
-              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-              {/* Los cuatro factores REALES (migración 110): rendimiento 45,
-                  contexto 20, mediático 15, forma 20. El texto anterior
-                  prometía «estadística» y «percepción pública» — esta última
-                  era el factor subjetivo que se retiró justamente para que el
-                  ranking no dependiera de opiniones.
-
-                  El ritmo de actualización NO va aquí: lo dice el sello de
-                  arriba («próxima el domingo»), y repetirlo costaba una línea
-                  entera de las tres que ocupa este párrafo en móvil. */}
-              Rankings propios de Taka: rendimiento medido, nivel de competición,
-              repercusión mediática y forma reciente.
-            </p>
-            {/* Reyes del deporte, Comparador y Mi Top son herramientas, no la
-                razón por la que alguien abre un ranking. Como tres botones
-                grandes competían con las pestañas que hay justo debajo —dos
-                niveles de navegación discutiendo por el mismo sitio— y metían
-                casi una pantalla de cabecera antes del primer nombre en móvil.
-                Ahora es un solo control que se abre si lo buscas. */}
-            <div className="mt-4 flex flex-col items-center gap-2">
-              <button
-                onClick={() => setToolsOpen(o => !o)}
-                aria-expanded={toolsOpen}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
-                style={{ background: 'rgba(255,255,255,0.05)', color: '#8A8AA0', border: '1px solid rgba(255,255,255,0.09)', cursor: 'pointer', fontFamily: 'var(--font-sport)' }}
-              >
-                Herramientas <span style={{ fontSize: 8 }}>{toolsOpen ? '▲' : '▼'}</span>
-              </button>
-              {toolsOpen && (
-            <div className="flex justify-center gap-2 flex-wrap">
-              <Link
-                href="/rankings/todos"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
-                style={{ background: 'rgba(196,181,253,0.12)', color: '#C4B5FD', border: '1px solid rgba(196,181,253,0.3)', fontFamily: 'var(--font-sport)' }}
-              >
-                👑 Reyes del deporte <span style={{ color: '#A78BFA' }}>→</span>
-              </Link>
-              <Link
-                href="/rankings/comparar"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
-                style={{ background: 'rgba(124,58,237,0.12)', color: '#C4B5FD', border: '1px solid rgba(124,58,237,0.3)', fontFamily: 'var(--font-sport)' }}
-              >
-                ⚖️ Comparador <span style={{ color: '#A78BFA' }}>→</span>
-              </Link>
-              <Link
-                href="/rankings/mi-top"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
-                style={{ background: 'rgba(248,113,113,0.10)', color: '#fca5a5', border: '1px solid rgba(248,113,113,0.25)', fontFamily: 'var(--font-sport)' }}
-              >
-                ❤ Mi Top
-              </Link>
-            </div>
-              )}
-            </div>
+        {/* ── CABECERA, a la izquierda como «Noticias» (V-24) ──────
+            Antes: sello, título centrado de 60 px, párrafo, «Herramientas» y
+            siete capas de controles; el primer nombre caía a 1.200 px en móvil. */}
+        <div className="pt-5 sm:pt-6 pb-2">
+          <div className="flex items-center gap-2.5 mb-1.5">
+            <span className="section-accent" />
+            <span className="section-label">Ranking Taka</span>
           </div>
+          <div className="flex items-end justify-between gap-3">
+            <h1 className="font-extrabold leading-none"
+              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 3.5vw, 44px)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+              Rankings
+            </h1>
+            {/* Reyes del deporte, Comparador y Mi Top son herramientas, no la
+                razón por la que alguien abre un ranking: un solo control. */}
+            <button
+              onClick={() => setToolsOpen(o => !o)}
+              aria-expanded={toolsOpen}
+              className={`ts-chip${toolsOpen ? ' is-on' : ''}`}
+              style={{ height: 32, padding: '0 12px', fontSize: 11, color: toolsOpen ? undefined : 'var(--text-secondary)' }}
+            >
+              Herramientas
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ transform: toolsOpen ? 'rotate(180deg)' : 'none' }}>
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[14px] mt-1.5" style={{ color: 'var(--text-secondary)' }}>
+            {(() => {
+              if (lastUpdated) {
+                const d = new Date(lastUpdated)
+                const now = new Date()
+                // Días de CALENDARIO, no milisegundos entre medias: el pipeline
+                // corre a las 22:00 y a las 23:45, así que a la una de la
+                // madrugada del día siguiente «hoy» ya es otro día.
+                const soloFecha = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
+                const diffDays = Math.round((soloFecha(now) - soloFecha(d)) / 86400000)
+                const label = diffDays <= 0 ? 'hoy' : diffDays === 1 ? 'ayer' : `hace ${diffDays} días`
+                return `Actualizado ${label} · ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} · próxima ${proximaActualizacion(now)}`
+              }
+              const now = new Date()
+              const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+              const fmt = (d: Date) => d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+              return `Edición ${fmt(now)} · vs ${fmt(prev)}`
+            })()}
+          </p>
+          {toolsOpen && (
+            <div className="flex gap-2 flex-wrap mt-3">
+              <Link href="/rankings/todos" className="ts-chip" style={{ height: 32, fontSize: 11, color: '#C4B5FD', textDecoration: 'none' }}>
+                Reyes del deporte →
+              </Link>
+              <Link href="/rankings/comparar" className="ts-chip" style={{ height: 32, fontSize: 11, color: '#C4B5FD', textDecoration: 'none' }}>
+                Comparador →
+              </Link>
+              <Link href="/rankings/mi-top" className="ts-chip" style={{ height: 32, fontSize: 11, color: '#C4B5FD', textDecoration: 'none' }}>
+                Mi Top →
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* ── 1. TRACK TABS (Deportistas / Equipos / Creadores) ── */}
         <div
           role="tablist"
           aria-label="Tipo de ranking"
-          className="flex gap-1 overflow-x-auto scrollbar-hide"
+          className="flex gap-0 overflow-x-auto scrollbar-hide"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
           {TRACK_TABS.map((t) => {
@@ -496,12 +453,12 @@ export default function RankingsClient({
             return (
               <button key={t.id} role="tab" aria-selected={isActive}
                 onClick={() => handleTrackChange(t.id)}
-                className="flex-shrink-0 px-4 py-2.5 text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                className="flex-shrink-0 pt-2.5 pb-2.5 mr-5 text-[13px] font-bold uppercase tracking-[0.06em] transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
                 style={{
                   fontFamily: 'var(--font-sport)',
-                  color: isActive ? sportAccent : 'var(--text-muted)',
+                  color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
                   background: 'none', border: 'none',
-                  borderBottom: isActive ? `2px solid ${sportAccent}` : '2px solid transparent',
+                  borderBottom: isActive ? '2px solid var(--purple)' : '2px solid transparent',
                   marginBottom: -1, cursor: 'pointer',
                 }}>
                 {t.label}
@@ -510,102 +467,86 @@ export default function RankingsClient({
           })}
         </div>
 
-        {/* ── 2. SELECTOR DE DEPORTE / VERTICAL ─────────────────── */}
-        <div className="mt-4 mb-2">
-          {isCreador ? (
-            <FilterPillBar filters={CREADOR_VERTICALS} active={activeSport} onChange={handleSportChange} accentColor="#f59e0b" />
+        {/* ── 2. DEPORTE + BUSCADOR en la misma fila ─────────────── */}
+        <div className="mt-3 mb-2 flex items-center gap-2">
+          {searchOpen ? (
+            <>
+              <div className="relative flex-1 min-w-0">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center" style={{ color: 'var(--text-muted)' }}><SearchIcon size={14} /></span>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Buscar en todos los rankings…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 rounded-full text-[13px] font-medium focus:outline-none"
+                  style={{ height: 36, background: 'var(--bg-surface)', border: searchQuery ? '1px solid rgba(124,58,237,0.4)' : '1px solid var(--border)', color: 'var(--text-primary)' }}
+                />
+              </div>
+              <button
+                onClick={() => { setSearchQuery(''); setSearchOpen(false) }}
+                aria-label="Cerrar búsqueda"
+                className="ts-chip ts-chip--icono"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+              </button>
+            </>
           ) : (
-            <SportSelector active={activeSport} onChange={handleSportChange} only={track === 'equipo' ? EQUIPO_SPORTS : DEPORTISTA_SPORTS} />
+            <>
+              <div className="flex-1 min-w-0">
+                {isCreador ? (
+                  <FilterPillBar filters={CREADOR_VERTICALS} active={activeSport} onChange={handleSportChange} accentColor="#f59e0b" />
+                ) : (
+                  <SportSelector active={activeSport} onChange={handleSportChange} only={track === 'equipo' ? EQUIPO_SPORTS : DEPORTISTA_SPORTS} />
+                )}
+              </div>
+              <button
+                onClick={() => setSearchOpen(true)}
+                aria-label="Buscar en todos los rankings"
+                className="ts-chip ts-chip--icono"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+              </button>
+            </>
           )}
         </div>
 
-        {/* ── Toggle Femenino ───────────────────────────────────── */}
-        {showGenderToggle && (
-          <div className="flex items-center gap-1.5 mt-1 mb-1">
-            {(['m', 'f'] as const).map(g => {
+        {/* ── Fila secundaria: femenino · cantera · lo que más sube ──
+            Un solo chip para todo (maqueta 3); fuera el rótulo «✦ Ranking
+            deportivo · Top 100 ampliable», que no decía nada al lector. */}
+        {!searchOpen && (showGenderToggle || track === 'deportista' || (!isCreador && hasHotData)) && (
+          <div className="flex items-center gap-2 mb-4 mt-1 overflow-x-auto scrollbar-hide">
+            {showGenderToggle && (['m', 'f'] as const).map(g => {
               const isActive = gender === g
               return (
                 <button key={g} onClick={() => { setGender(g); setLigaFilter('') }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
-                  style={{
-                    background: isActive ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.04)',
-                    color: isActive ? '#22c55e' : 'var(--text-muted)',
-                    border: isActive ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                    cursor: 'pointer', fontFamily: 'var(--font-sport)',
-                  }}>
+                  className={`ts-chip${isActive ? ' is-on' : ''}`}
+                  style={{ height: 32, fontSize: 11, color: isActive ? undefined : 'var(--text-secondary)' }}>
                   {activeSport === 'tenis'
-                    ? (<><TennisIcon size={11} /> {g === 'm' ? 'ATP' : 'WTA'}</>)
-                    : (g === 'm' ? '♂ Masculino' : '♀ Femenino')}
+                    ? (<><TennisIcon size={12} /> {g === 'm' ? 'ATP' : 'WTA'}</>)
+                    : (g === 'm' ? 'Masculino' : 'Femenino')}
                 </button>
               )
             })}
-          </div>
-        )}
-
-        {/* ── Cantera (Sub-21) — solo deportistas ───────────────── */}
-        {track === 'deportista' && (
-          <div className="flex items-center gap-1.5 mt-2 mb-1">
-            <button onClick={() => setCantera(c => !c)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
-              style={{
-                background: cantera ? 'rgba(255,203,87,0.16)' : 'rgba(255,255,255,0.04)',
-                color: cantera ? '#ffcb57' : 'var(--text-muted)',
-                border: cantera ? '1px solid rgba(255,203,87,0.4)' : '1px solid rgba(255,255,255,0.07)',
-                cursor: 'pointer', fontFamily: 'var(--font-sport)',
-              }}>
-              <StarIcon size={11} /> Cantera Sub-21
-            </button>
-          </div>
-        )}
-
-        {/* ── BÚSQUEDA + FILTRO BADGE ──────────────────────────── */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-3 mt-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex items-center"
-              style={{ color: 'var(--text-muted)' }}><SearchIcon size={13} /></span>
-            <input
-              type="text"
-              placeholder="Buscar en TODOS los rankings (ej: Messi, Ferrari, Pedrerol)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-9 py-2 rounded-full text-xs font-semibold transition-all focus:outline-none"
-              style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: searchQuery ? `1px solid ${sportAccent}40` : '1px solid rgba(255,255,255,0.07)',
-                color: '#D0D0E0', fontFamily: 'var(--font-sport)',
-              }}
-            />
-            {searchQuery && (
+            {track === 'deportista' && (
+              <button onClick={() => setCantera(c => !c)}
+                className={`ts-chip${cantera ? ' is-on' : ''}`}
+                style={{ height: 32, fontSize: 11, color: cantera ? undefined : 'var(--text-secondary)' }}>
+                <StarIcon size={12} /> Cantera Sub-21
+              </button>
+            )}
+            {(!isCreador && hasHotData) && (
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs"
-                style={{ color: '#8E8E9E', cursor: 'pointer', background: 'none', border: 'none' }}
-                aria-label="Limpiar búsqueda">
-                ✕
+                onClick={() => setSortMode(s => s === 'score' ? 'hot' : 'score')}
+                className={`ts-chip${sortMode === 'hot' ? ' is-on' : ''}`}
+                style={{ height: 32, fontSize: 11, color: sortMode === 'hot' ? undefined : 'var(--text-secondary)' }}>
+                <FireIcon size={12} /> Lo que más sube
               </button>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-2 mb-6 mt-2">
-          <span className="text-[9px] font-black uppercase tracking-widest"
-            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-            {isCreador ? '✦ Ranking editorial · Top curado por disciplina' : '✦ Ranking deportivo · Top 100 ampliable'}
-          </span>
-          {(!isCreador && hasHotData) && (
-            <button
-              onClick={() => setSortMode(s => s === 'score' ? 'hot' : 'score')}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-              style={{
-                background: sortMode === 'hot' ? 'rgba(245,158,11,0.14)' : 'rgba(255,255,255,0.04)',
-                color: sortMode === 'hot' ? '#f59e0b' : 'var(--text-muted)',
-                border: sortMode === 'hot' ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                cursor: 'pointer', fontFamily: 'var(--font-sport)',
-              }}>
-              <FireIcon size={11} /> Hot now
-            </button>
-          )}
-        </div>
+        )}
 
         {/* ── Liga ──────────────────────────────────────────────── */}
         {showLiga && (
@@ -688,7 +629,7 @@ export default function RankingsClient({
             {!q && mostrarPodios ? (
               <>
                 {podios.some(g => g.seguido) && (
-                  <p className="flex items-center gap-2.5 px-1 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
+                  <p className="flex items-center gap-2.5 px-1 pb-2 text-[11px] font-bold uppercase tracking-[0.12em]"
                     style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     Tus deportes
                     <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
@@ -698,7 +639,7 @@ export default function RankingsClient({
                   <div key={g.sport}>
                     {/* Separador entre lo tuyo y el resto: solo donde cambia. */}
                     {g.seguido === false && podios[i - 1]?.seguido === true && (
-                      <p className="flex items-center gap-2.5 px-1 pt-3 pb-2 text-[9.5px] font-black uppercase tracking-[0.18em]"
+                      <p className="flex items-center gap-2.5 px-1 pt-3 pb-2 text-[11px] font-bold uppercase tracking-[0.12em]"
                         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                         El resto
                         <span aria-hidden="true" className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
@@ -715,7 +656,7 @@ export default function RankingsClient({
                   <h2 className="font-black" style={{ fontFamily: 'var(--font-display)', fontSize: 21, color: '#F8F8FF', letterSpacing: '-0.01em' }}>
                     Todos los deportes
                   </h2>
-                  <p className="text-[11.5px] mt-1 mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  <p className="text-[13px] mt-1 mb-3" style={{ color: 'var(--text-muted)' }}>
                     La lista completa, mezclando deportes. {finalEntries.length} {finalEntries.length === 1 ? 'nombre' : 'nombres'}.
                   </p>
                   <ColumnHeader />

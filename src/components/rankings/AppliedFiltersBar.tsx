@@ -39,7 +39,7 @@ export default function AppliedFiltersBar({
           return (
             <span
               key={f.key}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide"
               style={{
                 background: `${color}14`,
                 color: color,
@@ -65,7 +65,7 @@ export default function AppliedFiltersBar({
       {onClearAll && visible.some(f => f.onClear) && (
         <button
           onClick={onClearAll}
-          className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full transition-all hover:brightness-150 flex-shrink-0"
+          className="text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full transition-all hover:brightness-150 flex-shrink-0"
           style={{
             background: 'rgba(255,255,255,0.04)',
             color: '#7A7A92',

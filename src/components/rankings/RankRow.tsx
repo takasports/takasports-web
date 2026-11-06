@@ -96,7 +96,7 @@ export default function RankRow({
             {entry.badge && <BadgePill text={entry.badge} />}
             {entry.editorialNote && <EditorialNoteChip note={entry.editorialNote} />}
           </div>
-          <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {entry.subtitle}
           </p>
           {barFrac !== null && (
@@ -163,7 +163,7 @@ export default function RankRow({
               {displayScore.toFixed(1)}
             </span>
             {scoreDiff !== null && (
-              <span className="text-[9px] tabular-nums leading-none mt-0.5"
+              <span className="text-[11px] tabular-nums leading-none mt-0.5"
                 style={{ color: scoreDiff >= 0 ? '#22c55e' : '#f87171', fontFamily: 'var(--font-display)' }}>
                 {scoreDiff >= 0 ? '+' : ''}{scoreDiff.toFixed(1)}
               </span>
@@ -177,7 +177,7 @@ export default function RankRow({
               <div className="absolute right-0 bottom-full mb-2 w-48 px-2.5 py-2 rounded-lg pointer-events-none z-20
                 opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                 style={{ background: '#12121E', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                <p className="text-[10px] leading-relaxed" style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}>
+                <p className="text-[11px] leading-relaxed" style={{ color: '#A0A0B8', fontFamily: 'var(--font-sport)' }}>
                   {entry.trendReason}
                 </p>
               </div>
@@ -192,7 +192,7 @@ export default function RankRow({
                 color: expanded ? sportAccent : 'var(--text-muted)',
                 border: `1px solid ${expanded ? sportAccent + '40' : 'rgba(255,255,255,0.07)'}`,
                 fontFamily: 'var(--font-sport)',
-                fontSize: 10,
+                fontSize: 11,
               }}
               title={expanded ? 'Ocultar desglose' : 'Ver desglose del score'}
               aria-label={expanded ? 'Ocultar desglose' : 'Ver desglose del score'}
@@ -244,7 +244,7 @@ function EditorialNoteChip({ note }: { note: string }) {
           border: '1px solid rgba(124,58,237,0.3)',
           color: 'var(--purple-light)',
           fontFamily: 'var(--font-sport)',
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 800,
           letterSpacing: '0.06em',
           textTransform: 'uppercase',

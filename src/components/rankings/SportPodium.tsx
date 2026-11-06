@@ -43,7 +43,7 @@ export default function SportPodium({
           </h2>
           {seguido && (
             <span
-              className="flex-shrink-0 text-[8px] font-black uppercase tracking-[0.14em] px-1.5 py-[3px] rounded-full"
+              className="flex-shrink-0 text-[11px] font-bold uppercase tracking-[0.08em] px-1.5 py-[3px] rounded-full"
               style={{ color: '#22c55e', background: 'rgba(34,197,94,0.11)', border: '1px solid rgba(34,197,94,0.28)', fontFamily: 'var(--font-sport)' }}
             >
               Sigues
@@ -53,7 +53,7 @@ export default function SportPodium({
         <button
           type="button"
           onClick={() => onOpen(sport)}
-          className="flex-shrink-0 text-[9px] font-black uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
+          className="flex-shrink-0 text-[11px] font-black uppercase tracking-[0.14em] transition-opacity hover:opacity-70"
           style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
         >
           Ver {total > 3 ? `los ${total}` : 'todos'} →

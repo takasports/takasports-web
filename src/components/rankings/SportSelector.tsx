@@ -1,6 +1,6 @@
 'use client'
 
-import { getSportStyle, accentTexto } from '@/lib/sports'
+import { getSportStyle } from '@/lib/sports'
 import { MedalIcon, FootballIcon, BasketballIcon, F1Icon, TennisIcon, UFCIcon, WWEIcon } from '@/components/icons/GameIcons'
 
 type IconC = React.ComponentType<{ size?: number }>
@@ -31,15 +31,9 @@ export default function SportSelector({ active, onChange, only }: { active: stri
         const Icon = s.Icon
         return (
           <button key={s.slug} onClick={() => onChange(s.slug)}
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap"
-            style={{
-              background: isActive ? `${accent}20` : 'rgba(255,255,255,0.04)',
-              color: isActive ? accentTexto(accent) : 'var(--text-muted)',
-              border: isActive ? `1px solid ${accent}45` : '1px solid rgba(255,255,255,0.06)',
-              boxShadow: isActive ? `0 2px 20px ${accent}28` : 'none',
-              cursor: 'pointer', fontFamily: 'var(--font-sport)',
-            }}>
-            <span className="inline-flex items-center"><Icon size={14} /></span>
+            className={`ts-chip${isActive ? ' is-on' : ''}`}
+            aria-pressed={isActive}>
+            <span className="inline-flex items-center" style={{ color: isActive ? '#fff' : accent }}><Icon size={14} /></span>
             <span>{s.label}</span>
           </button>
         )
