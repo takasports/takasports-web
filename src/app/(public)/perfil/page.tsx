@@ -30,6 +30,7 @@ import FollowedSportsEditor from '@/components/profile/FollowedSportsEditor'
 import DeleteAccountSection from '@/components/DeleteAccountSection'
 import { usePoints, useStreak } from '@/hooks/useGameState'
 import GuardadosSection from '@/components/profile/GuardadosSection'
+import InvitadoHero from '@/components/profile/InvitadoHero'
 
 const REMINDERS_KEY = 'ts_reminders'
 const REMINDERS_DATA_KEY = 'ts_reminders_data'
@@ -540,6 +541,15 @@ export default function PerfilPage() {
           </div>
         )}
 
+        {/* Sin sesión: la pantalla «Tú» de la app (V-37). Con sesión, la
+            cabecera de siempre. */}
+        {!user ? (
+          <InvitadoHero
+            onEntrar={() => { setAuthInitialMode('social'); setShowAuthModal(true) }}
+            onCrearCuenta={() => { setAuthInitialMode('register'); setShowAuthModal(true) }}
+          />
+        ) : (
+          <>
         {/* ── HERO CABECERA ─────────────────────────────── */}
         <div className="relative pt-10 pb-10">
           {/* Glow ambiental */}
@@ -895,6 +905,8 @@ export default function PerfilPage() {
             </div>
           </div>
         </div>
+          </>
+        )}
         {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} initialMode={authInitialMode} next={authNext} />}
 
         {/* ── GRID PRINCIPAL ───────────────────────────── */}
@@ -1017,7 +1029,7 @@ export default function PerfilPage() {
             )}
 
             {/* GUARDADOS — se autooculta si no has guardado nada */}
-            <GuardadosSection />
+            <div id="guardados"><GuardadosSection /></div>
 
             {/* ACTIVIDAD RECIENTE */}
             <section>

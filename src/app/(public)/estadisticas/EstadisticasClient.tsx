@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
-import { PodiumMedal } from '@/components/icons/GameIcons'
 import NewsletterSection from '@/components/NewsletterSection'
 import ScrollToTop from '@/components/ScrollToTop'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
@@ -539,14 +538,14 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
               </div>
               {/* Freshness chip */}
               {lastUpdated && (
-                <span className="text-[10px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full sm:mb-0.5"
+                <span className="text-[11px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full sm:mb-0.5"
                   style={{ background: fetchError ? 'rgba(248,113,113,0.08)' : 'rgba(74,222,128,0.08)', color: fetchError ? '#f87171' : '#4ade80', border: `1px solid ${fetchError ? 'rgba(248,113,113,0.2)' : 'rgba(74,222,128,0.2)'}`, fontFamily: 'var(--font-sport)' }}>
                   <span className={refreshing ? 'animate-spin' : ''} style={{ display: 'inline-block' }}>⟳</span>
                   Actualizado {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
               {updatedFlash && (
-                <span aria-live="polite" className="text-[10px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                <span aria-live="polite" className="text-[11px] inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                   style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)', animation: 'fadeOut 2.2s forwards' }}>
                   ● Actualizado
                 </span>
@@ -618,7 +617,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                     </span>
                   )}
                   {(s.id !== 'mundial' || wcFase !== 'en-curso') && count > 0 && (
-                    <span className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
+                    <span className="text-[11px] font-black tabular-nums px-1.5 py-0.5 rounded-full"
                       style={{
                         background: isActive ? `${s.accent}1f` : 'rgba(74,222,128,0.10)',
                         color: isActive ? s.accent : '#4ade80',
@@ -628,7 +627,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                     </span>
                   )}
                   {isEmpty && (
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                    <span className="text-[11px] font-black px-1.5 py-0.5 rounded-full"
                       style={{ background: 'rgba(248,113,113,0.10)', color: '#f87171', border: '1px solid rgba(248,113,113,0.25)' }}>
                       —
                     </span>
@@ -704,7 +703,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                       ? `${sec.label}, ${SECTION_BLOCK_COUNT.get(`${sport.id}:${sec.id}`)} tablas`
                       : sec.label}
                     aria-current={sectionId === sec.id ? 'true' : undefined}
-                    className="flex items-center gap-1.5 px-3.5 py-2 text-[10px] font-black uppercase tracking-widest transition-all"
+                    className="flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-black uppercase tracking-widest transition-all"
                     style={{
                       // Píldora activa = vidrio teñido con halo del acento (tanda v2).
                       borderRadius: 10,
@@ -774,7 +773,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                 value={leagueFilter}
                 onChange={e => setLeagueFilter(e.target.value)}
                 aria-label="Filtrar por liga"
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-semibold"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold"
                 style={{
                   background: leagueFilter === 'General' ? 'rgba(255,255,255,0.03)' : 'rgba(34,197,94,0.10)',
                   color: leagueFilter === 'General' ? '#9090B0' : '#86efac',
@@ -818,7 +817,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
                     FIFA World Cup 2026
                   </span>
                   {wcFase === 'antes'
-                    ? <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
+                    ? <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>PRÓXIMO</span>
                     : null
                   }
                 </div>
@@ -929,34 +928,7 @@ export default function EstadisticasClient({ initialData, initialSport }: { init
           </>
         )}
 
-        {/* ── ROADMAP ───────────────────────────────── */}
-        <div className="mt-14 rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-2 mb-5">
-            <span className="section-accent" />
-            <h2 className="section-label">Próximas integraciones</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {[
-              { icon: '📊', label: 'Gráficos de evolución', sub: 'Por temporada' },
-              { icon: '⚔️', label: 'Comparativas H2H', sub: 'Jugador vs jugador' },
-              { icon: '🗂️', label: 'Fichas individuales', sub: 'Historial completo' },
-              { icon: '🌐', label: 'Datos avanzados', sub: 'Opta · StatsBomb · WhoScored' },
-              { icon: '📈', label: 'Rendimiento reciente', sub: 'Últimos 5 partidos' },
-              { icon: '🏅', label: 'Palmarés histórico', sub: 'Títulos y logros' },
-              { icon: '📐', label: 'Mapas de calor', sub: 'Posicionamiento' },
-              { icon: '🔔', label: 'Alertas personalizadas', sub: 'Sigue jugadores clave' },
-            ].map(({ icon, label, sub }) => (
-              <div key={label} className="flex items-start gap-3 px-3.5 py-3 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <span className="text-xl flex-shrink-0">{icon}</span>
-                <div>
-                  <p className="text-xs font-semibold leading-tight" style={{ color: '#A0A0C0', fontFamily: 'var(--font-sport)' }}>{label}</p>
-                  <p className="text-[9px] mt-0.5" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Sin «Próximas integraciones»: era texto de hoja de ruta, no de producto (V-27). */}
 
       </div>
 

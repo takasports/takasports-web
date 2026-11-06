@@ -6,6 +6,8 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import ScrollToTop from '@/components/ScrollToTop'
 import SearchTracker from './SearchTracker'
+import BuscarLive from './BuscarLive'
+import MasLeidas from '@/components/MasLeidas'
 import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import type { MatchHit } from '@/app/api/search/matches/route'
 
@@ -142,41 +144,14 @@ export default async function BuscarPage({
         >
           Buscar
         </h1>
-        <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>
-          Noticias, análisis y resultados
+        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
+          Partidos, jugadores, equipos y noticias
         </p>
 
-        {/* Search form — preserva filtros activos como hidden inputs */}
-        <form method="GET" action="/buscar" className="mb-6">
-          <div className="relative">
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder="Buscar noticias…"
-              autoFocus
-              className="w-full rounded-2xl px-5 py-4 pr-14 text-base outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)]"
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-                fontSize: '1rem',
-              }}
-            />
-            {sportFilter && <input type="hidden" name="sport" value={sportFilter} />}
-            {rangeFilter && <input type="hidden" name="range" value={rangeFilter} />}
-            <button
-              type="submit"
-              className="absolute right-4 top-1/2 -translate-y-1/2 opacity-50 hover:opacity-100 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--purple)] rounded-md"
-              aria-label="Buscar"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ color: 'var(--text-primary)' }}>
-                <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M13 13l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-        </form>
+        {/* La caja y los resultados al teclear viven en BuscarLive; lo que pintó
+            el servidor para ?q= va dentro (indexable y sin JS). Con la caja
+            vacía: lo más buscado y lo más leído (V-36). */}
+        <BuscarLive initialQuery={query} sugerencias={<MasLeidas limite={5} />}>
 
         {/* Facetas: deporte + rango temporal */}
         {query.length >= 2 && (
@@ -229,7 +204,7 @@ export default async function BuscarPage({
                     className="flex items-center gap-3 rounded-xl px-4 py-3 no-underline hover:brightness-125"
                     style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
                   >
-                    <span className="flex-shrink-0 text-sm font-bold tabular-nums" style={{ color: '#2EE59D', fontFamily: 'var(--font-sport)', minWidth: 52 }}>
+                    <span className="flex-shrink-0 text-[16px] font-bold tabular-nums" style={{ color: 'var(--green)', fontFamily: 'var(--font-display)', minWidth: 52 }}>
                       {p.homeScore != null && p.awayScore != null ? `${p.homeScore}-${p.awayScore}` : p.time}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: '#E8E8F4' }}>
@@ -279,13 +254,13 @@ export default async function BuscarPage({
                       <div className="flex flex-col justify-center min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           {(article.sport || article.category) && (
-                            <span className="text-[9px] font-black uppercase tracking-widest flex-shrink-0"
+                            <span className="text-[11px] font-bold uppercase tracking-[0.08em] flex-shrink-0"
                               style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
                               {getSportLabel(article.sport, article.category)}
                             </span>
                           )}
                           {article.publishedAt && (
-                            <span className="text-[10px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
+                            <span className="text-[11px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                               {timeAgo(article.publishedAt)}
                             </span>
                           )}
@@ -339,6 +314,7 @@ export default async function BuscarPage({
             Escribe al menos 2 caracteres para buscar.
           </p>
         ) : null}
+        </BuscarLive>
       </div>
 
       <ScrollToTop />

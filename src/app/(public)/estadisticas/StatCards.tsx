@@ -5,7 +5,6 @@
 import React, { useContext, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { PodiumMedal } from '@/components/icons/GameIcons'
 import { StatBlockBoundary } from '@/components/StatBlockBoundary'
 import { trackStatsBlockOpen, trackStatsGroupOpen } from '@/lib/analytics'
 import type { MetricGroup, StatBlock, StatRow } from './stats-types'
@@ -50,7 +49,7 @@ export function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
   const color = trend === 'up' ? '#4ade80' : '#f87171'
   const arrow = trend === 'up' ? '▲' : '▼'
   return (
-    <span className="inline-block text-[10px] font-black w-4 text-center leading-none"
+    <span className="inline-block text-[11px] font-black w-4 text-center leading-none"
       style={{ color }}
       aria-label={trend === 'up' ? 'Tendencia al alza' : 'Tendencia a la baja'}>
       {arrow}
@@ -58,10 +57,11 @@ export function TrendArrow({ trend }: { trend?: 'up' | 'down' | 'flat' }) {
   )
 }
 
+// Puestos 1-2-3 en número con color, no con emoji de medalla (V-27).
+const COLOR_PODIO: Record<number, string> = { 1: '#F5C542', 2: '#C4C4D4', 3: '#D9925B' }
 export function MedalBadge({ rank }: { rank: number }) {
-  if (rank <= 3) return <PodiumMedal position={rank} size={18} />
   return (
-    <span className="font-black tabular-nums text-xs w-5 text-center" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+    <span className="font-black tabular-nums text-[13px] w-5 text-center" style={{ color: COLOR_PODIO[rank] ?? 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
       {rank}
     </span>
   )
@@ -81,7 +81,7 @@ export function PlaceholderBlockCard({ block, accent }: { block: StatBlock; acce
             PRÓXIMAMENTE
           </span>
         </div>
-        <span className="text-[10px] font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{block.metric}</span>
+        <span className="text-[11px] font-black" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{block.metric}</span>
       </div>
       <div className="px-5 py-8 flex flex-col items-center gap-2">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-lg"
@@ -127,7 +127,7 @@ export function BlockJsonLd({ block, rows, isLive }: { block: StatBlock; rows: S
 
 export function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: BlockMeta }) {
   // Priority: 1) live → green  2) stale → amber  3) historical → grey  4) unavailable → red  5) no info → nothing
-  const base = 'text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded'
+  const base = 'text-[11px] font-bold uppercase tracking-[0.06em] px-2 py-0.5 rounded'
   const fetchedAt = formatFetchedAt(meta?.fetchedAt)
   const sourceTitle = meta?.source ? `Fuente: ${meta.source}${fetchedAt ? ` · Actualizado ${fetchedAt}` : ''}` : ''
   if (isLive) {
@@ -135,8 +135,8 @@ export function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: Bloc
       <span className={base} title={sourceTitle || 'Datos en vivo'}
         role="status"
         aria-label={`Datos en vivo${meta?.source ? ` desde ${meta.source}` : ''}${fetchedAt ? `, actualizados ${fetchedAt}` : ''}`}
-        style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)' }}>
-        ● AL DÍA
+        style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+        {fetchedAt ? `Actualizado ${fetchedAt}` : 'Al día'}
       </span>
     )
   }
@@ -218,7 +218,7 @@ export function PlayoffSeriesCard({ block, accent, isLive, meta }: {
                 <div className="font-semibold text-[13px]" style={{ color: '#E0E0F0', fontFamily: 'var(--font-display)' }}>
                   {row.name}
                 </div>
-                <div className="text-[10px] mt-0.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                <div className="text-[11px] mt-0.5" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
                   {serieText}
                 </div>
               </div>
@@ -227,7 +227,7 @@ export function PlayoffSeriesCard({ block, accent, isLive, meta }: {
                   <div className="font-black text-sm tabular-nums" style={{ color: isActive ? accent : '#8080A0', fontFamily: 'var(--font-display)' }}>
                     {row.value}
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {row.sub}
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
         </div>
       </div>
 
-      <div className="px-5 pt-2 pb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
+      <div className="px-5 pt-2 pb-1 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
         <span className="w-8 flex-shrink-0">#</span>
         <span className="flex-1">Nombre</span>
@@ -324,12 +324,12 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                 : 'Sin datos disponibles'}
             </p>
             {meta?.fetchedAt && (
-              <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 Última comprobación: {formatFetchedAt(meta.fetchedAt)}
               </p>
             )}
             {meta?.source && (
-              <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{meta.source}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{meta.source}</p>
             )}
           </div>
         )}
@@ -391,7 +391,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                   className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ background: '#16161F', border: '1px solid rgba(255,255,255,0.12)' }}
                 >
-                  <span className="text-[10px] font-black" style={{ color: 'var(--text-muted)' }}>{rowInitials(row.name)}</span>
+                  <span className="text-[11px] font-black" style={{ color: 'var(--text-muted)' }}>{rowInitials(row.name)}</span>
                 </div>
               )
             ) : row.logo ? (
@@ -434,7 +434,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
                 {row.value}
               </div>
               {row.perMatch && (
-                <div className="text-[10px] tabular-nums" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
+                <div className="text-[11px] tabular-nums" style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
                   {row.perMatch}
                 </div>
               )}
@@ -448,7 +448,7 @@ export function StatBlockCard({ block, accent, expanded, onToggle, leagueFilter,
 
       {filteredRows.length > 5 && (
         <button onClick={onToggle}
-          className="w-full px-5 py-3 text-[10px] font-black uppercase tracking-widest transition-opacity hover:opacity-70"
+          className="w-full px-5 py-3 text-[11px] font-black uppercase tracking-widest transition-opacity hover:opacity-70"
           style={{ borderTop: '1px solid rgba(255,255,255,0.05)', color: accent, fontFamily: 'var(--font-sport)', background: 'none', cursor: 'pointer' }}>
           {expanded ? 'Ver menos ↑' : `Ver todos (${filteredRows.length}) ↓`}
         </button>
@@ -549,7 +549,7 @@ export function MetricGroupAccordion({ group, accent, expanded, onToggle, expand
               {group.label}
             </p>
             {group.description && (
-              <p className="text-[10px] mt-0.5 hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+              <p className="text-[11px] mt-0.5 hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {group.description}
               </p>
             )}
