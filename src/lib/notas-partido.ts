@@ -155,12 +155,14 @@ export interface CamposPartidoApi {
 
 export function camposPartidoApi(a: NotaConPartido & { partido?: PartidoDeNota | null }): CamposPartidoApi {
   const p = a.partido ?? null
+  // En F1, `matchKickoff` guarda el GP y el circuito en home y away: no son dos lados.
+  const conLados = !a.matchRef?.startsWith('racing_')
   const marcador = p && p.estado === 'final' && p.homeScore != null && p.awayScore != null
     ? `${p.homeScore}-${p.awayScore}`
     : null
   return {
-    matchHome: p?.home ?? a.matchHome ?? null,
-    matchAway: p?.away ?? a.matchAway ?? null,
+    matchHome: p?.home ?? (conLados ? a.matchHome : null) ?? null,
+    matchAway: p?.away ?? (conLados ? a.matchAway : null) ?? null,
     matchHomeLogo: p?.homeLogo ?? null,
     matchAwayLogo: p?.awayLogo ?? null,
     matchCompetition: p?.competicionCorta ?? p?.competicion ?? a.matchComp ?? a.category ?? null,
