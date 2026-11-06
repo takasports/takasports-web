@@ -7,7 +7,7 @@ import PlayerPhoto from '@/components/PlayerPhoto'
 import { accentForSport } from '@/lib/sports'
 import type { TeamResult } from '@/app/api/team/[slug]/route'
 import { ShareButton } from '@/components/ShareButton'
-import BreadcrumbsNav from '@/components/BreadcrumbsNav'
+import FichaLayout from '@/components/FichaLayout'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import PlayerStatsRadar, { hasRadarData } from '@/components/PlayerStatsRadar'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
@@ -262,37 +262,54 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 py-6">
-      {/* Breadcrumbs semánticos — mirror del BreadcrumbList JSON-LD */}
-      <BreadcrumbsNav
-        items={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Estadísticas', href: '/estadisticas' },
-          ...(player.team
-            ? [{ label: player.team.name, href: `/equipo/${player.team.slug ?? player.team.id}` }]
-            : []),
-          { label: player.name },
-        ]}
-        className="mb-4 text-[11px] flex items-center gap-2 flex-wrap"
-      />
+    <FichaLayout
+      miga={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Estadísticas', href: '/estadisticas' },
+        ...(player.team
+          ? [{ label: player.team.name, href: `/equipo/${player.team.slug ?? player.team.id}` }]
+          : []),
+        { label: player.name },
+      ]}
+      acciones={<ShareButton title={`${player.name} · ${player.leagueLabel}`} />}
+      lateral={(
+        <>
+          {/* Comparar */}
+          <Link
+            prefetch={false}
+            href={`/comparar?p1=${player.leagueSlug.replaceAll('/', '_')}_${player.id}`}
+            className="block rounded-2xl p-4 transition-opacity hover:opacity-90"
+            style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.25)' }}
+          >
+            <div className="text-[13px] font-bold text-white" style={{ fontFamily: 'var(--font-sport)' }}>⇄ Comparar jugador</div>
+            <div className="text-[11px] text-[#9A9AAA] mt-0.5">Mídelo contra otro crack de la liga.</div>
+          </Link>
 
-      {/* Back + Share */}
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href="/estadisticas/futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
-          style={{ fontFamily: 'var(--font-sport)' }}
-        >
-          ‹ Volver a estadísticas
-        </Link>
-        <ShareButton title={`${player.name} · ${player.leagueLabel}`} />
-      </div>
+          {/* Club recent matches */}
+          {hasRecent && (
+            <div
+              className="rounded-2xl p-4"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
+            >
+              <div
+                className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)] mb-3"
+                style={{ fontFamily: 'var(--font-sport)' }}
+              >
+                Últimos partidos · {player.team!.name}
+              </div>
+              {player.recent.map(r => (
+                <MatchRow key={r.matchRef} r={r} teamId={player.team!.id} />
+              ))}
+            </div>
+          )}
 
-      {/* 2 columnas en escritorio: principal (perfil + estadísticas) + lateral (comparar / partidos / noticias).
-          En móvil/tablet se apila (flex-col). */}
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        {/* ── Columna principal ── */}
-        <div className="flex-1 min-w-0 w-full">
+          {/* Noticias relacionadas con el jugador */}
+          <Suspense>
+            <RelatedArticlesByEntity entityName={player.name} limit={6} />
+          </Suspense>
+        </>
+      )}
+    >
           {/* Header — Vidrio Taka: panel translúcido con glow del deporte */}
           <div
             className="relative rounded-2xl p-5 mb-6 flex items-center gap-5 backdrop-blur-xl"
@@ -579,7 +596,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
                     </span>
                   ))}
                 </div>
-                <div className="text-[9px] text-[var(--text-muted)] mt-2">Premios individuales.</div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-2">Premios individuales.</div>
               </div>
             </details>
           )}
@@ -589,46 +606,7 @@ function PlayerContent({ player }: { player: PlayerDetail }) {
               Sin estadísticas disponibles para este jugador
             </div>
           )}
-        </div>
-
-        {/* ── Barra lateral ── */}
-        <aside className="w-full lg:w-72 xl:w-80 flex-shrink-0 space-y-4">
-          {/* Comparar */}
-          <Link
-            prefetch={false}
-            href={`/comparar?p1=${player.leagueSlug.replaceAll('/', '_')}_${player.id}`}
-            className="block rounded-2xl p-4 transition-opacity hover:opacity-90"
-            style={{ background: 'rgba(124,58,237,0.10)', border: '1px solid rgba(124,58,237,0.25)' }}
-          >
-            <div className="text-[13px] font-bold text-white" style={{ fontFamily: 'var(--font-sport)' }}>⇄ Comparar jugador</div>
-            <div className="text-[11px] text-[#9A9AAA] mt-0.5">Mídelo contra otro crack de la liga.</div>
-          </Link>
-
-          {/* Club recent matches */}
-          {hasRecent && (
-            <div
-              className="rounded-2xl p-4"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}
-            >
-              <div
-                className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
-                style={{ fontFamily: 'var(--font-sport)' }}
-              >
-                Últimos partidos · {player.team!.name}
-              </div>
-              {player.recent.map(r => (
-                <MatchRow key={r.matchRef} r={r} teamId={player.team!.id} />
-              ))}
-            </div>
-          )}
-
-          {/* Noticias relacionadas con el jugador */}
-          <Suspense>
-            <RelatedArticlesByEntity entityName={player.name} limit={6} />
-          </Suspense>
-        </aside>
-      </div>
-    </div>
+    </FichaLayout>
   )
 }
 

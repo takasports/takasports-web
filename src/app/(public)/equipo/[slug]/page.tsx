@@ -10,7 +10,7 @@ import { StandingsTab } from './StandingsTab'
 import { RosterTab } from './RosterTab'
 import { RosterCredits } from './RosterCredits'
 import { ShareButton } from '@/components/ShareButton'
-import BreadcrumbsNav from '@/components/BreadcrumbsNav'
+import FichaLayout from '@/components/FichaLayout'
 import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { canonicalTeamSlug } from '@/lib/team-slug'
@@ -107,7 +107,7 @@ const POS_LABEL: Record<string, string> = {
 }
 
 // ── Featured Player ────────────────────────────────────────────────────
-function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterPlayer; teamColor?: string; leagueSlug: string }) {
+function FeaturedPlayerCard({ player, teamColor, leagueSlug, teamLogo }: { player: RosterPlayer; teamColor?: string; leagueSlug: string; teamLogo?: string }) {
   const accent = teamColor ? `#${teamColor}` : '#7C3AED'
   const href = player.id ? `/jugador/${canonicalPlayerSlug(player.name, player.id)}` : undefined
   const card = (
@@ -123,9 +123,23 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
         {player.headshot ? (
           <Image src={imagenPequenaGratis(player.headshot, 72)!} alt={player.name} width={72} height={72} unoptimized
             style={{ objectFit: 'cover', borderRadius: 'var(--radius-card)' }} />
+        ) : teamLogo ? (
+          // Sin foto: el escudo del club con el dorsal encima, nunca un
+          // recuadro con «#11» (V-29).
+          <span className="relative inline-flex items-center justify-center" style={{ width: 72, height: 72 }}>
+            <Image src={imagenPequenaGratis(teamLogo, 56)!} alt="" width={48} height={48} unoptimized style={{ objectFit: 'contain', opacity: 0.9 }} />
+            {player.jersey ? (
+              <span
+                className="absolute bottom-1 right-1 inline-flex items-center justify-center rounded-md text-[11px] font-black tabular-nums"
+                style={{ minWidth: 22, height: 20, padding: '0 5px', background: accent, color: '#0A0A12', fontFamily: 'var(--font-display)' }}
+              >
+                {player.jersey}
+              </span>
+            ) : null}
+          </span>
         ) : (
           <span className="font-black text-2xl" style={{ color: accent, fontFamily: 'var(--font-display)' }}>
-            {player.jersey ? `#${player.jersey}` : player.name.charAt(0)}
+            {player.name.charAt(0)}
           </span>
         )}
       </div>
@@ -133,7 +147,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span
-            className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+            className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
             style={{ background: `${accent}33`, color: accent, fontFamily: 'var(--font-sport)' }}
           >
             Figura del equipo
@@ -299,35 +313,22 @@ function ResultsTab({ results, proximos, teamId }: { results: TeamResult[]; prox
 }
 
 // ── Main Team Content ──────────────────────────────────────────────────
-function TeamContent({ team }: { team: TeamDetail }) {
+function TeamContent({ team, lateral }: { team: TeamDetail; lateral?: React.ReactNode }) {
   const accent = team.color ? `#${team.color}` : '#7C3AED'
   const esBaloncesto = team.leagueSlug.startsWith('basketball')
   const past = team.results.filter(r => r.result || r.status === 'STATUS_IN_PROGRESS')
   const upcoming = team.results.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS')
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
-      {/* Breadcrumbs semánticos — mirror del BreadcrumbList JSON-LD */}
-      <BreadcrumbsNav
-        items={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Estadísticas', href: '/estadisticas' },
-          { label: team.leagueLabel, href: leagueHref(team.leagueSlug) },
-          { label: team.name },
-        ]}
-        className="mb-4 text-[11px] flex items-center gap-2 flex-wrap"
-      />
-
-      {/* Back + Share */}
-      <div className="flex items-center justify-between mb-6">
-        <Link
-          href="/calendario"
-          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
-          style={{ fontFamily: 'var(--font-sport)' }}
-        >
-          ‹ Volver
-        </Link>
-        <div className="flex items-center gap-3">
+    <FichaLayout
+      miga={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Estadísticas', href: '/estadisticas' },
+        { label: team.leagueLabel, href: leagueHref(team.leagueSlug) },
+        { label: team.name },
+      ]}
+      acciones={(
+        <>
           <Link
             prefetch={false}
             href={`/comparar-equipos?t1=${team.leagueSlug.replaceAll('/', '_')}_${team.id}`}
@@ -337,9 +338,10 @@ function TeamContent({ team }: { team: TeamDetail }) {
             ⇄ Comparar
           </Link>
           <ShareButton title={`${team.name} · ${team.leagueLabel}`} />
-        </div>
-      </div>
-
+        </>
+      )}
+      lateral={lateral}
+    >
       {/* Team Header */}
       <div
         className="rounded-2xl p-5 mb-6 flex items-center gap-5"
@@ -434,7 +436,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
             <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
               {s.value}
             </div>
-            <div className="text-[10px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
+            <div className="text-[11px] text-[var(--text-muted)] uppercase tracking-wide mt-0.5">{s.label}</div>
           </div>
         ))}
       </div>
@@ -447,7 +449,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
         return (
           <div className="flex items-center gap-3 mb-6">
             <span
-              className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]"
               style={{ fontFamily: 'var(--font-sport)' }}
             >
               Forma
@@ -472,7 +474,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
 
       {/* Featured player */}
       {team.featuredPlayer && (
-        <FeaturedPlayerCard player={team.featuredPlayer} teamColor={team.color} leagueSlug={team.leagueSlug} />
+        <FeaturedPlayerCard player={team.featuredPlayer} teamColor={team.color} leagueSlug={team.leagueSlug} teamLogo={team.logo} />
       )}
 
       {/* Tabs */}
@@ -487,7 +489,12 @@ function TeamContent({ team }: { team: TeamDetail }) {
         <RosterTab roster={team.roster} leagueSlug={team.leagueSlug} />
         <StandingsTab table={team.leagueTable} />
       </TeamTabs>
-    </div>
+      {/* Créditos CC de las fotos de la plantilla — última línea de la ficha a
+          propósito (no ensucia la información; ver RosterCredits para el porqué legal). */}
+      <div className="pt-8">
+        <RosterCredits roster={team.roster} />
+      </div>
+    </FichaLayout>
   )
 }
 
@@ -534,20 +541,18 @@ export default async function EquipoPage({ params }: { params: Promise<{ slug: s
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
         <Suspense>
-          <TeamContent team={team} />
+          <TeamContent
+            team={team}
+            // Noticias del equipo en la columna lateral (el mismo contenedor
+            // de dos columnas que la ficha de jugador). Distribuye autoridad
+            // del feed editorial al hub de la entidad.
+            lateral={(
+              <Suspense>
+                <RelatedArticlesByEntity entityName={team.name} limit={6} />
+              </Suspense>
+            )}
+          />
         </Suspense>
-        {/* Widget de noticias relacionadas con el equipo.
-            Distribuye autoridad del feed editorial al hub de la entidad. */}
-        <div className="max-w-2xl mx-auto px-4 pb-10">
-          <Suspense>
-            <RelatedArticlesByEntity entityName={team.name} limit={6} />
-          </Suspense>
-        </div>
-        {/* Créditos CC de las fotos de la plantilla — última línea de la página a
-            propósito (no ensucia la información; ver RosterCredits para el porqué legal). */}
-        <div className="max-w-2xl mx-auto px-4 pb-8">
-          <RosterCredits roster={team.roster} />
-        </div>
       </div>
     </>
   )

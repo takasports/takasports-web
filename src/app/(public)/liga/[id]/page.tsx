@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShareButton } from '@/components/ShareButton'
-import BreadcrumbsNav from '@/components/BreadcrumbsNav'
+import FichaLayout from '@/components/FichaLayout'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { fetchLeagueTableRows, byGroup, groupLabel } from '@/lib/espn-standings'
@@ -147,7 +147,7 @@ async function fetchDirect(def: LeagueDef): Promise<{ rows: StandRow[]; goals: P
     name: t.name,
     abbr: t.abbr,
     value: String(t.pts),
-    extra: { V: String(t.w), E: String(t.d), D: String(t.l), DG: t.gd > 0 ? `+${t.gd}` : String(t.gd) },
+    extra: { V: String(t.w), E: String(t.d), D: String(t.l), GF: String(t.gf), GC: String(t.gc), DG: t.gd > 0 ? `+${t.gd}` : String(t.gd) },
     teamId: t.teamId,
     logo: t.logo,
     group: t.group,
@@ -176,7 +176,7 @@ function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
       <div className="flex flex-col gap-4">
         {grupos.map(g => (
           <div key={g.name ?? 'unico'}>
-            <p className="text-[10px] font-black uppercase tracking-widest mb-2"
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] mb-2"
               style={{ color: def.accent, fontFamily: 'var(--font-sport)' }}>
               {groupLabel(g.name)}
             </p>
@@ -192,12 +192,17 @@ function StandingsTable({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
 function StandingsGroup({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderTop: '1px solid rgba(255,255,255,0.16)' }}>
-      <div className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest text-[#3A3A4A]"
+      <div className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', fontFamily: 'var(--font-sport)' }}>
         <span className="w-6 text-center">#</span>
         <span className="flex-1">Equipo</span>
         <span className="w-7 text-center">PJ</span>
-        <span className="hidden sm:block w-9 text-center">DG</span>
+        <span className="hidden sm:block w-7 text-center">G</span>
+        <span className="hidden sm:block w-7 text-center">E</span>
+        <span className="hidden sm:block w-7 text-center">P</span>
+        <span className="hidden sm:block w-8 text-center">GF</span>
+        <span className="hidden sm:block w-8 text-center">GC</span>
+        <span className="w-9 text-center">DG</span>
         <span className="w-8 text-center font-black text-[var(--text-muted)]">PTS</span>
       </div>
       {rows.map(r => {
@@ -211,7 +216,12 @@ function StandingsGroup({ rows, def }: { rows: StandRow[]; def: LeagueDef }) {
               <span className="text-[12px] font-semibold truncate" style={{ color: href ? '#fff' : '#9A9AAA' }}>{r.name}</span>
             </div>
             <span className="w-7 text-center text-[12px] text-[var(--text-muted)] tabular-nums">{(parseInt(r.extra?.V ?? '0') + parseInt(r.extra?.E ?? '0') + parseInt(r.extra?.D ?? '0')) || 0}</span>
-            <span className="hidden sm:block w-9 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.DG ?? '—'}</span>
+            <span className="hidden sm:block w-7 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.V ?? '—'}</span>
+            <span className="hidden sm:block w-7 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.E ?? '—'}</span>
+            <span className="hidden sm:block w-7 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.D ?? '—'}</span>
+            <span className="hidden sm:block w-8 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.GF ?? '—'}</span>
+            <span className="hidden sm:block w-8 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.GC ?? '—'}</span>
+            <span className="w-9 text-center text-[12px] tabular-nums" style={{ color: 'var(--text-muted)' }}>{r.extra?.DG ?? '—'}</span>
             <span className="w-8 text-center text-[13px] font-black tabular-nums text-white" style={{ fontFamily: 'var(--font-display)' }}>{r.value}</span>
           </div>
         )
@@ -265,12 +275,12 @@ function LeaderList({ title, players, metric, def }: { title: string; players: P
               )}
               <div className="flex-1 min-w-0">
                 <div className="text-[13px] font-semibold truncate text-white">{p.name}</div>
-                <div className="text-[10px] truncate" style={{ color: '#7A7A92' }}>{p.team} · {p.matches} PJ</div>
+                <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{p.team} · {p.matches} PJ</div>
               </div>
               <span className="w-10 text-right font-black tabular-nums" style={{ color: i < 3 ? def.accent : '#fff', fontFamily: 'var(--font-display)' }}>
                 {p.value}
               </span>
-              <span className="hidden sm:block w-12 text-right text-[10px] uppercase tracking-wide" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{metric}</span>
+              <span className="hidden sm:block w-12 text-right text-[11px] uppercase tracking-wide" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{metric}</span>
             </div>
           )
           return href
@@ -334,29 +344,41 @@ async function Content({ id }: { id: string }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(leagueJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-
-      <BreadcrumbsNav
-        className="mb-4 text-xs flex items-center gap-2 flex-wrap"
-        items={[
-          { label: 'Inicio', href: '/' },
-          { label: 'Estadísticas', href: '/estadisticas' },
-          { label: 'Fútbol', href: '/estadisticas/futbol' },
-          { label: def.label },
-        ]}
-      />
-
-      <div className="flex items-center justify-between mb-6">
-        <Link href="/estadisticas/futbol"
-          className="flex items-center gap-1.5 text-[12px] text-[var(--text-muted)] hover:text-white transition-colors"
-          style={{ fontFamily: 'var(--font-sport)' }}>
-          ‹ Volver a estadísticas
-        </Link>
-        <ShareButton title={`${def.label} · TakaSports`} />
-      </div>
-
+    <FichaLayout
+      miga={[
+        { label: 'Inicio', href: '/' },
+        { label: 'Estadísticas', href: '/estadisticas' },
+        { label: 'Fútbol', href: '/estadisticas/futbol' },
+        { label: def.label },
+      ]}
+      acciones={<ShareButton title={`${def.label} · TakaSports`} />}
+      lateral={(
+        <>
+          <LeaderList title="Goleadores" players={goals} metric="Goles" def={def} />
+          <LeaderList title="Asistencias" players={assists} metric="Asist." def={def} />
+          {/* Otras ligas: enlaza los 8 hubs entre sí. Da a las ligas Latam las
+              que les faltaban —eran indexables pero huérfanas—. */}
+          <nav aria-label="Otras ligas">
+            <div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-3"
+              style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+              Otras ligas
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.values(LEAGUES).filter(l => l.id !== def.id).map(l => (
+                <Link key={l.id} href={`/liga/${l.id}`}
+                  className="ts-chip"
+                  style={{ height: 32, fontSize: 11, textDecoration: 'none', color: 'var(--text-secondary)' }}>
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        </>
+      )}
+    >
       <div className="rounded-2xl p-5 mb-6"
         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="text-[11px] font-black uppercase tracking-widest mb-1"
@@ -367,38 +389,15 @@ async function Content({ id }: { id: string }) {
         <p className="text-[12px] text-[#9A9AAA] mt-1">Tabla, goleadores y asistentes en vivo</p>
       </div>
 
-      <section className="mb-8">
-        <div className="text-[10px] font-black uppercase tracking-widest mb-3"
+      <section>
+        <div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-3"
           style={{ color: def.accent, fontFamily: 'var(--font-sport)' }}>
           Clasificación
         </div>
         <StandingsTable rows={rows} def={def} />
       </section>
-
-      <div className="grid sm:grid-cols-2 gap-6">
-        <LeaderList title="Goleadores" players={goals} metric="Goles" def={def} />
-        <LeaderList title="Asistencias" players={assists} metric="Asist." def={def} />
-      </div>
-
-      {/* Otras ligas: enlaza los 8 hubs entre sí. Da a las ligas Latam (bra/mex/arg)
-          los enlaces internos que les faltaban —eran indexables pero huérfanas— y
-          mejora la navegación entre competiciones para todas. */}
-      <nav className="mt-10" aria-label="Otras ligas">
-        <div className="text-[10px] font-black uppercase tracking-widest mb-3"
-          style={{ color: '#7A7A92', fontFamily: 'var(--font-sport)' }}>
-          Otras ligas
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {Object.values(LEAGUES).filter(l => l.id !== def.id).map(l => (
-            <Link key={l.id} href={`/liga/${l.id}`}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-colors hover:bg-white/[0.08]"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#C0C0D4' }}>
-              {l.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
-    </div>
+    </FichaLayout>
+    </>
   )
 }
 
