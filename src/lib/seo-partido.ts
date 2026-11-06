@@ -241,7 +241,6 @@ export function sportsEventJsonLd(d: DatosSeoPartido, canonical: string, descrip
         ? { competitor: [{ '@type': 'Person', name: d.home }, { '@type': 'Person', name: d.away }] }
         : { homeTeam: equipo(d.home), awayTeam: equipo(d.away), competitor: [equipo(d.home), equipo(d.away)] }),
     ...(f?.estadio ? { location: { '@type': 'Place', name: f.estadio, address: f.ciudad ?? f.estadio } } : {}),
-    ...(d.competicion ? { superEvent: { '@type': 'SportsEvent', name: d.competicion } } : {}),
     url: canonical,
   }
 }

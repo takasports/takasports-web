@@ -71,6 +71,7 @@ function tituloPartido(match: NonNullable<Awaited<ReturnType<typeof fetchMatchDe
     const [a, b] = match.mma.fighters
     return `${a?.name ?? '?'} vs ${b?.name ?? '?'} · UFC`
   }
+  if (match.racing?.raceName) return `${match.racing.raceName} · ${match.leagueLabel}`
   return match.leagueLabel
 }
 

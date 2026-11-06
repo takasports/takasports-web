@@ -14,6 +14,7 @@ import { adminSupabase } from './supabase-admin'
 import { fetchEspnEvents } from './espn'
 import { parseMatchRef } from './match-ref'
 import { sendPushToUser } from './push-helper'
+import { sendExpoPush } from './expo-push'
 import {
   cruzarPartidos, equiposPorUsuario, horaDecente, leerEstadoSummary, planAvisoHoy,
   textoAvisoFinal, tocaMirarResultado, zonaValida, SIN_MADRUGADA_FINAL,
@@ -23,6 +24,9 @@ import {
 /** Tope de consultas `summary` a ESPN por pasada (son gratis, pero no infinitas). */
 const MAX_SUMMARIES = 25
 const LOG_PURGA_DIAS = 30
+
+const PREFIJO_TOKEN = 'tok:'
+const etiquetaDestino = (clave: string) => (clave.startsWith(PREFIJO_TOKEN) ? 'invitado' : clave.slice(0, 8))
 
 export interface AvisoPropuesto {
   /** Primeros 8 caracteres del id: suficiente para depurar, sin volcar ids enteros. */
@@ -92,28 +96,48 @@ export async function calcularAvisosEquipo(opts: {
     .like('entry_id', 'team:%')
   if (favErr) return { ...informe, aviso: `favoritos: ${favErr.message}` }
   const porUsuario = equiposPorUsuario(favs ?? [])
+  const userIds = [...porUsuario.keys()]
+
+  // Móviles sin cuenta: guardan sus equipos junto al token. Entran en el mismo cálculo
+  // con la clave `tok:<token>`, que nunca sale al informe.
+  const { data: invitados } = await admin
+    .from('push_tokens')
+    .select('token, teams, timezone')
+    .is('user_id', null)
+    .not('teams', 'eq', '{}')
+  for (const m of invitados ?? []) porUsuario.set(`${PREFIJO_TOKEN}${m.token}`, m.teams as string[])
+  const tokensInvitados = (invitados ?? []).map((m) => m.token as string)
+
   informe.usuariosConEquipo = porUsuario.size
   if (porUsuario.size === 0) return informe
-  const userIds = [...porUsuario.keys()]
 
   // 2) Zona horaria, destinos de push y lo ya avisado.
   const desdeLog = new Date(ahora.getTime() - 3 * 86_400_000).toISOString()
-  const [perfiles, subs, tokens, log] = await Promise.all([
+  const [perfiles, subs, tokens, log, logTokens] = await Promise.all([
     admin.from('profiles').select('id, timezone').in('id', userIds),
     admin.from('push_subscriptions').select('user_id').in('user_id', userIds),
     admin.from('push_tokens').select('user_id').in('user_id', userIds),
     admin.from('avisos_equipo_log').select('user_id, kind, ref').in('user_id', userIds).gte('sent_at', desdeLog),
+    admin.from('avisos_equipo_token_log').select('token, kind, ref').in('token', tokensInvitados).gte('sent_at', desdeLog),
   ])
   const tzDe = new Map((perfiles.data ?? []).map((p) => [p.id as string, zonaValida(p.timezone as string | null)]))
   const conPush = new Set([...(subs.data ?? []), ...(tokens.data ?? [])].map((r) => r.user_id as string))
-  informe.usuariosConPush = userIds.filter((u) => conPush.has(u)).length
+  for (const m of invitados ?? []) {
+    const clave = `${PREFIJO_TOKEN}${m.token}`
+    conPush.add(clave)
+    tzDe.set(clave, zonaValida(m.timezone as string | null))
+  }
+  informe.usuariosConPush = [...porUsuario.keys()].filter((u) => conPush.has(u)).length
   if (log.error) {
     // Sin la tabla (migración 136 sin aplicar) no hay idempotencia: se puede
     // calcular la vista previa, pero NUNCA enviar.
     if (opts.enviar) return { ...informe, aviso: `registro no disponible: ${log.error.message}` }
     informe.aviso = 'registro avisos_equipo_log no disponible (¿migración 136 sin aplicar?)'
   }
-  const yaAvisado = new Set((log.data ?? []).map((r) => `${r.user_id}|${r.kind}|${r.ref}`))
+  const yaAvisado = new Set([
+    ...(log.data ?? []).map((r) => `${r.user_id}|${r.kind}|${r.ref}`),
+    ...(logTokens.data ?? []).map((r) => `${PREFIJO_TOKEN}${r.token}|${r.kind}|${r.ref}`),
+  ])
 
   // 3) Partidos: de hace 7 h a dentro de 30 h, solo de equipos.
   const todos = opts.partidos ?? (await fetchEspnEvents().catch(() => [])) as PartidoAviso[]
@@ -134,7 +158,7 @@ export async function calcularAvisosEquipo(opts: {
     if (!plan.ok) { descarta(`hoy:${plan.motivo}`); continue }
     if (yaAvisado.has(`${userId}|equipo_hoy|${plan.ref}`)) { descarta('hoy:ya_avisado'); continue }
     propuestos.push({
-      userId, usuario: userId.slice(0, 8), tipo: 'equipo_hoy', ref: plan.ref, tz,
+      userId, usuario: etiquetaDestino(userId), tipo: 'equipo_hoy', ref: plan.ref, tz,
       tienePush: conPush.has(userId), equipo: plan.cruce.equipo,
       partido: `${plan.cruce.partido.home} vs ${plan.cruce.partido.away}`,
       saque: plan.cruce.partido.isoDate, texto: plan.texto,
@@ -165,7 +189,7 @@ export async function calcularAvisosEquipo(opts: {
     const texto = textoAvisoFinal(cruce, estado)
     if (!texto) { descarta('final:sin_marcador'); continue }
     propuestos.push({
-      userId, usuario: userId.slice(0, 8), tipo: 'equipo_final', ref: cruce.partido.id, tz,
+      userId, usuario: etiquetaDestino(userId), tipo: 'equipo_final', ref: cruce.partido.id, tz,
       tienePush: conPush.has(userId), equipo: cruce.equipo,
       partido: `${cruce.partido.home} vs ${cruce.partido.away}`, saque: cruce.partido.isoDate, texto,
     })
@@ -184,6 +208,21 @@ export async function calcularAvisosEquipo(opts: {
       informe.avisos.push({ ...publico, resultado: { reclamado: false, motivo: 'sin_push' } })
       continue
     }
+    if (userId.startsWith(PREFIJO_TOKEN)) {
+      const token = userId.slice(PREFIJO_TOKEN.length)
+      const { data: reclamado, error } = await admin
+        .from('avisos_equipo_token_log')
+        .upsert({ token, kind: p.tipo, ref: p.ref }, { onConflict: 'token,kind,ref', ignoreDuplicates: true })
+        .select('token')
+      if (error || !reclamado || reclamado.length === 0) {
+        informe.avisos.push({ ...publico, resultado: { reclamado: false, motivo: error ? 'error_registro' : 'ya_avisado' } })
+        continue
+      }
+      const r = await sendExpoPush([token], { title: p.texto.title, body: p.texto.body, data: { url: p.texto.url } })
+      if (r.dead.length > 0) await admin.from('push_tokens').delete().in('token', r.dead)
+      informe.avisos.push({ ...publico, resultado: { reclamado: true, web: 0, app: r.sent, motivo: r.reason } })
+      continue
+    }
     const { data: reclamado, error } = await admin
       .from('avisos_equipo_log')
       .upsert({ user_id: userId, kind: p.tipo, ref: p.ref }, { onConflict: 'user_id,kind,ref', ignoreDuplicates: true })
@@ -199,10 +238,9 @@ export async function calcularAvisosEquipo(opts: {
 }
 
 async function purgarRegistro(admin: Admin, ahora: Date): Promise<void> {
+  const limite = new Date(ahora.getTime() - LOG_PURGA_DIAS * 86_400_000).toISOString()
   try {
-    await admin
-      .from('avisos_equipo_log')
-      .delete()
-      .lt('sent_at', new Date(ahora.getTime() - LOG_PURGA_DIAS * 86_400_000).toISOString())
+    await admin.from('avisos_equipo_log').delete().lt('sent_at', limite)
+    await admin.from('avisos_equipo_token_log').delete().lt('sent_at', limite)
   } catch { /* swallow */ }
 }

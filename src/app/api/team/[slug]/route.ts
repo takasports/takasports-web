@@ -82,6 +82,8 @@ export interface TeamDetail {
   standingSummary?: string
   record?: { summary: string; gp: number; w: number; d: number; l: number; pts: number }
   results: TeamResult[]
+  /** Próximos partidos, el más cercano primero. Opcional: la caché puede traer la forma anterior. */
+  upcoming?: TeamResult[]
   roster: RosterPlayer[]
   leagueTable: TeamTableRow[]
   featuredPlayer?: RosterPlayer
@@ -409,11 +411,20 @@ export async function GET(
   const leagueLabel = COMP_LABELS[leagueSlug] ?? leagueSlug
 
   try {
-    const [teamJson, scheduleJson, rosterJson, tableRows] = await Promise.all([
+    // El calendario normal de ESPN solo trae lo jugado y solo de esa liga: el Real Madrid
+    // jugaba al día siguiente y su ficha no lo decía. `fixture=true` da lo que viene.
+    const champions = 'soccer/uefa.champions'
+    const conEuropa = sport === 'soccer' && leagueSlug !== champions
+    const urlCalendario = (slug: string, fixture: boolean) =>
+      `https://site.api.espn.com/apis/site/v2/sports/${slug}/teams/${teamId}/schedule${fixture ? '?fixture=true' : ''}`
+    const [teamJson, scheduleJson, rosterJson, tableRows, fixtureJson, europaJson, europaFixtureJson] = await Promise.all([
       espnFetch(`https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/teams/${teamId}`, 3600),
-      espnFetch(`https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/teams/${teamId}/schedule`, 300),
+      espnFetch(urlCalendario(leagueSlug, false), 300),
       espnFetch(`https://site.api.espn.com/apis/site/v2/sports/${leagueSlug}/teams/${teamId}/roster`, 3600),
       fetchTeamTable(leagueSlug, teamId),
+      sport === 'soccer' ? espnFetch(urlCalendario(leagueSlug, true), 900) : Promise.resolve(null),
+      conEuropa ? espnFetch(urlCalendario(champions, false), 900) : Promise.resolve(null),
+      conEuropa ? espnFetch(urlCalendario(champions, true), 900) : Promise.resolve(null),
     ])
 
     if (!teamJson) return NextResponse.json(null, { status: 404 })
@@ -442,8 +453,26 @@ export async function GET(
     const events = asArr(scheduleJson?.events)
     // Del más nuevo al más viejo en todos los deportes: ESPN da el fútbol así y
     // la NBA al revés, y la web y la app pintan la lista tal cual llega.
-    const results = buildResults(events, teamId, leagueSlug, leagueLabel)
+    const eventosDe = (json: unknown) => asArr(asObj(json)?.events)
+    const etiquetaEuropa = COMP_LABELS[champions] ?? 'Champions League'
+    const todos = [
+      ...buildResults(events, teamId, leagueSlug, leagueLabel),
+      ...buildResults(eventosDe(europaJson), teamId, champions, etiquetaEuropa),
+    ]
+    const results = todos
+      .filter(r => r.result || r.status === 'STATUS_IN_PROGRESS')
       .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    // Aparte de `results`: la app instalada pinta esa lista tal cual y abriría con el
+    // partido más lejano.
+    const ahora = Date.now()
+    const upcoming = [
+      ...todos.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS'),
+      ...buildResults(eventosDe(fixtureJson), teamId, leagueSlug, leagueLabel),
+      ...buildResults(eventosDe(europaFixtureJson), teamId, champions, etiquetaEuropa),
+    ]
+      .filter((r, i, l) => Date.parse(r.date) > ahora && l.findIndex(x => x.matchRef === r.matchRef) === i)
+      .sort((a, b) => Date.parse(a.date) - Date.parse(b.date))
+      .slice(0, 5)
 
     // Roster
     const athletes = asArr(rosterJson?.athletes)
@@ -476,6 +505,7 @@ export async function GET(
       standingSummary: asString(team.standingSummary) ? translateStanding(asString(team.standingSummary)!) : undefined,
       record,
       results,
+      upcoming,
       roster,
       leagueTable:     tableRows,
       featuredPlayer:  featured,

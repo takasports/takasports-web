@@ -165,6 +165,12 @@ async function datosSeoPartido(
   }
 }
 
+/** Alto a 900 de ancho según el id de Sanity (`image-…-3276x4096-jpg`). */
+function altoReal(ref: string | undefined): number {
+  const m = ref?.match(/-(\d+)x(\d+)-/)
+  return m ? Math.round(900 * Number(m[2]) / Number(m[1])) : 540
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -842,8 +848,10 @@ export default async function NoticiaPage({
                               <Image
                                 src={src}
                                 alt={value?.alt ?? ''}
+                                // Con la proporción real se reserva el hueco justo:
+                                // 900×540 fijo hacía saltar las fotos verticales.
                                 width={900}
-                                height={540}
+                                height={altoReal(value?.asset?._ref)}
                                 className="w-full h-auto object-cover"
                               />
                             </div>

@@ -13,6 +13,7 @@
 import webpush from 'web-push'
 import { adminSupabase } from './supabase-admin'
 import { initVapid } from './push-helper'
+import { sendExpoPush } from './expo-push'
 import { loadDay } from './calendar-day-data'
 import { getBroadcastForTz } from './broadcasts'
 import { getEventHighlightScore } from './competitions'
@@ -29,6 +30,12 @@ interface Suscripcion {
   agenda_sent_for: string | null
 }
 
+interface Movil {
+  token: string
+  timezone: string | null
+  agenda_sent_for: string | null
+}
+
 export interface InformeAgenda {
   enviado: boolean
   ahora: string
@@ -36,6 +43,7 @@ export interface InformeAgenda {
   lesToca: number
   avisos: Array<{ zona: string; dia: string; texto: AvisoAgenda | null; envios: number }>
   web: { sent: number; pruned: number; failed: number }
+  app: { sent: number; pruned: number; failed: number }
   aviso?: string
 }
 
@@ -52,6 +60,7 @@ export async function enviarAgendaNoche(opts: {
   const informe: InformeAgenda = {
     enviado: opts.enviar, ahora: ahora.toISOString(), suscritos: 0, lesToca: 0, avisos: [],
     web: { sent: 0, pruned: 0, failed: 0 },
+    app: { sent: 0, pruned: 0, failed: 0 },
   }
   const admin = adminSupabase()
   if (!admin) return { ...informe, aviso: 'sin supabase' }
@@ -63,24 +72,31 @@ export async function enviarAgendaNoche(opts: {
     .contains('topics', [AGENDA_TOPIC])
   if (error) return { ...informe, aviso: `consulta: ${error.message}` }
   const subs = (data ?? []) as Suscripcion[]
-  informe.suscritos = subs.length
+  const { data: datosMoviles } = await admin
+    .from('push_tokens')
+    .select('token, timezone, agenda_sent_for')
+    .contains('topics', [AGENDA_TOPIC])
+  const moviles = (datosMoviles ?? []) as Movil[]
+  informe.suscritos = subs.length + moviles.length
 
   // Agrupados por zona y día: el texto es el mismo para todos los de la misma
   // zona, y así cada día del calendario se carga una sola vez por pasada.
-  const grupos = new Map<string, { zona: string; dia: string; subs: Suscripcion[] }>()
-  for (const s of subs) {
-    const dia = diaQueToca(ahora, s.timezone, s.agenda_sent_for)
-    if (!dia) continue
-    const zona = zonaValida(s.timezone)
+  const grupos = new Map<string, { zona: string; dia: string; subs: Suscripcion[]; moviles: Movil[] }>()
+  const grupoDe = (timezone: string | null, sentFor: string | null) => {
+    const dia = diaQueToca(ahora, timezone, sentFor)
+    if (!dia) return null
+    const zona = zonaValida(timezone)
     const k = `${zona}|${dia}`
-    if (!grupos.has(k)) grupos.set(k, { zona, dia, subs: [] })
-    grupos.get(k)!.subs.push(s)
+    if (!grupos.has(k)) grupos.set(k, { zona, dia, subs: [], moviles: [] })
     informe.lesToca += 1
+    return grupos.get(k)!
   }
+  for (const s of subs) grupoDe(s.timezone, s.agenda_sent_for)?.subs.push(s)
+  for (const m of moviles) grupoDe(m.timezone, m.agenda_sent_for)?.moviles.push(m)
   if (opts.zonaPrevia && !opts.enviar) {
     const zona = zonaValida(opts.zonaPrevia)
     const dia = addDays(partesEnZona(ahora, zona).dia, 1)
-    if (!grupos.has(`${zona}|${dia}`)) grupos.set(`${zona}|${dia}`, { zona, dia, subs: [] })
+    if (!grupos.has(`${zona}|${dia}`)) grupos.set(`${zona}|${dia}`, { zona, dia, subs: [], moviles: [] })
   }
   if (grupos.size === 0) return informe
 
@@ -91,7 +107,8 @@ export async function enviarAgendaNoche(opts: {
   }
 
   const muertos: string[] = []
-  for (const { zona, dia, subs: delGrupo } of grupos.values()) {
+  const muertosApp: string[] = []
+  for (const { zona, dia, subs: delGrupo, moviles: movilesDelGrupo } of grupos.values()) {
     const events = (await Promise.all(diasFuente(dia, zona).map(cargar))).flat()
     const texto = construirAviso(events, dia, zona, score, (e) => getBroadcastForTz(e.comp ?? '', e.sport ?? '', zona) ?? e.broadcast)
     const fila = { zona, dia, texto, envios: 0 }
@@ -121,10 +138,26 @@ export async function enviarAgendaNoche(opts: {
     if (avisados.length > 0) {
       await admin.from('push_subscriptions').update({ agenda_sent_for: dia }).in('endpoint', avisados)
     }
+
+    if (movilesDelGrupo.length > 0) {
+      const tokens = movilesDelGrupo.map(m => m.token)
+      if (texto) {
+        const r = await sendExpoPush(tokens, { title: texto.title, body: texto.body, data: { url: texto.url } })
+        informe.app.sent += r.sent
+        informe.app.failed += r.failed
+        fila.envios += r.sent
+        muertosApp.push(...r.dead)
+      }
+      await admin.from('push_tokens').update({ agenda_sent_for: dia }).in('token', tokens)
+    }
   }
   if (muertos.length > 0) {
     informe.web.pruned = muertos.length
     try { await admin.from('push_subscriptions').delete().in('endpoint', muertos) } catch { /* swallow */ }
+  }
+  if (muertosApp.length > 0) {
+    informe.app.pruned = muertosApp.length
+    try { await admin.from('push_tokens').delete().in('token', muertosApp) } catch { /* swallow */ }
   }
   return informe
 }

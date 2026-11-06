@@ -7,6 +7,7 @@ import { getSportStyle, getSportLabel } from '@/lib/sports'
 import ScrollToTop from '@/components/ScrollToTop'
 import SearchTracker from './SearchTracker'
 import { SITE_URL, REPORTAJE_GROQ_FILTER } from '@/lib/constants'
+import type { MatchHit } from '@/app/api/search/matches/route'
 
 // Búsqueda cachea 60s por query: la mayoría de hits son del mismo término
 // (Google indexa, usuarios repiten). 60s da freshness razonable y evita
@@ -103,6 +104,13 @@ export default async function BuscarPage({
     const cutoff = RANGE_FACETS.find(r => r.key === rangeFilter)!.ms
     queryParams.fromDate = new Date(Date.now() - cutoff).toISOString()
   }
+
+  const partidos: MatchHit[] = query.length >= 2
+    ? await fetch(`${SITE_URL}/api/search/matches?q=${encodeURIComponent(query)}`, { next: { revalidate: 300 } })
+        .then(r => (r.ok ? r.json() : null))
+        .then(d => ((d?.matches ?? []) as MatchHit[]).slice(0, 5))
+        .catch(() => [])
+    : []
 
   const results: SearchArticle[] = query.length >= 2
     ? await sanityClient
@@ -205,6 +213,33 @@ export default async function BuscarPage({
                 />
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Partidos: lo más buscado en Taka. La API ya existía y solo la usaba la app. */}
+        {partidos.length > 0 && (
+          <div className="mb-8">
+            <h2 className="section-label mb-3">Partidos</h2>
+            <ul className="flex flex-col gap-2">
+              {partidos.map(p => (
+                <li key={p.id}>
+                  <Link
+                    href={p.matchRef ? `/partido/${p.matchRef}` : '/calendario'}
+                    prefetch={false}
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 no-underline hover:brightness-125"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                  >
+                    <span className="flex-shrink-0 text-sm font-bold tabular-nums" style={{ color: '#2EE59D', fontFamily: 'var(--font-sport)', minWidth: 52 }}>
+                      {p.homeScore != null && p.awayScore != null ? `${p.homeScore}-${p.awayScore}` : p.time}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm font-semibold" style={{ color: '#E8E8F4' }}>
+                      {p.away ? `${p.home} - ${p.away}` : p.home}
+                    </span>
+                    <span className="flex-shrink-0 text-xs" style={{ color: 'var(--text-muted)' }}>{p.comp}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

@@ -27,6 +27,8 @@ import {
 } from '@/lib/calendar-day-page'
 import { dayChannel, dayStars, loadDay, todayIso } from '@/lib/calendar-day-data'
 import { compConfigForGroup } from '@/lib/calendar-competitions'
+import { HoraLocal, ZonaDelDia } from '@/components/HoraLocal'
+import BreadcrumbJsonLd from '@/components/BreadcrumbJsonLd'
 
 export const revalidate = 300
 
@@ -158,6 +160,11 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
           <span>{shortDayLabel(fecha)}</span>
         </nav>
 
+        <BreadcrumbJsonLd items={[
+          { name: 'TakaSports', path: '' },
+          { name: 'Calendario', path: '/calendario' },
+          { name: shortDayLabel(fecha), path: `/calendario/dia/${fecha}` },
+        ]} />
         <header className="mb-6">
           {/* Compartir el día: el enlace se abre con su tarjeta (opengraph-image)
               y el texto lleva la FECHA, no «hoy», para que no caduque en el chat.
@@ -175,7 +182,7 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
             </div>
           </div>
           <p className="text-sm first-letter:uppercase" style={{ color: 'var(--text-muted)' }}>
-            {longDayLabel(fecha)} · {events.length} {events.length === 1 ? 'partido' : 'partidos'}
+            {longDayLabel(fecha)} · {events.length} {events.length === 1 ? 'partido' : 'partidos'} · <ZonaDelDia />
           </p>
         </header>
 
@@ -269,7 +276,9 @@ export default async function DiaPage({ params }: { params: Promise<{ fecha: str
                           className="flex-shrink-0 text-sm font-bold tabular-nums"
                           style={{ color: e.accent ?? '#A78BFA', fontFamily: 'var(--font-sport)', minWidth: 58 }}
                         >
-                          {timeLabel(e)}
+                          {e.homeScore != null && e.awayScore != null
+                            ? timeLabel(e)
+                            : <HoraLocal iso={e.timeTbd ? undefined : e.isoDate} hora={timeLabel(e)} />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold" style={{ color: '#E8E8F4' }}>

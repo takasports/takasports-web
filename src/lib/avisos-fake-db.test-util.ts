@@ -55,6 +55,7 @@ export function crearFakeDb(tablas: Record<string, Fila[]>, unicas: Record<strin
       lt: (c: string, v: string) => { filtros.push((f) => String(f[c]) < v); return b },
       contains: (c: string, v: unknown[]) => { filtros.push((f) => Array.isArray(f[c]) && v.every((x) => (f[c] as unknown[]).includes(x))); return b },
       not: () => b,
+      is: (c: string, v: unknown) => { filtros.push((f) => (f[c] ?? null) === v); return b },
       order: () => b,
       limit: () => b,
       maybeSingle: () => { uno = true; return b },

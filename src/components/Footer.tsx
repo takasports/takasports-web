@@ -38,6 +38,7 @@ const PLATFORM_LINKS = [
   { label: 'Juegos',       href: '/juegos' },
   { label: 'Predicciones', href: '/predicciones' },
   { label: 'Archivo',      href: '/archivo' },
+  { label: 'App para iPhone', href: 'https://apps.apple.com/es/app/id6787799706' },
 ]
 const LEGAL_LINKS = [
   { label: 'Sobre TakaSports',  href: '/sobre' },

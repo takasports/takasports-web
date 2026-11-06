@@ -99,7 +99,7 @@ export function trackStatsGroupOpen(params: {
 // Sin esto no se sabe si una oferta falla o si simplemente nadie llega a verla: el
 // aviso de cada noche llevaba 8 días con 0 apuntados y solo se podía estimar.
 export function trackOferta(params: {
-  oferta: 'agenda_noche' | 'newsletter'
+  oferta: 'agenda_noche' | 'newsletter' | 'salida_glosario'
   accion: 'visto' | 'pulsado'
   origen?: string
 }) {

@@ -14,6 +14,8 @@ vi.mock('./push-topic', () => ({
   audienciaDeTema: async () => ({ web: 3, app: 1 }),
 }))
 vi.mock('./espn', () => ({ fetchEspnEvents: async () => [] }))
+const sendExpoPush = vi.fn(async (_t: readonly string[], _m: unknown) => ({ sent: 1, dead: [] as string[], failed: 0 }))
+vi.mock('./expo-push', () => ({ sendExpoPush: (t: readonly string[], m: unknown) => sendExpoPush(t, m) }))
 
 import { calcularAvisosEquipo } from './avisos-equipo-run'
 import { avisarNoticiaPublicada } from './avisos-noticias-run'
@@ -46,6 +48,20 @@ beforeEach(() => {
 })
 
 describe('calcularAvisosEquipo', () => {
+  it('móvil sin cuenta: avisa por su token, una sola vez y sin enseñar el token', async () => {
+    sendExpoPush.mockClear()
+    db = crearFakeDb({
+      user_favorites: [], profiles: [], push_subscriptions: [], avisos_equipo_log: [], avisos_equipo_token_log: [],
+      push_tokens: [{ token: 'ExponentPushToken[abc]', user_id: null, teams: ['Atlético Madrid'], timezone: 'Europe/Madrid' }],
+    }, { avisos_equipo_token_log: [['token', 'kind', 'ref']] })
+    const r = await calcularAvisosEquipo({ enviar: true, ahora: AHORA_HOY, partidos: [partido] })
+    expect(sendExpoPush).toHaveBeenCalledTimes(1)
+    expect(sendExpoPush.mock.calls[0][0]).toEqual(['ExponentPushToken[abc]'])
+    expect(JSON.stringify(r)).not.toContain('ExponentPushToken')
+    await calcularAvisosEquipo({ enviar: true, ahora: new Date('2026-10-03T17:15:00Z'), partidos: [partido] })
+    expect(sendExpoPush).toHaveBeenCalledTimes(1)
+  })
+
   it('apagado: propone, no envía ni escribe', async () => {
     db = dbEquipo()
     const r = await calcularAvisosEquipo({ enviar: false, ahora: AHORA_HOY, partidos: [partido] })

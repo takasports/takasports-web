@@ -150,11 +150,11 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug }: { player: RosterP
 
       {/* Stats */}
       <div className="flex gap-4 flex-shrink-0">
-        {[
+        {(leagueSlug.startsWith('basketball') ? [] : [
           { label: 'Goles', value: player.goals },
           { label: 'Asist.', value: player.assists },
           { label: 'PJ', value: player.gamesPlayed },
-        ].map(s => (
+        ]).map(s => (
           <div key={s.label} className="text-center">
             <div className="text-xl font-black text-white" style={{ fontFamily: 'var(--font-display)' }}>
               {s.value}
@@ -258,13 +258,26 @@ function porFechaDesc(results: TeamResult[]): TeamResult[] {
   return [...results].sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
 }
 
-function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string }) {
+function ResultsTab({ results, proximos, teamId }: { results: TeamResult[]; proximos: TeamResult[]; teamId: string }) {
   // Split past + upcoming
   const past = porFechaDesc(results.filter(r => r.result || r.status === 'STATUS_IN_PROGRESS'))
-  const upcoming = porFechaDesc(results.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS')).reverse()
+  const upcoming = proximos
 
   return (
     <div>
+      {upcoming.length > 0 && (
+        <div className="mb-6">
+          <div
+            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
+            style={{ fontFamily: 'var(--font-sport)' }}
+          >
+            Próximos partidos
+          </div>
+          {upcoming.slice(0, 8).map(r => (
+            <ResultRow key={r.matchRef} r={r} teamId={teamId} />
+          ))}
+        </div>
+      )}
       {past.length > 0 && (
         <div className="mb-6">
           <div
@@ -274,19 +287,6 @@ function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string
             Últimos resultados
           </div>
           {past.slice(0, 15).map(r => (
-            <ResultRow key={r.matchRef} r={r} teamId={teamId} />
-          ))}
-        </div>
-      )}
-      {upcoming.length > 0 && (
-        <div>
-          <div
-            className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3"
-            style={{ fontFamily: 'var(--font-sport)' }}
-          >
-            Próximos partidos
-          </div>
-          {upcoming.slice(0, 8).map(r => (
             <ResultRow key={r.matchRef} r={r} teamId={teamId} />
           ))}
         </div>
@@ -301,6 +301,7 @@ function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string
 // ── Main Team Content ──────────────────────────────────────────────────
 function TeamContent({ team }: { team: TeamDetail }) {
   const accent = team.color ? `#${team.color}` : '#7C3AED'
+  const esBaloncesto = team.leagueSlug.startsWith('basketball')
   const past = team.results.filter(r => r.result || r.status === 'STATUS_IN_PROGRESS')
   const upcoming = team.results.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS')
 
@@ -381,14 +382,14 @@ function TeamContent({ team }: { team: TeamDetail }) {
             >
               {team.record.summary}
             </div>
-            <div
+            {!esBaloncesto && <div
               className="text-[13px] font-black px-3 py-1 rounded-full"
               // El texto en blanco y el color del club solo en el fondo: con
               // acentos oscuros (el granate del Barça) los puntos no se leían.
               style={{ background: `${accent}22`, color: '#F4F4FA', fontFamily: 'var(--font-display)' }}
             >
               {team.record.pts} pts
-            </div>
+            </div>}
           </div>
         )}
       </div>
@@ -407,6 +408,13 @@ function TeamContent({ team }: { team: TeamDetail }) {
             { label: 'Victorias', value: w },
             { label: '% Victorias', value: winPct },
           ]
+          // En la NBA no hay puntos de clasificación ni goles: la plantilla de fútbol
+          // daba «-2 pts» y «-0,33 pts/partido».
+          if (esBaloncesto) {
+            cells.push({ label: 'Derrotas', value: team.record?.l ?? mainRow?.l ?? '—' })
+            if (mainRow) cells.push({ label: 'Posición', value: `${mainRow.rank}º` })
+            return cells
+          }
           if (mainRow) {
             cells.push(
               { label: 'GF', value: mainRow.gf },
@@ -475,7 +483,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
           { id: 'clasificacion', label: 'Clasificación' },
         ]}
       >
-        <ResultsTab results={team.results} teamId={team.id} />
+        <ResultsTab results={team.results} proximos={team.upcoming ?? []} teamId={team.id} />
         <RosterTab roster={team.roster} leagueSlug={team.leagueSlug} />
         <StandingsTab table={team.leagueTable} />
       </TeamTabs>

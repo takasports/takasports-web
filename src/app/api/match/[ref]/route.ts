@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { parseMatchRef } from '@/lib/match-ref'
+import { SOURCE_TZ } from '@/lib/timezone'
 import { sanityClient, previaByMatchRefQuery, cronicaByMatchRefQuery } from '@/lib/sanity'
 import { buildPlayerIndex, lookupPlayerId } from '@/lib/match-player-index'
 import type { StandingZone } from '@/lib/league-zones'
@@ -204,6 +205,7 @@ export interface MatchDetail {
     fights?: MmaFight[]      // cartelera completa (todos los combates, estelar primero)
   }
   racing?: {
+    raceName?: string
     circuit?: string
     circuitLocation?: string   // ciudad, país del circuito
     session?: string           // sesión mostrada (Carrera, Clasificación, Sprint…)
@@ -735,10 +737,45 @@ function mapMmaFight(fight: Record<string, unknown>, isMain: boolean): MmaFight 
   return { fighters, weightClass, rounds, endRound, endTime, note, statusLabel, isMain }
 }
 
+/** «Dom 8 nov · 18:00», hora de España. ESPN da «11/8 - 12:00 PM EST». */
+function fechaEs(iso: string | undefined): string | undefined {
+  const t = iso ? new Date(iso) : null
+  if (!t || Number.isNaN(t.getTime())) return undefined
+  const dia = new Intl.DateTimeFormat('es-ES', { timeZone: SOURCE_TZ, weekday: 'short', day: 'numeric', month: 'short' }).format(t).replace(/\./g, '').replace(',', '')
+  const hora = new Intl.DateTimeFormat('es-ES', { timeZone: SOURCE_TZ, hour: '2-digit', minute: '2-digit' }).format(t)
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} · ${hora}`
+}
+
+// El scoreboard de ESPN IGNORA ?event= y devuelve la jornada vigente. Las demás se
+// encuentran en el calendario del año (`?dates=2026`); en ese listado los resultados
+// pueden venir vacíos, así que se vuelve a pedir el día concreto.
+async function eventoDeTemporada(
+  base: string,
+  coincide: (e: Record<string, unknown>) => boolean,
+  fechaDe: (e: Record<string, unknown>) => string | undefined,
+): Promise<Record<string, unknown> | null> {
+  const lista = async (url: string) => asArr((await espnJson(url))?.events) as Record<string, unknown>[]
+  const vigente = (await lista(base)).find(coincide)
+  if (vigente) return vigente
+  const anio = new Date().getUTCFullYear()
+  for (const a of [anio, anio - 1]) {
+    const ev = (await lista(`${base}?dates=${a}`)).find(coincide)
+    if (!ev) continue
+    const dia = fechaDe(ev)?.slice(0, 10).replaceAll('-', '')
+    const exacto = dia ? (await lista(`${base}?dates=${dia}`)).find(coincide) : null
+    return exacto ?? ev
+  }
+  return null
+}
+
 async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; status: string; statusLabel: string; cardName?: string } | null> {
-  const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard?event=${eventId}`)
-  if (!json) return null
-  const card = asArr(json.events)[0] as Record<string, unknown> | undefined
+  // El id puede ser el de la cartelera o el de un combate.
+  const card = await eventoDeTemporada(
+    'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+    e => asString(e.id) === eventId
+      || (asArr(e.competitions) as Record<string, unknown>[]).some(c => asString(c.id) === eventId),
+    e => asString(e.date),
+  )
   if (!card) return null
   const cardName = asString(card.name) ?? asString(card.shortName)
   const competitions = asArr(card.competitions) as Record<string, unknown>[]
@@ -754,7 +791,9 @@ async function buildMma(eventId: string): Promise<{ mma: MatchDetail['mma']; sta
 
   const featStatusType = asObj(asObj(competitions[featuredIdx]?.status)?.type)
   const status = asString(featStatusType?.name) ?? ''
-  const statusLabel = asString(featStatusType?.shortDetail) ?? mapStatusLabel(status)
+  const programado = status === 'STATUS_SCHEDULED'
+  const statusLabel = (programado ? fechaEs(asString(competitions[featuredIdx]?.date) ?? asString(card.date)) : undefined)
+    ?? asString(featStatusType?.shortDetail) ?? mapStatusLabel(status)
 
   return {
     mma: {
@@ -786,13 +825,13 @@ const F1_SESSION_ES: Record<string, string> = {
 }
 
 async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['racing']; status: string; statusLabel: string; venue?: string; raceName?: string } | null> {
-  const json = await espnJson(`https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard?event=${eventId}`)
-  if (!json) return null
-  // ESPN IGNORA ?event= en el scoreboard y devuelve SIEMPRE la carrera actual. Si el
-  // id pedido no está entre los eventos devueltos (cualquier carrera pasada salvo la
-  // vigente), devolvemos null → 404 honesto, en vez de caer a events[0] y pintar los
-  // datos de OTRA carrera (Top10/circuito) bajo esta URL con estado 200.
-  const ev = (asArr(json.events) as Record<string, unknown>[]).find(e => asString(e.id) === eventId)
+  // Sin coincidencia exacta, 404 honesto: nunca los datos de OTRA carrera bajo esta URL.
+  const ev = await eventoDeTemporada(
+    'https://site.api.espn.com/apis/site/v2/sports/racing/f1/scoreboard',
+    e => asString(e.id) === eventId,
+    e => asString((asArr(e.competitions) as Record<string, unknown>[])
+      .find(c => asString(asObj(c.type)?.abbreviation) === 'Race')?.date) ?? asString(e.date),
+  )
   if (!ev) return null
   // Un GP tiene varias sesiones (FP1/FP2/FP3/Clasificación/Sprint/Carrera). NO
   // mostramos FP1 por defecto: elegimos la CARRERA si ya tiene datos; si no, la
@@ -810,7 +849,9 @@ async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['raci
   const statusObj = asObj(comp?.status ?? ev.status)
   const statusType = asObj(statusObj?.type)
   const status = asString(statusType?.name) ?? ''
-  const statusLabel = asString(statusType?.shortDetail) ?? mapStatusLabel(status)
+  const programada = status === 'STATUS_SCHEDULED'
+  const statusLabel = (programada ? fechaEs(asString(raceComp?.date) ?? asString(ev.date)) : undefined)
+    ?? asString(statusType?.shortDetail) ?? mapStatusLabel(status)
   const raceName = asString(ev.name)
 
   // Circuito: vive en el EVENTO (ev.circuit), no en la sesión (venue suele ser null).
@@ -837,7 +878,7 @@ async function buildRacing(eventId: string): Promise<{ racing: MatchDetail['raci
     .sort((a, b) => a.pos - b.pos)
     .slice(0, 10)
 
-  return { racing: { circuit, circuitLocation, session, results }, status, statusLabel, venue: circuit, raceName }
+  return { racing: { raceName, circuit, circuitLocation, session, results }, status, statusLabel, venue: circuit, raceName }
 }
 
 // ── Tennis ──────────────────────────────────────────────────────────

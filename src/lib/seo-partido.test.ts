@@ -87,7 +87,9 @@ describe('seo de partido', () => {
   })
   it('SportsEvent y la unión con las preguntas del pipeline sin repetir', () => {
     const j = sportsEventJsonLd(pre(), 'https://x/noticias/a')!
-    expect(j).toMatchObject({ '@type': 'SportsEvent', name: 'Barcelona - Real Madrid', startDate: '2026-10-25T20:00:00Z', location: { name: 'Stadion Narodowy' }, superEvent: { name: 'LaLiga' } })
+    expect(j).toMatchObject({ '@type': 'SportsEvent', name: 'Barcelona - Real Madrid', startDate: '2026-10-25T20:00:00Z', location: { name: 'Stadion Narodowy' } })
+    // Google lee `superEvent` como un evento sin fecha ni lugar: 275 inválidos en Search Console.
+    expect(j).not.toHaveProperty('superEvent')
     const u = unirPreguntas(faqPartido(pre()), [{ q: '¿A qué hora es el Barcelona-Real Madrid?', a: 'x' }, { q: '¿Quién arbitra?', a: 'y' }])
     expect(u.map((x) => x.q).slice(-1)).toEqual(['¿Quién arbitra?'])
   })

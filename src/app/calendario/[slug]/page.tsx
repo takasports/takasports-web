@@ -187,7 +187,8 @@ function ResultRow({ ev }: { ev: SportEvent }) {
         className="flex-shrink-0 px-2.5 py-1 rounded-lg text-[15px] font-black tabular-nums"
         style={{ background: 'rgba(255,255,255,0.06)', color: '#F8F8FF', fontFamily: 'var(--font-sport)' }}
       >
-        {ev.homeScore ?? 0}–{ev.awayScore ?? 0}
+        {/* F1 y UFC no tienen marcador: salían como «0–0». */}
+        {ev.homeScore == null && ev.awayScore == null ? 'Final' : `${ev.homeScore ?? 0}–${ev.awayScore ?? 0}`}
       </span>
       <div className="flex items-center gap-2 flex-1 min-w-0">
         {ev.awayLogo && (

@@ -38,7 +38,6 @@ export default function WelcomeOnboarding() {
 
     let cancelled = false
     let timer: ReturnType<typeof setTimeout> | undefined
-    let poll: ReturnType<typeof setInterval> | undefined
 
     const consentDecided = () => {
       try { return localStorage.getItem(CONSENT_KEY) != null } catch { return true }
@@ -51,22 +50,13 @@ export default function WelcomeOnboarding() {
       timer = setTimeout(() => { if (!cancelled) setOpen(true) }, 1200)
     }
 
-    if (consentDecided()) {
-      scheduleReveal()
-    } else {
-      // Aún sin decidir las cookies: esperamos a que el usuario las resuelva.
-      poll = setInterval(() => {
-        if (consentDecided()) {
-          if (poll) { clearInterval(poll); poll = undefined }
-          if (!cancelled) scheduleReveal()
-        }
-      }, 1000)
-    }
+    // Sin decidir las cookies es la primera visita: no se encadenan dos ventanas. Sale
+    // en la siguiente, cuando ya están decididas.
+    if (consentDecided()) scheduleReveal()
 
     return () => {
       cancelled = true
       if (timer) clearTimeout(timer)
-      if (poll) clearInterval(poll)
     }
   }, [])
 

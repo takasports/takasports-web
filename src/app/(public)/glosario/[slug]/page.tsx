@@ -1,3 +1,4 @@
+import SalidaPartidosHoy from '@/components/SalidaPartidosHoy'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -151,6 +152,8 @@ export default async function GlosarioTermPage({
             {term.summary}
           </p>
         </div>
+
+        {term.slug === 'que-es-una-tarjeta-roja' && <SalidaPartidosHoy />}
 
         <article className="flex flex-col" style={{ maxWidth: 680 }}>
           {term.body.map((p, i) => {

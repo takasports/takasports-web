@@ -6,7 +6,7 @@
 // auth.uid() = user_id), así que quien usa la app sin cuenta —la mayoría— no
 // podía recibir ningún aviso, ni siquiera los de noticias que no son personales.
 //
-//   POST   { token, platform?: 'ios'|'android', topics?: string[] }
+//   POST   { token, platform?: 'ios'|'android', topics?: string[], teams?: string[], timezone?: string }
 //          → { ok, topics, vinculado }
 //   DELETE { token } → { ok }
 //
@@ -33,7 +33,7 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { apiError, readJson } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 import { isExpoToken } from '@/lib/expo-push'
-import { filaRegistro, sanearPlataforma, sanearTemas } from '@/lib/app-push-token'
+import { filaRegistro, sanearEquipos, sanearPlataforma, sanearTemas, sanearZona } from '@/lib/app-push-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
   const limitado = await limitar(req)
   if (limitado) return limitado
 
-  const parsed = await readJson<{ token?: unknown; platform?: unknown; topics?: unknown }>(req)
+  const parsed = await readJson<{ token?: unknown; platform?: unknown; topics?: unknown; teams?: unknown; timezone?: unknown }>(req)
   if ('error' in parsed) return parsed.error
-  const { token, platform, topics } = parsed.data ?? {}
+  const { token, platform, topics, teams, timezone } = parsed.data ?? {}
   if (typeof token !== 'string' || !isExpoToken(token)) return apiError('invalid_token', 400)
 
   const admin = adminSupabase()
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const limpio = token.trim()
     const { data: existente } = await admin
       .from('push_tokens')
-      .select('user_id, topics, platform')
+      .select('user_id, topics, platform, teams, timezone')
       .eq('token', limpio)
       .maybeSingle()
 
@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
       token: limpio,
       platform: sanearPlataforma(platform),
       temas: sanearTemas(topics),
+      equipos: sanearEquipos(teams),
+      zona: sanearZona(timezone),
       userId: usuario,
       existente: existente ?? null,
       ahoraIso: new Date().toISOString(),
