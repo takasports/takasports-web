@@ -140,7 +140,7 @@ function TennisSets({ setsStr, col }: { setsStr: string; col: string }) {
         return (
           <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
             {i > 0 && (
-              <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: 9, lineHeight: 1 }}>·</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, lineHeight: 1 }}>·</span>
             )}
             <span style={{ color: isActive ? col : '#F0F0F8' }}>
               {display}

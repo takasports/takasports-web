@@ -26,10 +26,10 @@ export default function PickButton({
   theme: SoccerTheme
   onClick: () => void
 }) {
-  let bg     = 'rgba(255,255,255,0.05)'
-  let border = 'rgba(255,255,255,0.12)'
-  let color  = 'rgba(255,255,255,0.55)'
-  let sub    = 'rgba(255,255,255,0.25)'
+  let bg     = 'var(--bg-surface)'
+  let border = 'var(--border-2)'
+  let color  = 'var(--text-primary)'
+  let sub    = 'var(--text-muted)'
   let shadow = 'none'
   let visualOp = 0.65
 
@@ -56,8 +56,8 @@ export default function PickButton({
       aria-label={ariaLabel}
       style={{
         flex: 1, minWidth: 0,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-        padding: '9px 6px', borderRadius: 'var(--radius-md)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+        height: 52, padding: '0 6px', borderRadius: 12,
         background: bg, border: `1px solid ${border}`, boxShadow: shadow,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled && !active && !correct && !wrong ? 0.55 : 1,
@@ -66,12 +66,12 @@ export default function PickButton({
     >
       {visual && <span style={{ opacity: visualOp, lineHeight: 1, display: 'inline-flex' }}>{visual}</span>}
       <span style={{
-        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 900,
+        fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800,
         color, letterSpacing: '0.02em', lineHeight: 1,
       }}>{label}</span>
       {sublabel && (
         <span style={{
-          fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 700,
+          fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 500,
           color: sub, lineHeight: 1.2, textAlign: 'center',
           maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>{sublabel}</span>

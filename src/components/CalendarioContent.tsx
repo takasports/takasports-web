@@ -2,14 +2,14 @@
 
 import { eventHasFavorite, formKey, isFavorite } from './calendar-favorites'
 import { useLiveFixtures, useLiveScores, type RawLiveFixture } from './calendar-live'
-import { CompGroupHeader, DayCompactRow, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, SearchInput, SectionHeader, compConfigForGroup } from './CalendarCards'
+import { CompGroupHeader, DayCompactRow, DaySeparator, LiveHeroCard, LiveHeroStrip, MatchRow, SearchInput, SectionHeader, compConfigForGroup, formatDateSubtitle } from './CalendarCards'
 import { DayChips } from './CalendarDatePicker'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { SportEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase'
-import { SPORT_THEME, getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
+import { getEventHighlightScore, getLeagueScore, isCombat, isMundial, sportThemeKey } from '@/lib/competitions'
 import { orderCompGroups } from '@/lib/comp-group-order'
 import { ligasAbiertasPorDefecto, diasAbiertosPorDefecto, diasVisiblesDeArranque, estaAbierto } from '@/lib/calendar-collapse'
 import { groupChannel } from '@/lib/comp-group-channel'
@@ -1058,20 +1058,6 @@ export default function CalendarioContent({
   // banner); si no, deriva del filtro de deporte.
   const themeKey = sportThemeKey(activeCompCfg?.sport ?? activeFilter)
 
-  // Foto ÚNICA de la cabecera (telón): refleja lo seleccionado — la foto de la
-  // competición si hay una elegida, si no la del deporte del filtro. Va de fondo,
-  // con el título y los selectores encima; NO hay banner-recuadro aparte. Las
-  // cabeceras de grupo de la competición activa no repiten la foto (la lleva el
-  // telón); en la vista general cada liga conserva la suya (variedad).
-  // En las vistas generales del calendario (Destacados/Todo/nicho → tema 'default')
-  // usamos una arena nocturna PROPIA en vez del bokeh morado compartido con
-  // Juegos/Rankings/Estadísticas: casa mejor con el look de foto visible y no
-  // arrastra la "franja de luces" del bokeh. Las vistas de un deporte conservan su foto.
-  const heroPhoto =
-    activeCompCfg?.banner ??
-    (themeKey === 'default' ? '/banners/signal/destacados.webp' : SPORT_THEME[themeKey].backdrop) ??
-    null
-
   // Día de HOY (local): separa los días pasados (tono rojo suave) de los
   // futuros en las cabeceras del timeline continuo.
   // Bandera de render (no estado): se reinicia en cada pasada, justo antes de
@@ -1080,6 +1066,7 @@ export default function CalendarioContent({
   // Días abiertos por defecto: hoy. Hasta hidratar, TODOS abiertos (ver `hidratado`),
   // para que el HTML del servidor siga trayéndolo todo.
   const todayKey = isoToLocalDate(new Date(renderedAt).toISOString(), tz)
+  const partidosHoy = (grouped[todayKey] ?? []).length
   const diasAbiertos: ReadonlySet<string> = hidratado
     ? diasAbiertosPorDefecto(orderedDates, todayKey)
     : new Set(orderedDates)
@@ -1098,52 +1085,38 @@ export default function CalendarioContent({
       data-sport={themeKey}
       style={{ isolation: 'isolate' }}
     >
-      {/* Capa ambiente del tema (foto IA + tinte + textura broadcast, detrás del
-          hero). Solo el tema activo está montado → su foto carga lazy; el resto
-          ni se pide. Sin foto configurada, caen solo tinte + textura. */}
-      <div key={activeComp ?? themeKey} className={`cal-ambient${heroPhoto ? ' cal-ambient--photo' : ''}`} style={{ zIndex: 0 }} aria-hidden>
-        {heroPhoto && (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="cal-backdrop" src={heroPhoto} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-            <div className="cal-backdrop-scrim" aria-hidden />
-          </>
-        )}
-      </div>
+      {/* Sin capa de foto ni textura detrás de la cabecera: fondo plano (V-18,
+          maqueta 3 de noviembre). El tema por deporte sigue solo en --cal-accent. */}
       {/* Header */}
-      <div className="relative pt-3 pb-2 sm:pt-6 sm:pb-4" style={{ zIndex: 1 }}>
-        {/* Ambient glow */}
-        <div className="absolute -top-8 left-0 w-96 h-56 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 15% 45%, rgba(124,58,237,0.09) 0%, transparent 70%)', filter: 'blur(20px)' }} />
+      <div className="relative pt-3.5 pb-2 sm:pt-6 sm:pb-4" style={{ zIndex: 1 }}>
 
         <div className="relative flex items-start justify-between gap-3 mb-2 sm:mb-4">
           <div className="min-w-0">
             {/* Eyebrow: identidad de la competición elegida (escudo + nombre) o
                 "Agenda deportiva" cuando no hay filtro de competición. */}
-            <div className={`${activeCompCfg ? 'flex' : 'hidden sm:flex'} items-center gap-2 mb-1 sm:mb-2`}>
+            <div className={`${activeCompCfg ? 'flex' : 'hidden'} items-center gap-2 mb-1 sm:mb-2`}>
               {activeCompCfg ? (
                 <>
                   {activeCompCfg.crest && (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={activeCompCfg.crest} alt="" aria-hidden="true" width={20} height={20} loading="lazy" decoding="async" style={{ objectFit: 'contain', width: 20, height: 20 }} />
                   )}
-                  <span className="text-[10px] font-black uppercase tracking-[0.18em] truncate" style={{ color: accentForSport(activeCompCfg.sport, '#A78BFA'), fontFamily: 'var(--font-sport)', maxWidth: '58vw' }}>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate" style={{ color: accentForSport(activeCompCfg.sport, '#A78BFA'), fontFamily: 'var(--font-sport)', maxWidth: '58vw' }}>
                     {activeCompCfg.displayName}
                   </span>
                 </>
-              ) : (
-                <>
-                  <span className="block rounded-sm" style={{ width: 3, height: 13, background: '#7C3AED', boxShadow: '0 0 8px rgba(124,58,237,0.5)' }} />
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                    Todos los deportes
-                  </span>
-                </>
-              )}
+              ) : null}
             </div>
-            <h1 className="font-black leading-none uppercase"
-              style={{ fontFamily: 'var(--font-headline)', fontSize: '1.3rem', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+            {/* Título a la izquierda en Barlow Condensed, como «Noticias» (§6.6),
+                y debajo el día de hoy con cuántos partidos trae. */}
+            <h1 className="font-extrabold leading-none"
+              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 3.5vw, 44px)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
               Calendario
             </h1>
+            <p className="text-[14px] mt-1.5 first-letter:uppercase" style={{ color: 'var(--text-secondary)' }}>
+              {formatDateSubtitle(todayKey)}
+              {partidosHoy > 0 ? ` · ${partidosHoy} ${partidosHoy === 1 ? 'partido' : 'partidos'}` : ''}
+            </p>
             {/* Acceso a la página de la competición + quitar filtro. Sustituye al
                 antiguo banner-recuadro: la foto ya está de fondo, aquí va el texto. */}
             {activeCompCfg && (
@@ -1181,13 +1154,11 @@ export default function CalendarioContent({
                   onClick={() => setShowOnboarding(true)}
                   aria-label="Mis equipos"
                   title="Mis equipos"
-                  className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
+                  className="ts-chip ts-chip--icono relative"
                   style={{
-                    width: 36, height: 36,
-                    background: hasFavs ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.04)',
-                    border: hasFavs ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                    color: hasFavs ? '#C4B5FD' : '#7A7A8E',
-                    cursor: 'pointer',
+                    background: hasFavs ? 'rgba(124,58,237,0.16)' : undefined,
+                    borderColor: hasFavs ? 'rgba(124,58,237,0.4)' : undefined,
+                    color: hasFavs ? '#C4B5FD' : 'var(--text-secondary)',
                   }}>
                   <svg width={15} height={15} viewBox="0 0 16 16" fill={hasFavs ? '#C4B5FD' : 'none'} aria-hidden>
                     <path d="M8 13.5s-5-3-5-7a3 3 0 015-2 3 3 0 015 2c0 4-5 7-5 7z"
@@ -1211,13 +1182,11 @@ export default function CalendarioContent({
                   onClick={() => setView(isActive ? 'todos' : 'recordatorios')}
                   aria-label="Alertas"
                   title="Mis recordatorios"
-                  className="relative flex items-center justify-center rounded-full flex-shrink-0 transition-all"
+                  className="ts-chip ts-chip--icono relative"
                   style={{
-                    width: 36, height: 36,
-                    background: isActive ? 'rgba(251,191,36,0.16)' : 'rgba(255,255,255,0.04)',
-                    border: isActive ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                    color: isActive ? '#FBBF24' : '#7A7A8E',
-                    cursor: 'pointer',
+                    background: isActive ? 'rgba(251,191,36,0.16)' : undefined,
+                    borderColor: isActive ? 'rgba(251,191,36,0.4)' : undefined,
+                    color: isActive ? '#FBBF24' : 'var(--text-secondary)',
                   }}>
                   <BellIcon size={14} />
                   {remCount > 0 && (
@@ -1249,9 +1218,7 @@ export default function CalendarioContent({
             // Opaca donde hay controles; el degradado solo suaviza los últimos
             // px del padding inferior. Antes empezaba a desvanecerse al 80%,
             // justo sobre los chips, y el contenido se transparentaba tras ellos.
-            background: 'linear-gradient(180deg, rgba(10,10,18,0.98) 0%, rgba(10,10,18,0.98) 94%, rgba(10,10,18,0) 100%)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            background: 'var(--bg-base)',
           }}
         >
           {/* UNA fila de controles: fecha + buscador (plegado tras la lupa) + en vivo.
@@ -1267,10 +1234,10 @@ export default function CalendarioContent({
                 <button
                   onClick={() => { setSearchRaw(''); setSearchOpen(false) }}
                   aria-label="Cerrar búsqueda"
-                  className="cal-press flex items-center justify-center rounded-full flex-shrink-0"
-                  style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.05)', color: '#9090A8', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                  className="ts-chip ts-chip--icono cal-press"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
                     <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
                   </svg>
                 </button>
@@ -1279,12 +1246,11 @@ export default function CalendarioContent({
               <button
                 onClick={() => setSearchOpen(true)}
                 aria-label="Buscar equipo o competición"
-                className="cal-press flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ width: 30, height: 30, background: 'rgba(255,255,255,0.04)', color: '#9090A8', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
+                className="ts-chip ts-chip--icono cal-press"
+                style={{ color: 'var(--text-primary)' }}
               >
-                <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden>
-                  <circle cx="5" cy="5" r="3.4" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M7.6 7.6L10.5 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
                 </svg>
               </button>
             )}
@@ -1293,16 +1259,8 @@ export default function CalendarioContent({
               onClick={() => setOnlyLive(v => !v)}
               aria-pressed={onlyLive}
               aria-label="Mostrar solo partidos en vivo"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-              style={{
-                background: onlyLive ? 'rgba(255,77,46,0.18)' : 'rgba(255,255,255,0.04)',
-                color: onlyLive ? '#FF4D2E' : '#7A7A8E',
-                border: onlyLive ? '1px solid rgba(255,77,46,0.45)' : '1px solid rgba(255,255,255,0.06)',
-                fontFamily: 'var(--font-sport)',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap',
-                boxShadow: onlyLive ? '0 0 12px rgba(255,77,46,0.18)' : 'none',
-              }}
+              className={`ts-chip ts-chip--directo${onlyLive ? ' is-on' : ''}`}
+              style={{ color: onlyLive ? undefined : 'var(--text-secondary)' }}
             >
               {liveCount > 0 && <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#FF4D2E' }} />}
               {liveCount > 0 ? `${liveCount} en vivo` : 'En vivo'}
@@ -1312,15 +1270,8 @@ export default function CalendarioContent({
                 <div className="flex-shrink-0 w-px h-4" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-                  style={{
-                    background: 'rgba(244,63,94,0.10)',
-                    color: '#FB7185',
-                    border: '1px solid rgba(244,63,94,0.25)',
-                    fontFamily: 'var(--font-sport)',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className="ts-chip"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   ✕ Limpiar
                 </button>
@@ -1354,7 +1305,7 @@ export default function CalendarioContent({
 
       {/* Content */}
       {view === 'todos' && (
-        <div className="relative z-[1] space-y-10">
+        <div className="relative z-[1] space-y-6">
           {/* Directos que NO están en la lista: siguen con su tarjeta, porque no
               hay otro sitio donde verlos. */}
           {liveHeroCards.length > 0 && !selectedDate && (
@@ -1382,7 +1333,7 @@ export default function CalendarioContent({
                   ? `${liveEventsInList.length} en vivo más, en la lista`
                   : `${liveEventsInList.length} en vivo en la lista`}
               </span>
-              <span className="ml-auto text-[10px] font-bold" style={{ color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>ir →</span>
+              <span className="ml-auto text-[11px] font-bold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>ir →</span>
             </button>
           )}
 
@@ -1446,14 +1397,14 @@ export default function CalendarioContent({
               {pastTimeline.length === 0 && !selectedDate && !onlyLive ? (
                 <button
                   onClick={() => loadPastWindow()}
-                  className="cal-press w-full flex items-center justify-center gap-1.5 py-2.5 mb-1 rounded-xl text-[10px] font-black uppercase tracking-[0.18em] transition-all hover:brightness-125"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)', color: '#9090A8', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                  className="cal-press w-full flex items-center justify-center gap-1.5 py-2.5 mb-1 rounded-2xl text-[11px] font-bold uppercase tracking-[0.12em] transition-all hover:brightness-125"
+                  style={{ background: 'var(--bg-surface)', border: '1px dashed var(--border-2)', color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
                 >
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 7.5L6 4l3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                   Ver resultados anteriores
                 </button>
               ) : pastTimeline.length > 0 ? (
-                <div className="flex items-center justify-center py-2 text-[10px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                <div className="flex items-center justify-center py-2 text-[11px] uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   <span>Resultados de días anteriores</span>
                 </div>
               ) : null}
@@ -1599,7 +1550,7 @@ export default function CalendarioContent({
                       sola; la competición pasa a la ceja de cada fila. En "Todo"
                       se mantiene la agrupación. [José Tomás, 27/08/2026] */}
                   {!diaAbierto ? null : activeFilter === 'Destacados' ? (
-                    <div className="space-y-1.5">
+                    <div className="ts-lista">
                       {dayEvents.map(event => filaDe(event, null, true))}
                     </div>
                   ) : orderedComps.map((comp, compIdx) => {
@@ -1619,9 +1570,11 @@ export default function CalendarioContent({
                     return (
                       <div key={comp} className="mb-2 relative cal-anim-in" style={{ animationDelay: `${Math.min(compIdx * 55, 280)}ms` }}>
                         <CompGroupHeader comp={comp} accent={accent} count={compEvents.length} first={compIdx === 0} channel={canalGrupo} crest={cfg?.crest} slug={cfg?.slug} banner={activeComp && cfg?.slug === activeComp ? undefined : cfg?.banner} pinned={!!cfg?.slug && favComps.has(cfg.slug)} onTogglePin={cfg?.slug ? () => togglePinComp(cfg.slug!) : undefined} collapsed={!estaAbierto(comp, ligasAbiertas, compOverride)} onToggleCollapse={() => toggleCollapsedComp(comp, estaAbierto(comp, ligasAbiertas, compOverride))} />
-                        <div className="space-y-1.5">
-                          {estaAbierto(comp, ligasAbiertas, compOverride) ? compEvents.map(event => filaDe(event, canalGrupo, false)) : null}
-                        </div>
+                        {estaAbierto(comp, ligasAbiertas, compOverride) ? (
+                          <div className="ts-lista">
+                            {compEvents.map(event => filaDe(event, canalGrupo, false))}
+                          </div>
+                        ) : null}
                       </div>
                     )
                   })}
@@ -1632,8 +1585,8 @@ export default function CalendarioContent({
                 <button
                   type="button"
                   onClick={() => setVerTodosLosDias(true)}
-                  className="cal-press w-full flex items-center justify-center gap-1.5 py-3 mt-1 rounded-xl text-[11px] font-black uppercase tracking-[0.16em] transition-all hover:brightness-125"
-                  style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.28)', color: '#C4B5FD', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
+                  className="cal-press w-full flex items-center justify-center gap-1.5 py-3 mt-1 rounded-2xl text-[12px] font-bold uppercase tracking-[0.12em] transition-all hover:brightness-125"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: '#C4B5FD', fontFamily: 'var(--font-sport)', cursor: 'pointer' }}
                 >
                   Ver {diasOcultos} {diasOcultos === 1 ? 'día' : 'días'} más
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden><path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1684,7 +1637,7 @@ export default function CalendarioContent({
           ) : (
             <section>
               <SectionHeader icon={<BellIcon size={12} />} label="Mis Recordatorios" color="#FBBF24" count={remindedEvents.length} />
-              <div className="space-y-1.5">
+              <div className="ts-lista">
                 {remindedEvents.map(event => {
                   const evDate = event.isoDate ? isoToLocalDate(event.isoDate, tz) : null
                   const today = todayKey

@@ -603,17 +603,21 @@ export default function FootballClient() {
           // En móvil se apila: la barra horizontal deja de serlo y el CTA baja a
           // ancho completo. Con `flex-wrap` a secas, el botón se estiraba a lo
           // alto ocupando media pantalla y la etiqueta se partía en tres líneas.
-          className="tk-glass-tint tk-glass-spine mt-4 mb-7 overflow-hidden flex flex-col sm:flex-row sm:items-stretch"
-          style={{ ['--ga' as string]: T.accent, borderRadius: 'var(--radius-card)' }}
+          // Una sola cabecera (V-33, maqueta 3 de noviembre): tarjeta del sistema
+          // con el nombre, cuántos partidos y cuándo cierra, y al lado el pleno y
+          // los hechos. El banderín que lo repetía debajo ya no existe.
+          className="mt-4 mb-6 overflow-hidden flex flex-col sm:flex-row sm:items-stretch"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16 }}
         >
           <div className="flex-1 min-w-0 flex items-center gap-4 sm:gap-5 px-4 sm:px-5 py-4 flex-wrap">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="whitespace-nowrap" style={{
-                fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 900,
+                fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 800,
                 color: '#F4F4FA', letterSpacing: '-0.01em', lineHeight: 1, textTransform: 'capitalize',
               }}>{nextJornada.label}</p>
-              <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>
-                {nextJornada.events.length} {nextJornada.events.length === 1 ? 'partido destacado' : 'partidos destacados'}
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                {nextJornada.events.length} {nextJornada.events.length === 1 ? 'partido' : 'partidos'}
+                {nextJornada.nextLockAt ? <> · cierra en <b style={{ color: 'var(--text-primary)' }}>{formatCountdown(nextJornada.nextLockAt - nowMs)}</b></> : null}
                 {(() => {
                   const p = jornadaProgress(nextJornada, predictedIds)
                   const abiertos = nextJornada.pending.length
@@ -638,22 +642,8 @@ export default function FootballClient() {
                       +{jornadaEnVivo.puntos} pts
                     </span>
                   </p>
-                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
                     {jornadaEnVivo.enJuego > 0 ? 'tu jornada · en juego' : 'tu jornada'}
-                  </p>
-                </div>
-              </>
-            )}
-
-            {nextJornada.nextLockAt && (
-              <>
-                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
-                <div className="whitespace-nowrap">
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: 'var(--color-warning)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                    {formatCountdown(nextJornada.nextLockAt - nowMs)}
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
-                    <LockIcon size={8} className="inline-block align-middle mr-1" />próximo cierre
                   </p>
                 </div>
               </>
@@ -661,17 +651,33 @@ export default function FootballClient() {
 
             {plenoBonus(nextJornada.events.length) > 0 && (
               <>
-                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'rgba(255,255,255,0.09)' }} />
-                <div className="whitespace-nowrap">
-                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 19, fontWeight: 900, color: T.accent, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'var(--border)' }} />
+                <div className="whitespace-nowrap text-center">
+                  <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--green)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                     +{plenoBonus(nextJornada.events.length)}
                   </p>
-                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                  <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
                     pleno
                   </p>
                 </div>
               </>
             )}
+            {(() => {
+              const p = jornadaProgress(nextJornada, predictedIds)
+              return (
+                <>
+                  <span aria-hidden className="self-stretch w-px my-0.5" style={{ background: 'var(--border)' }} />
+                  <div className="whitespace-nowrap text-center">
+                    <p style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                      {p.done} / {p.total}
+                    </p>
+                    <p style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: 2 }}>
+                      hechos
+                    </p>
+                  </div>
+                </>
+              )
+            })()}
 
             {racha >= 2 && (
               <>
@@ -683,8 +689,8 @@ export default function FootballClient() {
                   {/* Una racha solo motiva cuando está en juego: mientras la
                       Jornada siga abierta y no haya tocado nada, se le dice. */}
                   <p style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 9, fontWeight: 800,
-                    letterSpacing: '0.14em', textTransform: 'uppercase',
+                    fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700,
+                    letterSpacing: '0.08em', textTransform: 'uppercase',
                     color: rachaEnRiesgo ? 'var(--color-warning)' : 'var(--text-muted)', marginTop: 2,
                   }}>
                     {rachaEnRiesgo ? 'no la rompas' : 'seguidas'}
@@ -707,11 +713,11 @@ export default function FootballClient() {
           {nextJornada.featured && nextJornada.featuredPlayable && (
             <a
               href={`#jornada-${nextJornada.weekKey}`}
-              className="fecha-cta flex items-center justify-center px-6 py-3 sm:py-0"
+              className="flex items-center justify-center px-5 py-3 sm:py-0"
               style={{
-                background: T.accent, color: '#04140C',
-                fontFamily: 'var(--font-sport)', fontWeight: 900, fontSize: 12,
-                letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none',
+                background: 'var(--purple)', color: '#fff',
+                fontFamily: 'var(--font-sport)', fontWeight: 700, fontSize: 12,
+                letterSpacing: '0.06em', textTransform: 'uppercase', textDecoration: 'none',
               }}
             >
               <StarIcon size={11} className="inline-block align-middle mr-1.5" />
@@ -755,44 +761,38 @@ export default function FootballClient() {
         const pleno = plenoBonus(jornada.events.length)
         return (
           <section key={jornada.weekKey} id={`jornada-${jornada.weekKey}`} className="mb-10 scroll-mt-24">
-            {/* Cabecera de la Jornada — banderín de retransmisión (`cal-pennant`),
-                la misma primitiva que separa los días en /calendario. */}
-            <div className="flex items-center gap-2.5 mb-4 flex-wrap">
-              <h2 className="cal-pennant" style={{
-                fontFamily: 'var(--font-headline)', fontSize: 17,
-                letterSpacing: '0.06em', lineHeight: 1, textTransform: 'uppercase',
-                padding: '7px 16px 13px', background: T.accent, color: '#04140C',
-              }}>{jornada.label}</h2>
-              <span style={{ flex: 1, height: 1, minWidth: 20, background: 'linear-gradient(to right, rgba(255,255,255,0.14), transparent)' }} />
-              {/* El pleno se anuncia ANTES de jugar: un premio que solo se
-                  descubre al cobrarlo no empuja a completar la Jornada. */}
-              {pleno > 0 && (
-                <span
-                  className="cal-live-tag"
-                  title={`Acierta los ${jornada.events.length} partidos y te llevas ${pleno} puntos extra. Fallando uno, +${plenoBonus(jornada.events.length, 1)}; fallando dos, +${plenoBonus(jornada.events.length, 2)}.`}
-                  style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
-                    letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
-                    background: 'rgba(167,139,250,0.13)',
-                    border: '1px solid rgba(167,139,250,0.34)',
-                    color: '#C4B5FD',
-                  }}
-                >
-                  Pleno +{pleno}
+            {/* Cabecera de la Jornada. La abierta ya se presenta en la tarjeta de
+                arriba (nombre, cierre, pleno y hechos), así que aquí no se repite
+                (V-33); las demás llevan un rótulo de 12 px con su estado. */}
+            {jornada.weekKey !== nextJornada?.weekKey || complete || faltaCapitan ? (
+              <div className="flex items-center gap-2.5 mb-3 flex-wrap">
+                {jornada.weekKey !== nextJornada?.weekKey && (
+                  <h2 className="uppercase" style={{
+                    fontFamily: 'var(--font-sport)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: '0.12em', color: 'var(--text-secondary)',
+                  }}>{jornada.label}</h2>
+                )}
+                <span style={{ flex: 1 }} />
+                {pleno > 0 && jornada.weekKey !== nextJornada?.weekKey && (
+                  <span
+                    className="ts-chip"
+                    title={`Acierta los ${jornada.events.length} partidos y te llevas ${pleno} puntos extra. Fallando uno, +${plenoBonus(jornada.events.length, 1)}; fallando dos, +${plenoBonus(jornada.events.length, 2)}.`}
+                    style={{ height: 26, padding: '0 10px', fontSize: 11, color: '#C4B5FD', cursor: 'default' }}
+                  >
+                    Pleno +{pleno}
+                  </span>
+                )}
+                <span className="ts-chip" style={{
+                  height: 26, padding: '0 10px', fontSize: 11, cursor: 'default',
+                  color: complete ? T.accent : faltaCapitan ? 'var(--color-warning)' : 'var(--text-secondary)',
+                  borderColor: complete ? `${T.accent}55` : faltaCapitan ? 'rgba(251,191,36,0.4)' : undefined,
+                }}>
+                  {complete ? '✓ Jornada completa'
+                    : faltaCapitan ? 'Falta tu capitán'
+                    : `${prog.done} / ${prog.total}`}
                 </span>
-              )}
-              <span className="cal-live-tag" style={{
-                fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 900,
-                letterSpacing: '0.09em', textTransform: 'uppercase', padding: '5px 11px',
-                background: complete ? `${T.accent}1F` : faltaCapitan ? 'rgba(251,191,36,0.13)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${complete ? `${T.accent}55` : faltaCapitan ? 'rgba(251,191,36,0.4)' : 'rgba(255,255,255,0.09)'}`,
-                color: complete ? T.accent : faltaCapitan ? 'var(--color-warning)' : 'var(--text-muted)',
-              }}>
-                {complete ? '✓ Jornada completa'
-                  : faltaCapitan ? 'Falta tu capitán'
-                  : `${prog.done} / ${prog.total}`}
-              </span>
-            </div>
+              </div>
+            ) : null}
 
             {/* Dónde está ese capitán que falta. La chapa de arriba avisa, pero
                 el botón vive dentro de las tarjetas y hay nueve iguales: sin
@@ -854,9 +854,9 @@ export default function FootballClient() {
               return (
                 <div key={day.dateKey} className="mb-3">
                   <p style={{
-                    fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 800,
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                    color: 'var(--text-muted)', marginBottom: 8, paddingLeft: 2,
+                    fontFamily: 'var(--font-sport)', fontSize: 12, fontWeight: 700,
+                    letterSpacing: '0.12em', textTransform: 'uppercase',
+                    color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 2,
                   }}>{day.label}</p>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                     {rest.map((ev, i) => (
@@ -889,18 +889,24 @@ export default function FootballClient() {
                 abierto —entonces el bloque ES la Jornada y esconderlo dejaría
                 la sección en blanco—. */}
             {jornada.settled.length > 0 && (
-              <details open={jornada.pending.length === 0} className="mt-1">
-                <summary style={{
-                  cursor: 'pointer', listStyle: 'none',
-                  fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 800,
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  color: 'var(--text-muted)', padding: '8px 2px',
+              <details open={jornada.pending.length === 0} className="mt-3 group">
+                <summary className="flex items-center justify-between gap-3 rounded-2xl" style={{
+                  cursor: 'pointer', listStyle: 'none', padding: '12px 14px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-sport)', fontSize: 12, fontWeight: 700,
+                  letterSpacing: '0.12em', textTransform: 'uppercase',
+                  color: 'var(--text-secondary)',
                 }}>
-                  Ya cerrados · {jornada.settled.length}
-                  {(() => {
-                    const sinPick = jornada.settled.filter(e => !predictedIds.has(e.id)).length
-                    return sinPick > 0 ? ` (${sinPick} sin pronosticar)` : ''
-                  })()}
+                  <span>
+                    Ya cerrados · {jornada.settled.length}
+                    {(() => {
+                      const sinPick = jornada.settled.filter(e => !predictedIds.has(e.id)).length
+                      return sinPick > 0 ? ` (${sinPick} sin pronosticar)` : ''
+                    })()}
+                  </span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden className="transition-transform group-open:rotate-180" style={{ color: 'var(--text-muted)' }}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
                 </summary>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-2">
                   {jornada.settled.map(ev => (

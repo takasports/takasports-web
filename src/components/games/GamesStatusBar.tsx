@@ -34,20 +34,16 @@ export default function GamesStatusBar({ overview, nextHref, nextLabel }: Props)
   if (status === 'guest') {
     return (
       <div
-        className="rounded-2xl px-4 py-3 flex items-center gap-3 flex-wrap"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}
+        className="rounded-2xl px-3.5 py-3 flex items-center gap-3"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        <span className="inline-flex flex-shrink-0" style={{ color: '#FDBA74' }} aria-hidden>
-          <FireIcon size={15} />
-        </span>
-        <p className="text-[13px] flex-1 min-w-[220px]" style={{ color: '#CFCFDD', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
-          Puedes jugar sin cuenta. <strong style={{ color: '#F0F0F5' }}>Entra</strong> y se te guardan la
-          racha y los puntos de la Liga Taka.
+        <p className="text-[14px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)', lineHeight: 1.35 }}>
+          Puedes jugar sin cuenta. Con cuenta se guardan la racha y los puntos de la Liga Taka.
         </p>
         <Link
           href="/auth"
-          className="text-[10px] font-black uppercase tracking-widest px-3.5 py-2 rounded-xl transition-opacity hover:opacity-90 flex-shrink-0"
-          style={{ background: '#7C3AED', color: '#fff', fontFamily: 'var(--font-sport)' }}
+          className="inline-flex items-center text-[13px] font-bold uppercase tracking-[0.04em] px-4 rounded-xl transition-opacity hover:opacity-90 flex-shrink-0"
+          style={{ height: 34, background: 'var(--purple)', color: '#fff', fontFamily: 'var(--font-sport)', textDecoration: 'none' }}
         >
           Entrar
         </Link>
@@ -69,9 +65,7 @@ export default function GamesStatusBar({ overview, nextHref, nextLabel }: Props)
     <div
       className="rounded-2xl px-4 py-3 flex items-center gap-x-5 gap-y-3 flex-wrap"
       style={{
-        background: atRisk
-          ? 'linear-gradient(135deg, rgba(251,146,60,0.10), rgba(255,255,255,0.02))'
-          : 'rgba(255,255,255,0.03)',
+        background: 'var(--bg-card)',
         border: `1px solid ${atRisk ? 'rgba(251,146,60,0.35)' : 'var(--border)'}`,
       }}
     >

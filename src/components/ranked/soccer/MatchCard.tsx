@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { StarIcon, LiveDotIcon, LockIcon } from '@/components/icons/GameIcons'
-import { getCompAccent, textoSobre } from '@/lib/competitions'
-import { competitionArt } from './competition-art'
 import TeamCrest from './TeamCrest'
 import PickButton from './PickButton'
 import ExactScoreBlock from './ExactScoreBlock'
@@ -68,9 +66,7 @@ export default function MatchCard({
   const isOpen   = event.status === 'open' && !isLocked
   const showLockWarning = event.status === 'open' && !isLocked && lockMs < 6 * 60 * 60 * 1000
 
-  const compColor = getCompAccent(event.competition, theme.accent)
-  const art       = competitionArt(event.competition)
-  const crest = (side: 'home' | 'away', size: number) => (
+    const crest = (side: 'home' | 'away', size: number) => (
     <TeamCrest
       name={side === 'home' ? event.team_home : event.team_away}
       logo={side === 'home' ? event.meta?.home_logo : event.meta?.away_logo}
@@ -144,130 +140,84 @@ export default function MatchCard({
 
   return (
     <div
-      // `cal-card` aporta la silueta broadcast del sistema: profundidad, hover y
-      // —sobre todo— la MUESCA DIAGONAL de la esquina inferior derecha teñida de
-      // la competición, que es la firma de forma de «La Señal». La tarjeta vivía
-      // fuera de ese lenguaje y por eso se leía como un dashboard cualquiera.
-      className="cal-card"
+      // La tarjeta del sistema (maqueta 3 de noviembre): fondo --bg-card, borde
+      // fino, radio 16, sin arte del torneo ni borde de color. La competición va
+      // en el rótulo de la cabecera, en su color; el resto, neutro.
       style={{
-        ['--row-accent' as string]: event.featured ? theme.accent : compColor,
         position: 'relative',
-        background: event.featured ? theme.cardBgFeat : theme.cardBg,
-        borderTop:    `1px solid ${event.featured ? `${theme.accent}35` : 'rgba(255,255,255,0.1)'}`,
-        borderRight:  `1px solid ${event.featured ? `${theme.accent}20` : 'rgba(255,255,255,0.07)'}`,
-        borderBottom: `1px solid ${event.featured ? `${theme.accent}20` : 'rgba(255,255,255,0.07)'}`,
-        borderLeft:   `3px solid ${event.featured ? theme.accent : compColor}`,
-        borderRadius: 'var(--radius-card)',
+        background: 'var(--bg-card)',
+        border: `1px solid ${event.featured ? `${theme.accent}45` : 'var(--border)'}`,
+        borderRadius: 16,
+        overflow: 'hidden',
         display: 'flex', flexDirection: 'column',
         animation: `fCardIn 0.4s ease-out ${animDelay}ms both`,
       }}
     >
-      {/* Arte del torneo, entrando por la derecha y disolviéndose hacia el texto.
-          Son las mismas ilustraciones que ya usa /calendario. */}
-      {art && (
-        <span
-          aria-hidden
-          style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            backgroundImage: `url(${art})`,
-            backgroundSize: 'cover', backgroundPosition: 'right center',
-            opacity: event.featured ? 0.3 : 0.24,
-            WebkitMaskImage: 'linear-gradient(to left, #000 0%, transparent 78%)',
-            maskImage: 'linear-gradient(to left, #000 0%, transparent 78%)',
-          }}
-        />
-      )}
-
-      <div style={{ position: 'relative', padding: band ? '13px 16px 12px 14px' : '13px 16px 14px 14px', display: 'flex', flexDirection: 'column' }}>
-      {/* ── Cabecera ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
-        {event.featured && (
-          <span className="cal-live-tag" style={{
-            fontSize: 9, fontWeight: 900, padding: '4px 10px',
-            background: `linear-gradient(90deg, ${theme.accent}, #A7F3D0)`,
-            color: '#04140C', fontFamily: 'var(--font-sport)', letterSpacing: '0.09em',
-          }}>
-            <StarIcon size={9} className="inline-block align-middle mr-1" />
-            {/* En fútbol el ×2 dejó de ser de la casa (migración 131): lo pone
-                el jugador con su capitán. El Partidazo se queda como lo que
-                siempre fue de verdad, el partido de la semana. Seguir diciendo
-                "X2" aquí sería prometer puntos que este partido ya no paga. */}
-            {event.sport === 'football' ? 'PARTIDAZO' : 'PARTIDO DEL DÍA · X2'}
+      {/* ── Cabecera: competición a la izquierda, estado a la derecha ── */}
+      <div style={{ height: 36, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '0 14px', borderBottom: '1px solid var(--border)' }}>
+        {/* El rótulo va en el color del DEPORTE (único sitio con color de la
+            tarjeta), no en el de la competición: así en /predicciones y en
+            /calendario LaLiga se lee igual. */}
+        <span className="truncate" style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+          color: theme.accent, fontFamily: 'var(--font-sport)',
+        }}>
+          {event.competition}{event.meta?.stage ? ` · ${event.meta.stage}` : ''}
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {event.featured && (
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: theme.accent, fontFamily: 'var(--font-sport)' }}>
+              <StarIcon size={10} className="inline-block align-middle mr-1" />
+              {/* En fútbol el ×2 dejó de ser de la casa (migración 131): lo pone
+                  el jugador con su capitán. El Partidazo se queda como lo que
+                  siempre fue de verdad, el partido de la semana. */}
+              {event.sport === 'football' ? 'Partidazo' : 'Partido del día · x2'}
+            </span>
+          )}
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-sport)',
+            color: isClosed ? 'var(--color-live)' : isResolved ? 'var(--text-muted)' : isLocked && event.status === 'open' ? 'var(--color-warning)' : 'var(--text-muted)' }}>
+            {isClosed ? <><LiveDotIcon size={7} className="align-middle mr-1" />En vivo</>
+              : isResolved ? 'Final'
+              : isLocked && event.status === 'open' ? <><LockIcon size={10} className="inline-block align-middle mr-1" />Cerrado</>
+              : showLockWarning ? `Cierra en ${formatCountdown(lockMs)}`
+              : 'Abierto'}
           </span>
-        )}
-        <span className="cal-live-tag" style={{
-          fontSize: 9, fontWeight: 900, padding: '4px 9px',
-          background: compColor, color: textoSobre(compColor),
-          fontFamily: 'var(--font-sport)',
-          textTransform: 'uppercase', letterSpacing: '0.09em',
-        }}>{event.competition}</span>
-        {event.meta?.stage && (
-          <span className="cal-live-tag" style={{
-            fontSize: 9, fontWeight: 700, padding: '4px 9px',
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'var(--text-muted)', fontFamily: 'var(--font-sport)',
-            textTransform: 'uppercase', letterSpacing: '0.07em',
-          }}>{event.meta.stage}</span>
-        )}
-        {isClosed && (
-          <span style={{ fontSize: 9, color: '#F87171', fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: '0.07em' }}>
-            <LiveDotIcon size={7} className="align-middle mr-1" />EN VIVO
-          </span>
-        )}
-        {isLocked && event.status === 'open' && (
-          <span style={{ fontSize: 9, color: 'rgba(251,191,36,0.6)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.06em' }}>
-            <LockIcon size={9} className="inline-block align-middle mr-1" />PICKS BLOQUEADOS
-          </span>
-        )}
-        {showLockWarning && (
-          <span style={{ marginLeft: 'auto', fontSize: 8, color: 'rgba(251,191,36,0.55)', fontFamily: 'var(--font-sport)', fontWeight: 700, letterSpacing: '0.05em' }}>
-            ⏱ {formatCountdown(lockMs)} para el cierre
-          </span>
-        )}
+        </span>
       </div>
 
-      {/* ── Enfrentamiento ──
-          Sin la caja negra que lo envolvía: tapaba el arte del torneo y añadía
-          una segunda superficie dentro de la tarjeta sin aportar jerarquía. */}
-      <div style={{
-        marginBottom: 12,
-        display: 'flex', alignItems: 'center', gap: 8,
-      }}>
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
-          {/* minWidth:0 + overflowWrap: sin ellos "Manchester United" desbordaba
-              la tarjeta en móvil en vez de partirse en dos líneas. */}
-          <span style={{
-            fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
-            // El perdedor se atenúa: con el marcador grande, atenuar al que cayó
-            // hace que el resultado se lea de un vistazo sin tener que sumar.
-            color: loserSide === '1' ? 'var(--text-muted)' : '#ECECF6',
-            lineHeight: 1.05, textAlign: 'right', letterSpacing: '-0.01em',
-            minWidth: 0, overflowWrap: 'break-word',
+      <div style={{ position: 'relative', padding: band ? '14px 14px 12px' : '14px 14px 14px', display: 'flex', flexDirection: 'column' }}>
+      {/* ── Enfrentamiento: escudo y nombre en columnas, la hora o el marcador
+          grande en medio (la misma tarjeta de partido que las notas). ── */}
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ width: 88, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          {crest('home', 44)}
+          <span className="truncate" style={{
+            width: '100%', textAlign: 'center',
+            fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600,
+            color: loserSide === '1' ? 'var(--text-muted)' : 'var(--text-primary)',
           }}>{event.team_home}</span>
-          {crest('home', 30)}
         </div>
 
         {/* Marcador de emisión. Cuando el partido acabó, el resultado es LO que
-            importa: iba en una cajita del mismo tamaño que la hora de un
-            partido sin jugar. Ahora manda él. */}
-        <div style={{ width: 'clamp(64px, 17vw, 96px)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            importa. */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           {isResolved && event.result ? (
             <>
               <span style={{
-                fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 38px)', fontWeight: 900,
-                color: '#F4F4FA', letterSpacing: '-0.03em', lineHeight: 0.92,
+                fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800,
+                color: '#F4F4FA', letterSpacing: '-0.02em', lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-              }}>{event.result.home_score ?? '?'}–{event.result.away_score ?? '?'}</span>
-              <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', letterSpacing: '0.16em', textTransform: 'uppercase' }}>Final</span>
+              }}>{event.result.home_score ?? '?'} – {event.result.away_score ?? '?'}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Final</span>
             </>
           ) : isClosed && liveScore && (liveScore.home != null || liveScore.away != null) ? (
             <>
               <span style={{
-                fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 7vw, 38px)', fontWeight: 900,
-                color: 'var(--color-live)', letterSpacing: '-0.03em', lineHeight: 0.92,
+                fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800,
+                color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1,
                 fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
-              }}>{liveScore.home ?? 0}–{liveScore.away ?? 0}</span>
-              <span style={{ fontSize: 8.5, fontWeight: 900, color: 'var(--color-live)', fontFamily: 'var(--font-sport)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+              }}>{liveScore.home ?? 0} – {liveScore.away ?? 0}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-live)', fontFamily: 'var(--font-sport)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                 {liveScore.clock || 'Directo'}
               </span>
             </>
@@ -276,24 +226,25 @@ export default function MatchCard({
               {/* La HORA manda sobre el "VS": es el dato que decide si te da
                   tiempo a jugar. Antes iba en cuerpo 9 debajo de un VS grande. */}
               <span style={{
-                fontFamily: 'var(--font-display)', fontSize: 21, fontWeight: 900,
-                color: '#F4F4FA', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800,
+                color: '#F4F4FA', lineHeight: 1, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums',
               }}>{timeLabel(event.event_date)}</span>
-              <span style={{
-                fontSize: 8, fontWeight: 900, color: 'var(--text-muted)',
-                fontFamily: 'var(--font-sport)', letterSpacing: '0.18em',
-              }}>VS</span>
+              {event.meta?.venue ? (
+                <span className="truncate" style={{
+                  maxWidth: '100%', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-sport)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>{event.meta.venue}</span>
+              ) : null}
             </>
           )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-          {crest('away', 30)}
-          <span style={{
-            fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 3.2vw, 17px)', fontWeight: 900,
-            color: loserSide === '2' ? 'var(--text-muted)' : '#ECECF6',
-            lineHeight: 1.05, textAlign: 'left', letterSpacing: '-0.01em',
-            minWidth: 0, overflowWrap: 'break-word',
+        <div style={{ width: 88, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          {crest('away', 44)}
+          <span className="truncate" style={{
+            width: '100%', textAlign: 'center',
+            fontFamily: 'var(--font-sport)', fontSize: 13, fontWeight: 600,
+            color: loserSide === '2' ? 'var(--text-muted)' : 'var(--text-primary)',
           }}>{event.team_away}</span>
         </div>
       </div>
@@ -310,13 +261,13 @@ export default function MatchCard({
         }}>
           {myPick ? (
             <>
-              <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Tu pick</span>
+              <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Tu pick</span>
               <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: hit ? theme.accent : '#F87171' }}>
                 {myPick} · {teamOf(myPick)}
               </span>
               {exactScore && (
                 <>
-                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 8.5, fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-muted)', marginLeft: 6 }}>Tu apuesta</span>
+                  <span style={{ fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginLeft: 6 }}>Tu marcador</span>
                   <span style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 900, color: exactHit ? theme.accent : 'var(--text-secondary)' }}>
                     {exactScore.home} - {exactScore.away}
                   </span>
@@ -336,7 +287,7 @@ export default function MatchCard({
               </span>
             </>
           ) : (
-            <span style={{ fontFamily: 'var(--font-sport)', fontSize: 10, color: 'var(--text-muted)' }}>
+            <span style={{ fontFamily: 'var(--font-sport)', fontSize: 12, color: 'var(--text-muted)' }}>
               No jugaste este partido · ganó {teamOf(winner)}
             </span>
           )}
@@ -445,7 +396,7 @@ export default function MatchCard({
             display: 'flex', alignItems: 'center', gap: 4,
             padding: '4px 10px', borderRadius: 'var(--radius-md)',
             background: `${theme.accent}0E`, border: `1px solid ${theme.accent}22`,
-            color: theme.accentDim, fontSize: 9, fontWeight: 900,
+            color: theme.accentDim, fontSize: 11, fontWeight: 700,
             fontFamily: 'var(--font-sport)', textTransform: 'uppercase',
             letterSpacing: '0.06em', cursor: 'pointer',
           }}
@@ -453,7 +404,7 @@ export default function MatchCard({
       )}
 
       {!myPick && !isOpen && !isResolved && (
-        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontFamily: 'var(--font-sport)', marginTop: 8 }}>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', marginTop: 8 }}>
           {isClosed ? 'Predicciones cerradas' : isLocked ? 'Ya empezó' : 'Sin predicción'}
         </span>
       )}

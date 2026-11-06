@@ -231,6 +231,54 @@ body {
   .mnc-escudo > * { width: var(--mnc-escudo-movil, 48px) !important; height: var(--mnc-escudo-movil, 48px) !important; }
 }
 
+/* ── Un solo sistema de chips y tarjetas (maqueta 3 de noviembre) ────────────
+   /calendario, /juegos y /predicciones tenían cada uno su juego de chips,
+   bordes de colores y fondos con foto. Desde el 06/11/2026 comparten esto:
+   · `.ts-chip`  — píldora de 36 px, 12 px en mayúsculas, fondo --bg-surface;
+                   activa (`.is-on`) morada con texto blanco. Sin icono salvo
+                   los deportes. El color del deporte NO va en el chip.
+   · `.ts-lista` — la tarjeta-lista de partidos: fondo --bg-card, borde
+                   --border, radio 16, filas separadas por un filete. Son las
+                   mismas filas que /calendario/dia.
+   El color del deporte aparece en UN solo sitio por tarjeta: el rótulo de la
+   competición. La hora de un partido por jugar va en el verde de marca y el
+   rojo queda para el directo. */
+.ts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  font-family: var(--font-sport);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.ts-chip:hover { border-color: var(--border-2); }
+.ts-chip.is-on { background: var(--purple); border-color: var(--purple); color: #fff; }
+.ts-chip.is-on:hover { border-color: var(--purple); }
+.ts-chip--icono { width: 36px; padding: 0; justify-content: center; }
+.ts-chip--texto { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 600; }
+.ts-chip--directo.is-on { background: rgba(255,77,46,0.18); border-color: rgba(255,77,46,0.45); color: var(--color-live, #FF4D2E); }
+.ts-chip:disabled, .ts-chip[aria-disabled="true"] { opacity: 0.5; cursor: default; }
+
+.ts-lista {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.ts-lista > * + * { border-top: 1px solid var(--border); }
+
 /* Botones de la hoja de noticia en móvil (guardar · compartir · modo claro):
    iconos de 40 px sin círculo, como los de la cabecera. */
 .art-tool {

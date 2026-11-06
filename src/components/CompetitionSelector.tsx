@@ -39,7 +39,7 @@ function AllIcon({ size = 18, color }: { size?: number; color: string }) {
 }
 
 function Card({
-  active, accent, primary, badge, label, sub, onClick, ariaLabel,
+  active, accent, badge, label, onClick, ariaLabel,
 }: {
   active: boolean
   accent: string
@@ -50,35 +50,19 @@ function Card({
   onClick: () => void
   ariaLabel: string
 }) {
+  // Un solo chip para todo (maqueta 3 de noviembre): píldora gris, activa
+  // morada. El color del deporte ya no tiñe el chip; solo el icono inactivo.
   return (
     <button
       onClick={onClick}
       aria-pressed={active}
       aria-label={ariaLabel}
-      className="cal-press group flex items-center gap-2 sm:gap-2.5 flex-shrink-0 rounded-xl pl-2 pr-2.5 py-1.5 sm:pl-2.5 sm:pr-3 sm:py-2 transition-all"
-      style={{
-        background: active ? `${accent}22` : (primary ? `${accent}14` : 'rgba(255,255,255,0.03)'),
-        borderTop: `1px solid ${active ? accent + '99' : (primary ? accent + '55' : 'rgba(255,255,255,0.07)')}`,
-        borderRight: `1px solid ${active ? accent + '99' : (primary ? accent + '55' : 'rgba(255,255,255,0.07)')}`,
-        borderBottom: `1px solid ${active ? accent + '99' : (primary ? accent + '55' : 'rgba(255,255,255,0.07)')}`,
-        borderLeft: `3px solid ${accent}`,
-        cursor: 'pointer',
-        boxShadow: active ? `0 0 14px ${accent}33` : 'none',
-      }}
+      className={`ts-chip cal-press${active ? ' is-on' : ''}`}
     >
-      <span className="flex items-center justify-center rounded-lg flex-shrink-0 w-6 h-6 sm:w-[30px] sm:h-[30px]" style={{ background: `${accent}1A` }}>
+      <span className="inline-flex items-center justify-center flex-shrink-0" style={{ width: 14, height: 14, color: active ? '#fff' : accent }}>
         {badge}
       </span>
-      <span className="flex flex-col leading-tight items-start">
-        <span className="text-[12px] font-bold whitespace-nowrap" style={{ color: active || primary ? '#fff' : '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-          {label}
-        </span>
-        {/* 2ª línea (recuento/sub) solo en escritorio: en móvil la ficha se reduce
-            a un chip de una línea para que los partidos suban (estilo 365scores). */}
-        <span className="hidden sm:block text-[9px] font-black uppercase tracking-wider tabular-nums whitespace-nowrap" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-          {sub}
-        </span>
-      </span>
+      {label}
     </button>
   )
 }
@@ -104,7 +88,7 @@ function LeagueMenu({
   const menuRef = useRef<HTMLDivElement | null>(null)
   const activa = comps.find((c) => c.slug === activeComp) ?? null
   const purple = '#7C3AED'
-
+  
   // Cierra al pulsar fuera o con Escape: es un menú, no un panel pegado.
   useEffect(() => {
     if (!open) return
@@ -130,35 +114,14 @@ function LeagueMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={activa ? `Liga: ${activa.displayName}. Cambiar` : 'Filtrar por liga'}
-        className="cal-press flex items-center gap-2 flex-shrink-0 rounded-xl pl-2 pr-2.5 py-1.5 sm:py-2 transition-all"
-        style={{
-          background: activa ? `${purple}22` : 'rgba(255,255,255,0.03)',
-          borderTop: `1px solid ${activa ? purple + '99' : 'rgba(255,255,255,0.07)'}`,
-          borderRight: `1px solid ${activa ? purple + '99' : 'rgba(255,255,255,0.07)'}`,
-          borderBottom: `1px solid ${activa ? purple + '99' : 'rgba(255,255,255,0.07)'}`,
-          borderLeft: `3px solid ${purple}`,
-          cursor: 'pointer',
-        }}
+        className={`ts-chip cal-press${activa ? ' is-on' : ''}`}
       >
-        <span className="flex items-center justify-center rounded-lg flex-shrink-0 w-6 h-6 sm:w-[30px] sm:h-[30px]" style={{ background: `${purple}1A` }}>
-          {activa?.crest ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img src={activa.crest} alt="" aria-hidden="true" width={20} height={20} loading="lazy" style={{ objectFit: 'contain', width: 20, height: 20 }} />
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke={purple} strokeWidth="1.6" aria-hidden>
-              <path d="M4 2h8v3a4 4 0 01-8 0V2zM3 3H1v1a3 3 0 003 3M13 3h2v1a3 3 0 01-3 3M6 12h4M8 9v3M5 14h6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          )}
-        </span>
-        <span className="flex flex-col leading-tight items-start">
-          <span className="text-[12px] font-bold whitespace-nowrap" style={{ color: activa ? '#fff' : '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {activa ? activa.shortName : 'Ligas'}
-          </span>
-          <span className="hidden sm:block text-[9px] font-black uppercase tracking-wider whitespace-nowrap" style={{ color: purple, fontFamily: 'var(--font-sport)' }}>
-            {activa ? 'Cambiar' : `${comps.length} competiciones`}
-          </span>
-        </span>
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7, marginLeft: 2 }} aria-hidden>
+        {activa?.crest ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={activa.crest} alt="" aria-hidden="true" width={16} height={16} loading="lazy" style={{ objectFit: 'contain', width: 16, height: 16 }} />
+        ) : null}
+        {activa ? activa.shortName : 'Ligas'}
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.8 }} aria-hidden>
           <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
@@ -257,14 +220,14 @@ export default function CompetitionSelector({
       if (pesoA !== pesoB) return pesoB - pesoA
       return (countBySlug.get(b.slug) ?? 0) - (countBySlug.get(a.slug) ?? 0)
     })
-
   const purple = '#7C3AED'
-  const eventsLabel = (n: number) => (n > 0 ? `${n} ${n === 1 ? 'evento' : 'eventos'}` : 'Ver')
+
+    const eventsLabel = (n: number) => (n > 0 ? `${n} ${n === 1 ? 'evento' : 'eventos'}` : 'Ver')
 
   return (
     <section aria-label="Categorías del calendario">
       <div
-        className="cal-rail flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide"
+        className="cal-rail flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide"
         style={{
           maskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 20px), transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to right, #000 0, #000 calc(100% - 20px), transparent 100%)',
@@ -275,7 +238,7 @@ export default function CompetitionSelector({
           active={!activeComp && activeFilter === 'Destacados'}
           accent={purple}
           primary
-          badge={<StarIcon color={purple} />}
+          badge={<StarIcon color="currentColor" />}
           label="Destacados"
           sub="Top del día"
           onClick={() => onSelectSport('Destacados')}
@@ -285,7 +248,7 @@ export default function CompetitionSelector({
         <Card
           active={!activeComp && activeFilter === 'Todo'}
           accent={purple}
-          badge={<AllIcon color={purple} />}
+          badge={<AllIcon color="currentColor" />}
           label="Todo"
           sub="Todo el calendario"
           onClick={() => onSelectSport('Todo')}

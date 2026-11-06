@@ -233,19 +233,11 @@ export function DayChips({ days, value, onChange, tz }: {
         aria-haspopup="dialog"
         aria-expanded={showCalendar}
         aria-label="Elegir día"
-        className="cal-press flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex-shrink-0"
-        style={{
-          background: active ? 'rgba(124,58,237,0.22)' : 'rgba(124,58,237,0.12)',
-          color: active ? '#D8CCFF' : '#C4B5FD',
-          border: active ? '1px solid rgba(124,58,237,0.6)' : '1px solid rgba(124,58,237,0.3)',
-          fontFamily: 'var(--font-sport)',
-          cursor: 'pointer',
-          whiteSpace: 'nowrap',
-        }}
+        className={`ts-chip ts-chip--texto cal-press${hasDay ? ' is-on' : ''}`}
       >
-        <CalendarIcon size={12} />
+        <CalendarIcon size={15} />
         {hasDay ? dayLabel(value) : 'Todos los días'}
-        <svg width="9" height="9" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.7 }}>
+        <svg width="14" height="14" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.8 }}>
           <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
@@ -255,17 +247,10 @@ export function DayChips({ days, value, onChange, tz }: {
         <button
           onClick={() => { onChange(null); setShowCalendar(false) }}
           aria-label="Ver todos los días"
-          className="cal-press flex items-center justify-center rounded-full flex-shrink-0 transition-all"
-          style={{
-            width: 26,
-            height: 26,
-            background: 'rgba(255,255,255,0.05)',
-            color: '#9090A8',
-            border: '1px solid rgba(255,255,255,0.08)',
-            cursor: 'pointer',
-          }}
+          className="ts-chip ts-chip--icono cal-press"
+          style={{ color: 'var(--text-secondary)' }}
         >
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
             <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>

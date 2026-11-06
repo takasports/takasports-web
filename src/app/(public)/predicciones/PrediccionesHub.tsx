@@ -79,7 +79,7 @@ const SPORTS: {
   },
   {
     id:        'ufc',
-    label:     'Ranked UFC',
+    label:     'UFC',
     emoji:     '🥊',
     accent:    '#F87171',
     available: true,
@@ -103,9 +103,10 @@ const CHIPS = SPORTS.filter(s => s.id !== 'mundial')
 
 // Tabs del hub (todas disponibles)
 const HUB_TABS: { id: HubTab; label: string }[] = [
-  { id: 'ranked',    label: 'Ranked' },
-  { id: 'creadores', label: 'Ligas Creadores' },
-  { id: 'privadas',  label: 'Ligas Privadas' },
+  // «Jornada», no «Ranked» (V-33): nada en inglés de interfaz.
+  { id: 'ranked',    label: 'Jornada' },
+  { id: 'creadores', label: 'Ligas de creadores' },
+  { id: 'privadas',  label: 'Ligas privadas' },
 ]
 
 // Deporte de entrada = el primero de SPORTS que esté disponible Y sea jugable
@@ -179,11 +180,11 @@ export default function PrediccionesHub() {
 
       {/* ── Hub tabs ──────────────────────────────────────────────── */}
       <div
-        className="sticky top-[48px] z-30 border-b"
-        style={{ background: 'var(--bg-base)', borderColor: 'rgba(255,255,255,0.06)' }}
+        className="sticky z-30 border-b"
+        style={{ top: 'var(--console-h, 56px)', background: 'var(--bg-base)', borderColor: 'var(--border)' }}
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
-          <div className="flex gap-0 overflow-x-auto scrollbar-none" role="tablist" aria-label="Secciones de predicciones">
+          <div className="flex gap-5 overflow-x-auto scrollbar-none" role="tablist" aria-label="Secciones de predicciones">
             {HUB_TABS.map((tab, idx) => {
               const on = hubTab === tab.id
               return (
@@ -196,13 +197,12 @@ export default function PrediccionesHub() {
                   tabIndex={on ? 0 : -1}
                   onClick={() => setHubTab(tab.id)}
                   onKeyDown={e => onHubKeyDown(e, idx)}
-                  className="relative flex-shrink-0 px-4 py-3 text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-inset"
+                  className="relative flex-shrink-0 pt-3 pb-2.5 text-[13px] font-bold uppercase tracking-[0.06em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-inset"
                   style={{
-                    color: on ? '#F0F0F8' : 'var(--text-muted)',
+                    color: on ? 'var(--text-primary)' : 'var(--text-secondary)',
                     fontFamily: 'var(--font-sport)',
-                    borderBottom: on
-                      ? '2px solid var(--accent)'
-                      : '2px solid transparent',
+                    marginBottom: -1,
+                    borderBottom: on ? '2px solid var(--purple)' : '2px solid transparent',
                   }}
                 >
                   {tab.label}
@@ -217,28 +217,7 @@ export default function PrediccionesHub() {
       <div role="tabpanel" id="hubpanel" aria-labelledby={`hubtab-${hubTab}`} tabIndex={0} className="focus-visible:outline-none">
       {hubTab === 'ranked' && (
         <div style={{ position: 'relative' }}>
-          {/* Ambiente cinematográfico por deporte (fondos "La Señal", Higgsfield).
-              Capa estática detrás del contenido; se desvanece hacia abajo;
-              key={sportTab} → crossfade al cambiar de deporte. Respeta
-              prefers-reduced-motion (globals: .signal-ambient → animation none). */}
-          <div className="signal-ambient signal-ambient--hero" aria-hidden="true" key={sportTab}>
-            <img
-              src={`/banners/signal/${sportTab}.webp`}
-              alt=""
-              className="signal-backdrop"
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="signal-scrim" />
-            <div
-              className="signal-tint"
-              style={{
-                background: `radial-gradient(120% 80% at 50% 0%, ${
-                  SPORTS.find(s => s.id === sportTab)?.accent ?? '#FBBF24'
-                }26 0%, transparent 58%)`,
-              }}
-            />
-          </div>
+          {/* Fondo plano (V-18, maqueta 3 de noviembre): sin foto detrás de los controles. */}
           <div style={{ position: 'relative', zIndex: 1 }}>
           {/* Sin el bloque de título (ceja, «PREDICCIONES» y subtítulo): la
               pestaña «La Jornada» de arriba ya dice dónde estás, y en el móvil
@@ -260,29 +239,14 @@ export default function PrediccionesHub() {
                   tabIndex={sportTab === sport.id ? 0 : -1}
                   onClick={() => sport.available && setSportTab(sport.id)}
                   onKeyDown={e => onSportKeyDown(e, idx)}
-                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  style={{
-                    background: on
-                      ? `${sport.accent}18`
-                      : 'rgba(255,255,255,0.03)',
-                    border: `1.5px solid ${
-                      on
-                        ? `${sport.accent}50`
-                        : 'rgba(255,255,255,0.06)'
-                    }`,
-                    color: sport.available
-                      ? sportTab === sport.id ? sport.accent : 'var(--text-muted)'
-                      : '#3A3A52',
-                    cursor: sport.available ? 'pointer' : 'default',
-                    fontFamily: 'var(--font-sport)',
-                    opacity: sport.available ? 1 : 0.6,
-                  }}
+                  className={`ts-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50${on ? ' is-on' : ''}`}
+                  style={{ opacity: sport.available ? 1 : 0.5, cursor: sport.available ? 'pointer' : 'default' }}
                 >
                   <span aria-hidden="true" className="inline-flex"><RankedCategoryIcon sport={sport.id} size={14} /></span>
                   <span>{sport.label}</span>
                   {sport.badge && (
                     <span
-                      className="text-[8px] px-1.5 py-0.5 rounded-full"
+                      className="text-[11px] px-1.5 py-0.5 rounded-full"
                       style={{
                         background: 'rgba(255,255,255,0.06)',
                         color: 'var(--text-muted)',
@@ -302,11 +266,8 @@ export default function PrediccionesHub() {
           {(streak !== null || points !== null) && (
             <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10 pb-1">
               <div
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
               >
                 {/* Racha Taka */}
                 {streak !== null && (
@@ -319,7 +280,7 @@ export default function PrediccionesHub() {
                       {streak.current_streak}
                     </span>
                     <span
-                      className="text-[10px]"
+                      className="text-[12px]"
                       style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                     >
                       {streak.current_streak === 1 ? 'día' : 'días'}
@@ -340,7 +301,7 @@ export default function PrediccionesHub() {
                       {points.toLocaleString('es-ES')}
                     </span>
                     <span
-                      className="text-[10px]"
+                      className="text-[12px]"
                       style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                     >
                       pts
@@ -357,7 +318,7 @@ export default function PrediccionesHub() {
                   if (diff > 3) return null
                   return (
                     <span
-                      className="text-[10px] font-black"
+                      className="text-[11px] font-bold"
                       style={{
                         fontFamily: 'var(--font-sport)',
                         color: '#F97316',

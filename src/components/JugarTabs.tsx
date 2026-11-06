@@ -24,8 +24,8 @@ export default function JugarTabs({ activo }: { activo: 'predicciones' | 'juegos
       <div
         role="tablist"
         aria-label="Secciones de Jugar"
-        className="inline-flex items-center gap-1 p-1 rounded-full"
-        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}
+        className="inline-flex items-center p-1 rounded-full"
+        style={{ height: 40, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
       >
         {partes.map(parte => {
           const on = parte.id === activo
@@ -37,13 +37,11 @@ export default function JugarTabs({ activo }: { activo: 'predicciones' | 'juegos
               role="tab"
               aria-selected={on}
               aria-current={on ? 'page' : undefined}
-              className="px-4 rounded-full text-[11.5px] font-black uppercase tracking-widest transition-colors flex items-center"
+              className="px-4 rounded-full text-[12px] font-bold uppercase tracking-[0.08em] transition-colors flex items-center h-full"
               style={{
-                minHeight: 36,
                 textDecoration: 'none',
-                background: on ? 'rgba(124,58,237,0.22)' : 'transparent',
-                border: on ? '1px solid rgba(124,58,237,0.42)' : '1px solid transparent',
-                color: on ? '#DDD3FF' : 'var(--text-muted)',
+                background: on ? 'var(--purple)' : 'transparent',
+                color: on ? '#fff' : 'var(--text-secondary)',
                 fontFamily: 'var(--font-sport)',
               }}
             >

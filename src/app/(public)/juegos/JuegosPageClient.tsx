@@ -94,7 +94,7 @@ const GAMES: Game[] = [
     status: 'active',
     href: '/predicciones',
     icon: <IconQuiniela />,
-    heroNote: 'Nueva Fecha cada día · Predicciones abiertas',
+    heroNote: 'Nueva Jornada cada día · Predicciones abiertas',
     ctaLabel: 'Jugar La Jornada',
     format: 'Diario',
     category: 'Predicciones',
@@ -271,7 +271,7 @@ function DifficultyDots({ level }: { level: Difficulty }) {
 function Badge({ label, color = 'rgba(255,255,255,0.06)', textColor = '#7878A2' }: { label: string; color?: string; textColor?: string }) {
   return (
     <span
-      className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0"
+      className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full flex-shrink-0"
       style={{ background: color, color: textColor, border: `1px solid rgba(255,255,255,0.07)`, fontFamily: 'var(--font-sport)' }}
     >
       {label}
@@ -279,111 +279,15 @@ function Badge({ label, color = 'rgba(255,255,255,0.06)', textColor = '#7878A2' 
   )
 }
 
-// ── Card activo hero ──────────────────────────────────────────
-
-function FeaturedGameCard({ game }: { game: Game }) {
-  return (
-    <Link
-      href={game.href!}
-      className="group relative rounded-2xl overflow-hidden flex flex-col lg:flex-row items-stretch transition-transform hover:scale-[1.005]"
-      style={{
-        background: 'linear-gradient(135deg,#1E1040 0%,#130D32 55%,#0F0A20 100%)',
-        border: `1px solid ${game.accentDim}50`,
-        minHeight: 220,
-      }}
-    >
-      {/* Glows */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 blur-3xl opacity-[0.18] pointer-events-none" style={{ background: game.accentDim }} />
-      <div className="absolute -bottom-12 -right-12 w-56 h-56 blur-3xl opacity-[0.08] pointer-events-none" style={{ background: game.accent }} />
-
-      {/* Left — main content */}
-      <div className="relative z-10 flex flex-col justify-between p-6 lg:p-8 flex-1 gap-6">
-        {/* Status + icon + name */}
-        <div className="flex items-start gap-4">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `${game.accentDim}28`, color: game.accent, border: `1px solid ${game.accentDim}30` }}
-          >
-            {game.icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center flex-wrap gap-2 mb-1.5">
-              <span
-                className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1.5"
-                style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)', fontFamily: 'var(--font-sport)' }}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-                Disponible ahora
-              </span>
-              <Badge label={game.format} />
-              <Badge label={game.category} />
-            </div>
-            <h2
-              className="font-black leading-none"
-              style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem,2.5vw,2.2rem)', color: '#F0F0FF', letterSpacing: '-0.02em' }}
-            >
-              {game.name}
-            </h2>
-            <p className="text-[11px] mt-1" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>
-              {game.tagline}
-            </p>
-          </div>
-
-        </div>
-
-        {/* Stats strip */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#5A4878" strokeWidth="1.2" /><path d="M7 4v3l2 1.5" stroke="#5A4878" strokeWidth="1.2" strokeLinecap="round" /></svg>
-            <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M7 1.5l1.5 3.2 3.5.5-2.5 2.4.6 3.4L7 9.3 3.9 11l.6-3.4L2 5.2l3.5-.5L7 1.5z" stroke="#5A4878" strokeWidth="1.1" /></svg>
-            <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>{LIGA_TAKA_MAX[game.id] ? `Hasta ${LIGA_TAKA_MAX[game.id]} pts Liga Taka` : `Hasta ${game.pts} pts`}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px]" style={{ color: '#5A4878', fontFamily: 'var(--font-sport)' }}>Dificultad</span>
-            <DifficultyDots level={game.difficulty} />
-          </div>
-          {game.heroNote && (
-            <>
-              <div className="w-px h-3 bg-white opacity-[0.06]" />
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                {game.heroNote}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* CTA */}
-        <div>
-          <span
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm transition-all group-hover:gap-3"
-            style={{
-              background: `linear-gradient(135deg,${game.accentDim},#5B21B6)`,
-              color: '#fff',
-              fontFamily: 'var(--font-sport)',
-              letterSpacing: '0.04em',
-              boxShadow: `0 4px 20px ${game.accentDim}40`,
-            }}
-          >
-            {game.ctaLabel ?? 'Jugar'}
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </span>
-        </div>
-      </div>
-
-    </Link>
-  )
-}
-
-// ── Card disponible (live, no hero) ───────────────────────────
+// ── Tarjeta de juego (una sola, neutra) ───────────────────────
+// Maqueta 3 de noviembre (V-31): cada juego traía su color saturado como borde
+// completo, previsualización y botón a color, y /juegos parecía un portal de
+// minijuegos. Ahora todas las tarjetas son iguales —fondo --bg-card, borde
+// fino, radio 16— y el color de cada juego vive en UN sitio: el icono. El
+// botón es el morado de marca, «Jugar». La Jornada es la primera tarjeta, no
+// un banner aparte, y el estado del juego (hecho / cierra en) va en su línea.
 
 function LiveGameCard({ game, state }: { game: Game; state?: GameCardState }) {
-  // El estado del juego (hecho / pendiente / cuánto queda) se pinta DENTRO de
-  // la tarjeta. Antes vivía en un bloque aparte ("Tu día Taka") que repetía los
-  // mismos cuatro juegos más arriba en la página: el mismo juego salía dos
-  // veces, una como ficha de estado y otra como tarjeta.
   // La cuenta atrás sale del reloj DEL NAVEGADOR y esta página es ESTÁTICA de
   // build (sin revalidación): el "2d 6h" del HTML es el de cuando se compiló y
   // no coincide nunca con el de quien la abre. Por eso se pinta tras montar
@@ -393,91 +297,46 @@ function LiveGameCard({ game, state }: { game: Game; state?: GameCardState }) {
   const period = getGamePeriod(game.id as GameId)
   const played = state?.played ?? false
   const countdown = montado && period.nextResetMs > 0 ? formatCountdown(period.nextResetMs) : null
+  const puntos = LIGA_TAKA_MAX[game.id] ? `hasta ${LIGA_TAKA_MAX[game.id]} pts` : `hasta ${game.pts} pts`
+  const meta = [game.timeEst, puntos, game.format.toLowerCase()].join(' · ')
 
   return (
     <Link
       href={game.href!}
-      className="group rounded-2xl overflow-hidden relative flex flex-col transition-all hover:translate-y-[-2px]"
-      style={{
-        background: 'var(--bg-card)',
-        border: `1px solid ${played ? 'rgba(134,239,172,0.28)' : `${game.accentDim}40`}`,
-      }}
+      className="group flex items-center gap-3.5 rounded-2xl p-3.5 no-underline transition-colors hover:bg-white/[0.03]"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', textDecoration: 'none' }}
     >
-      <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${game.accentDim}, ${game.accent})` }} />
-      <div className="absolute top-0 right-0 w-36 h-36 blur-3xl opacity-[0.10] pointer-events-none" style={{ background: game.accent }} />
-
-      {/* Mini preview visual */}
-      {game.preview && (
-        <div className="relative z-10 pt-3 px-3">
-          {game.preview}
-        </div>
-      )}
-
-      <div className="relative z-10 p-5 pt-2 flex flex-col gap-3 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: `${game.accentDim}24`, color: game.accent, border: `1px solid ${game.accentDim}40` }}
-          >
-            {game.icon}
-          </div>
+      <span
+        className="inline-flex items-center justify-center flex-shrink-0 rounded-[14px]"
+        style={{ width: 48, height: 48, background: `color-mix(in srgb, ${game.accent} 14%, var(--bg-surface))`, color: game.accent }}
+      >
+        {game.icon}
+      </span>
+      <div className="flex-1 min-w-0">
+        <h3 className="leading-none" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 22, color: 'var(--text-primary)' }}>
+          {game.name}
+        </h3>
+        <p className="text-[14px] mt-[3px] line-clamp-2" style={{ color: 'var(--text-secondary)', lineHeight: 1.3 }}>{game.tagline}</p>
+        <p className="text-[12px] mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
           {played ? (
-            <span
-              className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full inline-flex items-center gap-1"
-              style={{ background: 'rgba(134,239,172,0.12)', color: '#86EFAC', border: '1px solid rgba(134,239,172,0.3)', fontFamily: 'var(--font-sport)' }}
-            >
-              ✓ Hecho{state?.score != null ? ` · ${state.score}` : ''}
-            </span>
+            <span style={{ color: '#86EFAC' }}>Hecho{state?.score != null ? ` · ${state.score}` : ''} · </span>
           ) : countdown ? (
-            <span
-              className="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full"
-              style={{ background: `${game.accentDim}18`, color: game.accent, border: `1px solid ${game.accentDim}35`, fontFamily: 'var(--font-sport)' }}
-            >
-              Cierra en {countdown}
-            </span>
+            <span>cierra en {countdown} · </span>
           ) : null}
-        </div>
-
-        <div className="flex flex-col gap-1 flex-1">
-          <h3
-            className="font-black leading-tight"
-            style={{ fontFamily: 'var(--font-display)', color: '#F0F0F5', fontSize: 17, letterSpacing: '-0.01em' }}
-          >
-            {game.name}
-          </h3>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            {game.description}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2.5 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-          <DifficultyDots level={game.difficulty} />
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-          {/* Una sola escala: los puntos que suma a la Liga Taka. */}
-          {LIGA_TAKA_MAX[game.id] && (
-            <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}A0`, fontFamily: 'var(--font-sport)' }}>
-              {LIGA_TAKA_MAX[game.id]} pts
-            </span>
-          )}
-        </div>
-
-        <span
-          className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-center transition-all inline-flex items-center justify-center gap-2"
-          style={{
-            background: played ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg,${game.accentDim},${game.accentDim}D0)`,
-            color: played ? 'var(--text-secondary)' : '#F0FFF4',
-            border: played ? '1px solid rgba(255,255,255,0.08)' : undefined,
-            fontFamily: 'var(--font-sport)',
-            letterSpacing: '0.06em',
-            boxShadow: played ? undefined : `0 4px 18px ${game.accentDim}40`,
-          }}
-        >
-          {played ? 'Ver resultado' : 'Jugar ahora'}
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </span>
+          {meta}
+        </p>
       </div>
+      <span
+        className="inline-flex items-center justify-center flex-shrink-0 rounded-xl text-[13px] font-bold uppercase tracking-[0.04em] transition-opacity group-hover:opacity-90"
+        style={{
+          height: 36, padding: '0 16px', fontFamily: 'var(--font-sport)',
+          background: played ? 'var(--bg-surface)' : 'var(--purple)',
+          color: played ? 'var(--text-secondary)' : '#fff',
+          border: played ? '1px solid var(--border-2)' : '1px solid var(--purple)',
+        }}
+      >
+        {played ? 'Ver' : 'Jugar'}
+      </span>
     </Link>
   )
 }
@@ -518,11 +377,6 @@ function ComingGameCard({ game }: { game: Game }) {
         border: '1px solid var(--border)',
       }}
     >
-      {/* Top accent bar */}
-      <div className="h-[3px] w-full" style={{ background: `linear-gradient(90deg, ${game.accentDim}, ${game.accent})` }} />
-
-      {/* Glow */}
-      <div className="absolute top-0 right-0 w-36 h-36 blur-3xl opacity-[0.06] pointer-events-none" style={{ background: game.accent }} />
 
       <div className="relative z-10 p-5 flex flex-col gap-4 flex-1">
         {/* Header */}
@@ -535,13 +389,13 @@ function ComingGameCard({ game }: { game: Game }) {
           </div>
           <div className="flex flex-col items-end gap-1">
             <span
-              className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
               style={{ background: `${game.accentDim}14`, color: game.accent, border: `1px solid ${game.accentDim}22`, fontFamily: 'var(--font-sport)' }}
             >
               {game.releaseTarget ? `Próx · ${game.releaseTarget}` : 'Próximamente'}
             </span>
             <span
-              className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
               style={{ background: 'rgba(255,255,255,0.04)', color: '#9090A2', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
             >
               {game.category}
@@ -558,7 +412,7 @@ function ComingGameCard({ game }: { game: Game }) {
             {game.name}
           </h3>
           <p
-            className="text-[9px] font-black uppercase tracking-widest"
+            className="text-[11px] font-bold uppercase tracking-[0.08em]"
             style={{ color: game.accent, fontFamily: 'var(--font-sport)', opacity: 0.75 }}
           >
             {game.tagline}
@@ -573,10 +427,10 @@ function ComingGameCard({ game }: { game: Game }) {
           <div className="flex items-center gap-1">
             <DifficultyDots level={game.difficulty} />
           </div>
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>·</span>
-          <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-          <span className="ml-auto text-[9px] font-black" style={{ color: `${game.accent}B3`, fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>·</span>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+          <span className="ml-auto text-[11px] font-bold" style={{ color: `${game.accent}B3`, fontFamily: 'var(--font-sport)' }}>
             {LIGA_TAKA_MAX[game.id] ?? game.pts} pts
           </span>
         </div>
@@ -586,7 +440,7 @@ function ComingGameCard({ game }: { game: Game }) {
           <button
             onClick={handleNotify}
             disabled={notified}
-            className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+            className="w-full py-2.5 rounded-xl text-[12px] font-bold uppercase tracking-[0.06em] transition-all"
             style={{
               background: notified ? 'rgba(34,197,94,0.07)' : `${game.accentDim}12`,
               color: notified ? '#4ade80' : game.accent,
@@ -624,25 +478,9 @@ function ExternalGameCard({ game }: { game: Game }) {
       {/* ── Banner desktop/tablet ── */}
       <div
         className="relative rounded-2xl overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #1A0303 0%, #200505 40%, #1C0404 100%)',
-          border: `1.5px solid ${dim}45`,
-          boxShadow: `0 0 60px ${accent}0D, inset 0 1px 0 ${dim}25`,
-        }}
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
       >
-        {/* Red top stripe — su identidad cromática */}
-        <div
-          className="h-[2px] w-full"
-          style={{ background: `linear-gradient(90deg, transparent 5%, ${dim} 25%, ${accent} 50%, ${dim} 75%, transparent 95%)` }}
-        />
 
-        {/* Ambient glow — derecha arriba, izquierda abajo */}
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: `radial-gradient(ellipse 55% 55% at 90% 15%, ${accent}09 0%, transparent 100%)`
-        }} />
-        <div className="absolute inset-0 pointer-events-none" style={{
-          background: `radial-gradient(ellipse 35% 50% at 5% 85%, ${dim}07 0%, transparent 100%)`
-        }} />
 
         {/* Main content */}
         <div className="relative z-10 p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:gap-6 sm:items-center">
@@ -667,7 +505,7 @@ function ExternalGameCard({ game }: { game: Game }) {
               />
             </div>
             <span
-              className="text-[9px] font-black"
+              className="text-[11px] font-bold"
               style={{ color: `${accent}65`, fontFamily: 'var(--font-sport)', letterSpacing: '0.04em' }}
             >
               wrestlingfantasy.app
@@ -684,14 +522,14 @@ function ExternalGameCard({ game }: { game: Game }) {
                 {game.name}
               </h3>
               <span
-                className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
                 style={{ background: `${accent}18`, color: accent, border: `1px solid ${dim}45`, fontFamily: 'var(--font-sport)' }}
               >
                 {game.category}
               </span>
             </div>
             <p
-              className="text-[9px] font-black uppercase tracking-widest"
+              className="text-[11px] font-bold uppercase tracking-[0.08em]"
               style={{ color: `${dim}CC`, fontFamily: 'var(--font-sport)' }}
             >
               {game.tagline}
@@ -702,11 +540,11 @@ function ExternalGameCard({ game }: { game: Game }) {
             {/* Meta row */}
             <div className="flex items-center gap-2.5 mt-1">
               <DifficultyDots level={game.difficulty} />
-              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
-              <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
-              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
-              <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>·</span>
-              <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>WWE · AEW · Triple AAA</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.timeEst}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>·</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{game.format}</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>·</span>
+              <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>WWE · AEW · Triple AAA</span>
             </div>
           </div>
 
@@ -717,7 +555,7 @@ function ExternalGameCard({ game }: { game: Game }) {
               href={links.web}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-90 active:scale-[0.98]"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.08em] transition-all hover:opacity-90 active:scale-[0.98]"
               style={{
                 background: `linear-gradient(135deg, ${dim}, ${accent})`,
                 color: '#fff',
@@ -734,7 +572,7 @@ function ExternalGameCard({ game }: { game: Game }) {
             {/* Secondary: App Store (mobile shows sheet, desktop links direct) */}
             {links.appStore && (
               <button
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-80 sm:hidden"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.08em] transition-all hover:opacity-80 sm:hidden"
                 style={{
                   background: `${accent}10`,
                   border: `1px solid ${accent}32`,
@@ -752,7 +590,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                 href={links.appStore}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden sm:flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:opacity-80"
+                className="hidden sm:flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-[11px] font-bold uppercase tracking-[0.08em] transition-all hover:opacity-80"
                 style={{
                   background: `${accent}10`,
                   border: `1px solid ${accent}32`,
@@ -798,7 +636,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                   <p className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>
                     {game.name}
                   </p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>
                     ¿Cómo quieres acceder?
                   </p>
                 </div>
@@ -824,7 +662,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-black" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>Abrir en web</p>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>wrestlingfantasy.app</p>
+                  <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>wrestlingfantasy.app</p>
                 </div>
                 <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
                   <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-muted)' }} />
@@ -849,7 +687,7 @@ function ExternalGameCard({ game }: { game: Game }) {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-black" style={{ color: accent, fontFamily: 'var(--font-display)' }}>Descargar en App Store</p>
-                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>iPhone · iPad · Gratis</p>
+                    <p className="text-[12px]" style={{ color: 'var(--text-muted)' }}>iPhone · iPad · Gratis</p>
                   </div>
                   <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
                     <path d="M1.5 8.5L8.5 1.5M8.5 1.5H4M8.5 1.5v4.5" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -910,30 +748,7 @@ export default function JuegosPageClient() {
   return (
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh', position: 'relative' }}>
 
-      {/* Ambiente de marca "La Señal" (Higgsfield): capa estática detrás de la
-          cabecera del hub, se desvanece hacia abajo. No hay "deporte activo" en
-          /juegos → fondo neutro de marca (morado). Respeta prefers-reduced-motion
-          (globals: .signal-ambient → animation none) y NO es movimiento → no la
-          apaga el "modo flojo". */}
-      <div className="signal-ambient" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/banners/signal/default.webp"
-          alt=""
-          className="signal-backdrop"
-          loading="lazy"
-          decoding="async"
-          /* El foco morado de la escena vive arriba-derecha (el título va a la
-             izquierda) → encuadro a la derecha + un punto más de presencia para
-             que ese haz luzca junto al título. Override inline = NO toca Predicciones. */
-          style={{ objectPosition: '80% 8%', opacity: 0.9 }}
-        />
-        <div className="signal-scrim" />
-        <div
-          className="signal-tint"
-          style={{ background: 'radial-gradient(120% 85% at 70% 0%, #7C3AED33 0%, transparent 60%)' }}
-        />
-      </div>
+      {/* Fondo plano (V-18, maqueta 3 de noviembre): sin foto de marca detrás de los controles. */}
 
       {/* Las dos mitades de "Jugar", para poder volver a la Jornada sin pasar
           por el cajón ☰. */}
@@ -947,40 +762,20 @@ export default function JuegosPageClient() {
             Compacto a propósito: el titular ocupaba media pantalla y empujaba
             todos los juegos por debajo del pliegue. Un hub de juegos tiene que
             enseñar juegos. */}
-        <div className="relative pt-8 pb-5">
-          <div
-            className="absolute -top-8 left-0 w-96 h-48 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse at 20% 40%, rgba(124,58,237,0.1) 0%, transparent 70%)',
-              filter: 'blur(16px)',
-            }}
-          />
-          <div className="relative">
-            <div className="flex items-center gap-2.5 mb-2">
-              <span className="section-accent" />
-              <span className="section-label">Zona de juegos</span>
-            </div>
-            <h1
-              className="font-black leading-none mb-2"
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.7rem, 3vw, 2.4rem)',
-                color: '#F8F8FF',
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Pon a prueba tu instinto deportivo.
-            </h1>
-            {/* Más claro y con sombra: va encima de la foto de cabecera, y el
-                gris apagado se perdía en sus zonas claras. */}
-            <p className="text-[13px]" style={{ color: '#CFCFDD', textShadow: '0 1px 8px rgba(0,0,0,0.6)', maxWidth: 520 }}>
-              Predicciones, trivia, fantasy y puzzles. Compite cada semana y sube en el ranking.
-            </p>
-          </div>
+        <div className="pt-4 pb-4">
+          <h1
+            className="font-extrabold leading-none"
+            style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 3.5vw, 44px)', color: '#F8F8FF', letterSpacing: '-0.01em' }}
+          >
+            Juegos
+          </h1>
+          <p className="text-[14px] mt-1.5" style={{ color: 'var(--text-secondary)', maxWidth: 520 }}>
+            Pon a prueba tu instinto deportivo. Compite cada semana y sube en el ranking.
+          </p>
         </div>
 
         {/* ── ESTADO DEL JUGADOR (una sola barra) ───────────── */}
-        <div className="mb-8">
+        <div className="mb-6">
           <GamesStatusBar overview={overview} nextHref={nextGame?.href} nextLabel={nextGame?.name} />
         </div>
 
@@ -992,16 +787,13 @@ export default function JuegosPageClient() {
         <section className="mb-10">
           <div className="flex items-center justify-between mb-4">
             <SectionHeader>Juega hoy</SectionHeader>
-            <p className="text-[10px] hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[12px] hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Todo suma a tu Liga Taka
             </p>
           </div>
 
-          <div className="mb-4">
-            <FeaturedGameCard game={mundialGame} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <LiveGameCard game={mundialGame} />
             {jugables.map(game => (
               <LiveGameCard key={game.id} game={game} state={overview.byGame[game.id]} />
             ))}
@@ -1022,10 +814,7 @@ export default function JuegosPageClient() {
         <Link
           href="/liga-taka"
           className="group flex items-center gap-3 rounded-2xl px-4 py-3.5 mb-10 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-          style={{
-            background: 'linear-gradient(135deg, rgba(147,197,253,0.10), rgba(167,139,250,0.06))',
-            border: '1px solid rgba(147,197,253,0.22)',
-          }}
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
         >
           <span className="text-lg leading-none flex-shrink-0" aria-hidden>⚡</span>
           <p className="text-[13px] flex-1 min-w-0" style={{ color: 'var(--text-secondary)' }}>
@@ -1033,8 +822,8 @@ export default function JuegosPageClient() {
             racha en una sola clasificación general.
           </p>
           <span
-            className="text-[10px] font-black uppercase tracking-widest flex-shrink-0 whitespace-nowrap"
-            style={{ color: '#93C5FD', fontFamily: 'var(--font-sport)' }}
+            className="text-[11px] font-bold uppercase tracking-[0.08em] flex-shrink-0 whitespace-nowrap"
+            style={{ color: '#C4B5FD', fontFamily: 'var(--font-sport)' }}
           >
             Ver →
           </span>
@@ -1048,7 +837,7 @@ export default function JuegosPageClient() {
             <SectionHeader action={<>
               {comingGames.length > 0 && (
                 <span
-                  className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest"
+                  className="text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest"
                   style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.06)', fontFamily: 'var(--font-sport)' }}
                 >
                   {comingGames.length} en camino

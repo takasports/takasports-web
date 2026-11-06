@@ -45,13 +45,13 @@ export function TeamLogo({ logo, photo, name, size = 24, sport, accent, abbr }: 
           style={{
             width: size, height: size,
             borderRadius: Math.round(size * 0.28),
-            fontSize: size * 0.34,
+            fontSize: Math.max(11, Math.round(size * 0.34)),
             letterSpacing: 0.2,
             background: `${accent}1A`,
             color: accent,
             border: `1px solid ${accent}4D`,
           }}>
-          {crestInitials(abbr, name)}
+          {size < 28 ? crestInitials(abbr, name).slice(0, 1) : crestInitials(abbr, name)}
         </div>
       )
     }
@@ -61,12 +61,12 @@ export function TeamLogo({ logo, photo, name, size = 24, sport, accent, abbr }: 
       <div className="flex items-center justify-center rounded-full font-black flex-shrink-0"
         style={{
           width: size, height: size,
-          fontSize: size * 0.36,
+          fontSize: Math.max(11, Math.round(size * 0.36)),
           background: combat ? 'rgba(212,175,55,0.14)' : tennis ? 'rgba(217,119,6,0.14)' : 'rgba(255,255,255,0.06)',
           color: combat ? '#D4AF37' : tennis ? '#FBBF24' : '#7A7A8E',
           border: combat ? '1px solid rgba(212,175,55,0.25)' : tennis ? '1px solid rgba(251,191,36,0.25)' : 'none',
         }}>
-        {combat || tennis ? initials(name) : name.slice(0, 2).toUpperCase()}
+        {size < 28 ? name.slice(0, 1).toUpperCase() : combat || tennis ? initials(name) : name.slice(0, 2).toUpperCase()}
       </div>
     )
   }
@@ -128,7 +128,9 @@ export interface HeroProps {
 }
 
 export function LiveHeroCard(p: HeroProps) {
-  // FASE 3: comp en el color POR DEPORTE (fallback rojo del ticker en vivo).
+  // Fila a ancho completo, la misma del resto del calendario (V-19): antes era
+  // una tarjeta de 300 px sola con dos tercios de ancho vacío. El rojo queda
+  // para el estado en directo; la competición, en el color del deporte.
   const compColor = accentForSport(p.sport, '#FF4D2E')
   const tennis = isTennis(p.sport)
   const racing = isRacing(p.sport)
@@ -139,110 +141,49 @@ export function LiveHeroCard(p: HeroProps) {
   })
 
   const inner = (
-    <div
-      className={`cal-card cal-card--live flex flex-col hover:brightness-110 ${p.flashing ? 'ts-flash' : ''}`}
-      style={{
-        ['--row-accent' as string]: '#FF4D2E',
-        width: 300,
-        flexShrink: 0,
-        borderRadius: 15,
-        // VIDRIO v2: mismo velo que la fila en vivo de la lista — tinte rojo + canto
-        // specular + espina de acento. El box-shadow flotante lo pone .cal-card (CSS)
-        // para conservar el lift del hover.
-        background: 'linear-gradient(158deg, rgba(255,77,46,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)',
-        border: '1px solid rgba(255,77,46,0.4)',
-        borderTopColor: 'rgba(255,77,46,0.55)',
-        borderLeft: '4px solid #FF4D2E',
-      }}
-    >
-      {/* Luz refractada (blob) roja + brillo specular superior */}
-      <span aria-hidden className="pointer-events-none absolute"
-        style={{ top: -40, left: -10, width: 150, height: 110, background: 'radial-gradient(60% 60% at 30% 40%, rgba(255,77,46,0.3), transparent 70%)', filter: 'blur(6px)', opacity: 0.7 }} />
-      <span aria-hidden className="pointer-events-none absolute"
-        style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
-
-      {/* Header: pastilla EN VIVO idéntica a la de la fila + competición a la derecha */}
-      <div className="relative flex items-center justify-between gap-2 px-3.5 pt-3 pb-2">
-        <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0"
-          style={{ padding: '2.5px 8px', background: 'rgba(255,77,46,0.2)', border: '1px solid rgba(255,77,46,0.5)', boxShadow: '0 0 10px rgba(255,77,46,0.2)' }}>
-          <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
-          <span className="text-[8.5px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
-            {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
-          </span>
+    <div className={`relative flex items-center gap-3 hover:bg-white/[0.03] transition-colors ${p.flashing ? 'ts-flash' : ''}`} style={{ minHeight: 60, padding: '10px 14px' }}>
+      {racing ? (
+        <span className="flex items-center justify-center flex-shrink-0" style={{ width: 56, color: 'var(--color-live)' }}><F1Icon size={20} /></span>
+      ) : (
+        <span className="flex-shrink-0 tabular-nums whitespace-nowrap" style={{ width: 56, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, lineHeight: 1, color: 'var(--text-primary)' }}>
+          {p.homeScore ?? 0} – {p.awayScore ?? 0}
         </span>
-        <span className="flex items-center gap-1.5 min-w-0">
-          {tennis && <span style={{ color: '#d97706' }}><TennisIcon size={10} /></span>}
-          <span className="text-[8.5px] font-black uppercase tracking-wider truncate"
-            style={{ color: compColor, fontFamily: 'var(--font-sport)', maxWidth: 150 }}>
-            {p.comp}
-          </span>
-        </span>
-      </div>
-
-      {/* Body: Home — Cápsula — Away */}
-      <div className="relative flex items-center px-3.5 py-3 gap-2">
-        {/* Home */}
-        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo logo={p.homeLogo} photo={p.homePhoto} name={p.homeTeam} size={40} sport={p.sport} accent={compColor} abbr={p.homeAbbr} />
-          <span className="text-[10px] font-black truncate w-full text-center" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {shortName(p.homeTeam, p.homeAbbr)}
-          </span>
-        </div>
-
-        {/* Marcador en cápsula esmerilada (blanca): el rojo queda para el estado */}
-        <div className="flex flex-col items-center justify-center flex-shrink-0 px-1 gap-1">
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-[7px] min-w-0" style={{ fontFamily: 'var(--font-sport)', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
           {racing ? (
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] inline-flex items-center gap-1"
-                style={{ color: '#FF4D2E', fontFamily: 'var(--font-sport)' }}>
-                <F1Icon size={11} /> EN CARRERA
-              </span>
-              <span className="text-[11px] font-bold text-center"
-                style={{ color: '#C0C0D4', fontFamily: 'var(--font-sport)', maxWidth: 80 }}>
-                {p.comp}
-              </span>
-            </div>
+            <span className="truncate">{p.comp || p.homeTeam}</span>
           ) : (
             <>
-              {tennis && (
-                <span className="text-[8px] font-black uppercase tracking-[0.2em]"
-                  style={{ color: '#FBBF24', fontFamily: 'var(--font-sport)' }}>
-                  Sets
-                </span>
-              )}
-              <span className="inline-flex items-center justify-center gap-2"
-                style={{ padding: '5px 13px', borderRadius: 12, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.14)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
-                <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 26, color: '#fff', fontFamily: 'var(--font-display)', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
-                  {p.homeScore ?? 0}
-                </span>
-                <span className="text-[15px] font-light leading-none" style={{ color: '#55555F' }}>—</span>
-                <span className="font-black tabular-nums leading-none"
-                  style={{ fontSize: 26, color: '#fff', fontFamily: 'var(--font-display)', textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}>
-                  {p.awayScore ?? 0}
-                </span>
-              </span>
+              <TeamLogo logo={p.homeLogo} photo={p.homePhoto} name={p.homeTeam} size={22} sport={p.sport} accent={compColor} abbr={p.homeAbbr} />
+              <span className="truncate">{shortName(p.homeTeam, p.homeAbbr)}</span>
+              <span className="flex-shrink-0" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>–</span>
+              <TeamLogo logo={p.awayLogo} photo={p.awayPhoto} name={p.awayTeam} size={22} sport={p.sport} accent={compColor} abbr={p.awayAbbr} />
+              <span className="truncate">{shortName(p.awayTeam, p.awayAbbr)}</span>
             </>
           )}
         </div>
-
-        {/* Away */}
-        <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
-          <TeamLogo logo={p.awayLogo} photo={p.awayPhoto} name={p.awayTeam} size={40} sport={p.sport} accent={compColor} abbr={p.awayAbbr} />
-          <span className="text-[10px] font-black truncate w-full text-center" style={{ color: '#E8E8F4', fontFamily: 'var(--font-sport)' }}>
-            {shortName(p.awayTeam, p.awayAbbr)}
+        <div className="flex items-center gap-1.5 min-w-0 whitespace-nowrap overflow-hidden" style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
+          <span className="inline-flex items-center gap-1 font-bold" style={{ color: 'var(--color-live)' }}>
+            <span className="rounded-full" style={{ width: 6, height: 6, background: 'var(--color-live)', animation: 'live-pulse 1.6s ease-out infinite' }} />
+            {racing ? `En carrera${liveLabel ? ` · ${liveLabel}` : ''}` : liveLabel && liveLabel !== 'EN VIVO' ? `En vivo · ${liveLabel}` : 'En vivo'}
           </span>
+          {p.comp ? (
+            <>
+              <span aria-hidden>·</span>
+              <span className="truncate font-bold uppercase" style={{ color: compColor, letterSpacing: '0.06em', fontSize: 11 }}>
+                {tennis ? 'Tenis · ' : ''}{p.comp}
+              </span>
+            </>
+          ) : null}
+          <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="relative flex items-center justify-between px-3.5 pb-3 pt-1 gap-2 border-t" style={{ borderColor: 'rgba(255,77,46,0.12)' }}>
-        <span className="text-[9px] font-bold uppercase tracking-wider truncate" style={{ color: p.matchRef ? '#C0C0D4' : '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-          {p.matchRef ? 'Ver ficha →' : p.sport}
+      {p.matchRef ? (
+        <span className="hidden sm:inline flex-shrink-0 text-[11px] font-bold uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.08em', fontFamily: 'var(--font-sport)' }}>
+          Ficha →
         </span>
-        <BroadcastChip comp={p.comp ?? ''} sport={p.sport} tz={p.tz} fallback={p.broadcast} />
-        {/* Sin campana de recordatorio: el partido YA está en vivo (M22). */}
-      </div>
+      ) : null}
     </div>
   )
 
@@ -265,7 +206,7 @@ export function BroadcastChip({ comp, sport, tz, fallback }: {
   const split = isSplitBroadcast(channel)
   return (
     <span
-      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
+      className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wide"
       style={{
         background: split ? 'rgba(251,191,36,0.08)' : 'rgba(99,102,241,0.10)',
         color:      split ? '#D4A017'               : '#A5B4FC',
@@ -287,7 +228,7 @@ export { compConfigForGroup }
 // ─── Competition sub-header ───────────────────────────────────────────────
 // Si la competición tiene página propia, la cabecera lleva su escudo oficial y
 // es un enlace a /calendario/[slug] (anclaje visual + descubrimiento).
-export function CompGroupHeader({ comp, accent, count, first, crest, slug, banner, pinned, onTogglePin, channel, collapsed, onToggleCollapse }: {
+export function CompGroupHeader({ comp, accent, count, first, slug, pinned, onTogglePin, channel, collapsed, onToggleCollapse }: {
   comp: string; accent: string; count: number; first?: boolean; crest?: string; slug?: string
   banner?: string; pinned?: boolean; onTogglePin?: () => void
   /** Canal común a TODA la liga: se anuncia aquí una vez y las filas no lo repiten. */
@@ -297,104 +238,75 @@ export function CompGroupHeader({ comp, accent, count, first, crest, slug, banne
   /** Pliega/despliega la liga en TODO el timeline. */
   onToggleCollapse?: () => void
 }) {
-  // El enlace a /calendario/[liga] abraza SOLO la identidad de la liga (espina,
-  // escudo, nombre y su flecha), no la cabecera entera. Antes envolvía TODO, con
-  // los botones de fijar y plegar dentro: un <button> dentro de un <a> no es HTML
-  // válido, y mientras la página no está hidratada esos botones NAVEGAN en vez de
-  // hacer lo suyo (visto el 26/08/2026 con el service worker sirviendo HTML
-  // fósil: pulsar la estrella de Serie A se iba a /calendario/serie-a). Hidratada
-  // funcionaban bien gracias al preventDefault, así que era un fallo de ventana
-  // estrecha — pero real, y esto lo cierra por estructura.
-  const identidad = (
-    <>
-      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 14, background: accent, boxShadow: `0 0 8px ${accent}66` }} />
-      {crest && (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img src={smallImage(crest, 32)} alt="" aria-hidden="true" width={16} height={16} loading="lazy" decoding="async"
-          style={{ objectFit: 'contain', width: 16, height: 16, flexShrink: 0 }} />
-      )}
-      <span className="text-[11px] font-bold uppercase tracking-[0.12em] truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
-        {comp}
-      </span>
-      {slug && (
-        <svg width="13" height="13" viewBox="0 0 12 12" fill="none" className="flex-shrink-0" aria-hidden style={{ opacity: 0.95 }}>
-          <path d="M4.5 2L8 6l-3.5 4" stroke={accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-    </>
+  // Cabecera de competición como en /calendario/dia (maqueta 3 de noviembre):
+  // el nombre en el color del deporte y «Calendario →» a la derecha si la liga
+  // tiene página. Sin foto de fondo ni espina: el color del deporte vive aquí
+  // y en ningún otro sitio de la tarjeta. Fijar y plegar se conservan.
+  //
+  // El enlace abraza SOLO el nombre (un <button> dentro de un <a> no es HTML
+  // válido, y sin hidratar los botones navegaban en vez de hacer lo suyo).
+  const nombre = (
+    <span className="text-[12px] font-bold uppercase tracking-[0.12em] truncate" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+      {comp}
+    </span>
   )
   return (
-    <div className={`relative px-2 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
-      {/* Backdrop sutil de la competición (broadcast): la foto asoma muy tenue
-          por la derecha; un scrim la apaga sobre el lado del texto. Solo en las
-          competiciones con banner; el resto mantiene la cabecera lisa de antes. */}
-      {banner && (
-        <div className="absolute left-0 right-0 rounded-lg overflow-hidden pointer-events-none" style={{ top: first ? 2 : 12, bottom: 2, zIndex: 0 }} aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={banner} alt="" aria-hidden="true" loading="lazy" decoding="async"
-            className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.4, objectPosition: '85% 36%' }} />
-          <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--bg-base) 6%, color-mix(in srgb, ${accent} 9%, rgba(10,10,18,0.82)) 46%, rgba(10,10,18,0.34) 100%)` }} />
-        </div>
+    <div className={`flex items-center gap-2.5 px-0.5 pb-2 ${first ? 'pt-1' : 'pt-4'}`}>
+      {slug ? (
+        <Link href={`/calendario/${slug}`} prefetch={false} className="flex items-center gap-2 min-w-0 flex-1 no-underline transition-all hover:brightness-125" aria-label={`Ver calendario de ${comp}`}>
+          {nombre}
+        </Link>
+      ) : (
+        <span className="flex items-center gap-2 min-w-0 flex-1">{nombre}</span>
       )}
-      <div className="relative flex items-center gap-2.5" style={{ zIndex: 1 }}>
-        {slug ? (
-          <Link href={`/calendario/${slug}`} prefetch={false}
-            className="flex items-center gap-2.5 min-w-0 flex-1 no-underline transition-all hover:brightness-125"
-            aria-label={`Ver calendario de ${comp}`}>
-            {identidad}
-          </Link>
-        ) : (
-          <span className="flex items-center gap-2.5 min-w-0 flex-1">{identidad}</span>
-        )}
-        {channel && (
-          /* El canal de toda la liga, una sola vez. Ver lib/comp-group-channel.ts. */
-          <span className="flex items-center gap-1 flex-shrink-0" style={{ maxWidth: '42%' }}>
-            <TvIcon size={10} />
-            <span className="text-[9.5px] font-bold uppercase tracking-[0.05em] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-              {channel}
-            </span>
+      {channel && (
+        <span className="flex items-center gap-1 flex-shrink-0" style={{ maxWidth: '40%' }}>
+          <TvIcon size={11} />
+          <span className="text-[11px] font-bold uppercase tracking-[0.05em] truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            {channel}
           </span>
-        )}
-        {pinned && (
-          <span className="text-[8px] font-black uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
-            Fijada
-          </span>
-        )}
-        {onTogglePin && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin() }}
-            aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
-            aria-pressed={!!pinned}
-            className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
-            style={{ width: 24, height: 24, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
-              <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
-            </svg>
-          </button>
-        )}
-        {/* Plegar la liga. Un sábado en "Todo" son ~96 partidos en veinte grupos;
-            poder cerrar los que no interesan lo hace navegable. El contador de al
-            lado se queda para saber qué hay debajo. Espejo de la app. */}
-        {onToggleCollapse && (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCollapse() }}
-            aria-label={collapsed ? `Desplegar ${comp}` : `Plegar ${comp}`}
-            aria-expanded={!collapsed}
-            className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
-            style={{ width: 24, height: 24, cursor: 'pointer', background: 'transparent', border: 'none' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden
-              style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 140ms ease' }}>
-              <path d="M5 9l7 7 7-7" stroke={collapsed ? accent : '#6A6A80'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
-        <span className="text-[9px] font-bold tabular-nums px-2 py-0.5 rounded-full flex-shrink-0"
-          style={{ background: `${accent}14`, color: accent, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
+        </span>
+      )}
+      {pinned && (
+        <span className="text-[11px] font-bold uppercase tracking-wider flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)', opacity: 0.85 }}>
+          Fijada
+        </span>
+      )}
+      {onTogglePin && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePin() }}
+          aria-label={pinned ? `Dejar de fijar ${comp}` : `Fijar ${comp} arriba`}
+          aria-pressed={!!pinned}
+          className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
+          style={{ width: 24, height: 24, cursor: 'pointer', background: pinned ? `${accent}22` : 'transparent', border: 'none' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill={pinned ? accent : 'none'} stroke={pinned ? accent : '#6A6A80'} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round">
+            <path d="M12 2.5l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 16.8 6.4 19.7l1.1-6.2L3 9.1l6.2-.9L12 2.5z" />
+          </svg>
+        </button>
+      )}
+      {onToggleCollapse && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCollapse() }}
+          aria-label={collapsed ? `Desplegar ${comp}` : `Plegar ${comp}`}
+          aria-expanded={!collapsed}
+          className="flex items-center justify-center flex-shrink-0 rounded-md transition-all"
+          style={{ width: 24, height: 24, cursor: 'pointer', background: 'transparent', border: 'none' }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 140ms ease' }}>
+            <path d="M5 9l7 7 7-7" stroke={collapsed ? accent : '#6A6A80'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
+      {slug ? (
+        <Link href={`/calendario/${slug}`} prefetch={false} className="flex-shrink-0 no-underline text-[11px] font-bold uppercase tracking-[0.08em] transition-colors hover:text-[#C4B5FD]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          Calendario →
+        </Link>
+      ) : (
+        <span className="text-[11px] font-bold tabular-nums flex-shrink-0" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {count}
         </span>
-      </div>
+      )}
     </div>
   )
 }
@@ -477,7 +389,7 @@ export function TennisSetLine({ setsStr, accent }: { setsStr: string; accent: st
             key={i}
             className="tabular-nums rounded"
             style={{
-              fontSize: 10, fontWeight: activo ? 900 : 700, padding: '1px 5px',
+              fontSize: 11, fontWeight: activo ? 900 : 700, padding: '1px 5px',
               fontFamily: 'var(--font-sport)',
               color: activo ? accent : '#9A9AAE',
               background: activo ? `color-mix(in srgb, ${accent} 14%, transparent)` : 'rgba(255,255,255,0.05)',
@@ -501,7 +413,7 @@ export function StandingLine({ standing, align, reserve }: { standing?: TeamStan
   return (
     <span
       className={`block truncate tabular-nums ${align === 'right' ? 'text-right' : 'text-left'}`}
-      style={{ fontSize: 9.5, lineHeight: '12px', height: STANDING_H - 2, fontWeight: 700, letterSpacing: '0.04em', color: '#6E6E80', fontFamily: 'var(--font-sport)', marginTop: 2 }}
+      style={{ fontSize: 11, lineHeight: '12px', height: STANDING_H - 2, fontWeight: 700, letterSpacing: '0.04em', color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', marginTop: 2 }}
     >
       {label}
     </span>
@@ -721,48 +633,62 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
     <MatchCrest photo={photo} logo={logo} accent={accent} fav={fav} />
   )
 
-  // Cápsula de marcador (vidrio esmerilado): marcador blanco (vivo/final) o hora en el
-  // acento (próximos). Es el foco central de la tarjeta — la mezcla aprobada (G2).
-  const scoreCapsule = (
-    <span
-      className="inline-flex items-center justify-center flex-shrink-0"
-      style={{
-        minWidth: 54,
-        padding: '2.5px 11px',
-        borderRadius: 10,
-        background: showScore ? 'rgba(0,0,0,0.34)' : `color-mix(in srgb, ${accent} 12%, rgba(0,0,0,0.3))`,
-        border: `1px solid ${showScore ? 'rgba(255,255,255,0.14)' : `color-mix(in srgb, ${accent} 40%, rgba(255,255,255,0.14))`}`,
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08)',
-      }}
-    >
-      <span className="tabular-nums" style={{ fontSize: showScore ? 20 : 15, fontFamily: 'var(--font-sport)', fontWeight: 900, letterSpacing: showScore ? '0.04em' : 0, color: showScore ? '#fff' : accent, textShadow: showScore ? '0 1px 8px rgba(0,0,0,0.4)' : undefined }}>
-        {centerTxt}
-      </span>
-    </span>
-  )
+  // ── Fila del sistema único (maqueta 3 de noviembre, V-17) ──────────────────
+  // La misma fila que /calendario/dia: a la izquierda la hora en el verde de
+  // marca (o el marcador en blanco si ya se jugó), en medio escudos y nombres
+  // con una línea de contexto debajo, a la derecha la campana. Sin vidrio, sin
+  // borde de color ni cápsula: el color del deporte vive solo en el rótulo de
+  // la competición. Los nombres largos pasan a sus siglas en móvil en vez de
+  // cortarse con «…».
+  const abreviable = (nombre: string, abbr?: string): React.ReactNode =>
+    nombre.length > 18 && abbr ? (
+      <>
+        <span className="sm:hidden">{abbr}</span>
+        <span className="hidden sm:inline">{nombre}</span>
+      </>
+    ) : nombre
+
+  const izquierda = showScore
+    ? `${hg} – ${ag}`
+    : isLive || finished
+      ? null
+      : (kickoff || (isMatchup ? '—' : ''))
+  const stH = finished ? null : standingLabel(event.homeStanding)
+  const stA = finished ? null : standingLabel(event.awayStanding)
+
+  const contexto: React.ReactNode[] = []
+  if (isLive) {
+    contexto.push(
+      <span key="live" className="inline-flex items-center gap-1 font-bold" style={{ color: 'var(--color-live)' }}>
+        {!paused && <span className="rounded-full" style={{ width: 6, height: 6, background: 'var(--color-live)', animation: 'live-pulse 1.6s ease-out infinite' }} />}
+        {paused ? liveLabel : liveLabel && liveLabel !== 'EN VIVO' ? `En vivo · ${liveLabel}` : 'En vivo'}
+      </span>,
+    )
+  } else if (finished) {
+    contexto.push(<span key="fin">{event.finishNote ?? 'Final'}</span>)
+  }
+  if (dateLabel) contexto.push(<span key="fecha">{dateLabel}</span>)
+  if (eyebrowText) {
+    contexto.push(
+      <span key="comp" className="font-bold uppercase" style={{ color: accent, letterSpacing: '0.06em', fontSize: 11 }}>{eyebrowText}</span>,
+    )
+  }
+  if (event.stage) contexto.push(<span key="fase">{event.stage}</span>)
+  if (!isLive && !finished && event.venue) contexto.push(<span key="sede">{event.venue}</span>)
+  if (channel) contexto.push(<span key="tv">{channel}</span>)
+  if (stH && stA) contexto.push(<span key="tabla" className="tabular-nums">{stH} · {stA}</span>)
+  if (stakes) contexto.push(<span key="motivo" style={{ color: stakes.tone === 'alta' ? '#FCD34D' : '#C9A96A' }}>{stakes.tone === 'alta' ? '★ ' : ''}{stakes.label}</span>)
+  if (h2hNote) contexto.push(<span key="h2h">{h2hNote}</span>)
+  if (winnerNote) contexto.push(<span key="ganador">{racing ? '🏁 ' : '🏆 '}{winnerNote}</span>)
+  if (tennisSets) contexto.push(<TennisSetLine key="sets" setsStr={tennisSets} accent={accent} />)
 
   const inner = (
     <div
-      className={`relative overflow-hidden hover:brightness-110 transition-[filter] duration-150 ${flashing ? 'ts-flash' : ''}`}
-      style={{
-        borderRadius: 15,
-        padding: '11px 13px 11px 14px',
-        // VIDRIO TAKA teñido por deporte: velo translúcido + tinte del acento + canto de
-        // luz specular arriba + sombra que la hace FLOTAR (separa las tarjetas). En vivo = rojo.
-        background: isLive
-          ? 'linear-gradient(158deg, rgba(255,77,46,0.16) 0%, rgba(255,255,255,0.026) 46%, rgba(255,255,255,0.012) 100%)'
-          : `linear-gradient(158deg, color-mix(in srgb, ${accent} 15%, rgba(255,255,255,0.05)) 0%, rgba(255,255,255,0.028) 46%, rgba(255,255,255,0.015) 100%)`,
-        border: `1px solid ${isLive ? 'rgba(255,77,46,0.4)' : 'rgba(255,255,255,0.12)'}`,
-        borderTopColor: isLive ? 'rgba(255,77,46,0.5)' : 'rgba(255,255,255,0.28)',
-        borderLeft: `4px solid ${isLive ? '#FF4D2E' : accent}`,
-        boxShadow: '0 10px 24px -10px rgba(0,0,0,0.62), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -14px 22px -16px rgba(0,0,0,0.45)',
-      }}
+      className={`relative flex items-center gap-3 hover:bg-white/[0.03] transition-colors ${flashing ? 'ts-flash' : ''}`}
+      style={{ minHeight: 60, padding: '10px 14px' }}
     >
-      {/* Enlace de la TARJETA a la ficha del partido, en capa (patrón "stretched
-          link") en vez de envolviendo la fila. Antes toda la fila era un <a>, así
-          que los nombres no podían enlazar a su equipo: un <a> dentro de otro <a>
-          es HTML inválido. Ahora la capa cubre el hueco y los nombres, la campana
-          y el chip se ponen por encima (z-3). */}
+      {/* Enlace de la FILA a la ficha del partido, en capa (patrón "stretched
+          link"): los nombres, la campana y el chip van por encima (z-3). */}
       {cardHref ? (
         <Link
           href={cardHref}
@@ -772,202 +698,86 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
         />
       ) : null}
 
-      {/* Luz refractada (blob) — el toque líquido, teñido del deporte */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute"
-        style={{ top: -40, left: -10, width: 150, height: 110, background: `radial-gradient(60% 60% at 30% 40%, ${isLive ? 'rgba(255,77,46,0.3)' : `color-mix(in srgb, ${accent} 26%, transparent)`}, transparent 70%)`, filter: 'blur(6px)', opacity: 0.7 }}
-      />
-      {/* Brillo specular del borde superior */}
-      <div aria-hidden className="pointer-events-none absolute" style={{ top: 0, left: 0, right: 0, height: '42%', background: 'linear-gradient(180deg, rgba(255,255,255,0.07), transparent)', borderRadius: '15px 15px 0 0' }} />
+      {racing ? (
+        <span className="flex items-center justify-center flex-shrink-0" style={{ width: 56, color: accent }}>
+          <SportIcon sport={event.sport} size={20} />
+        </span>
+      ) : izquierda ? (
+        <span
+          className="flex-shrink-0 tabular-nums whitespace-nowrap"
+          style={{ width: 56, fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: showScore ? 16 : 18, lineHeight: 1, color: showScore ? 'var(--text-primary)' : 'var(--green)' }}
+        >
+          {izquierda}
+        </span>
+      ) : (
+        <span className="flex-shrink-0" style={{ width: 56 }} />
+      )}
 
-      {/* Recordatorio (campana) arriba-dcha SOLO en próximos. El estado (EN VIVO/Final)
-          ya NO va en la esquina: pasa a una ceja CENTRADA encima del marcador (Opción A). */}
+      <div className="relative flex-1 min-w-0 pointer-events-none" style={{ zIndex: 2 }}>
+        <div className="flex items-center gap-[7px] min-w-0" style={{ fontFamily: 'var(--font-sport)', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
+          {isMatchup ? (
+            <>
+              {hasCrests ? crest(event.homeLogo, event.homePhoto, hFav) : null}
+              <span className="min-w-0 truncate">
+                <TeamNameLink href={homeHref} name={rawHome} align="left">
+                  <span className="truncate" style={{ fontWeight: homeLead ? 700 : 600, color: dimHome ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                    {abreviable(dispHome, event.homeAbbr)}
+                  </span>
+                </TeamNameLink>
+              </span>
+              <span className="flex-shrink-0" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>–</span>
+              {hasCrests ? crest(event.awayLogo, event.awayPhoto, aFav) : null}
+              <span className="min-w-0 truncate">
+                <TeamNameLink href={awayHref} name={rawAway} align="left">
+                  <span className="truncate" style={{ fontWeight: awayLead ? 700 : 600, color: dimAway ? 'var(--text-muted)' : 'var(--text-primary)' }}>
+                    {abreviable(dispAway, event.awayAbbr)}
+                  </span>
+                </TeamNameLink>
+              </span>
+            </>
+          ) : (
+            <span className="truncate">{home}</span>
+          )}
+        </div>
+        {contexto.length > 0 ? (
+          <div className="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap" style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3 }}>
+            {contexto.map((nodo, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 min-w-0">
+                {i > 0 ? <span aria-hidden>·</span> : null}
+                <span className="truncate inline-flex items-center gap-1">{nodo}</span>
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {showForm ? (
+          <div className="flex items-center gap-3" style={{ marginTop: 2 }}>
+            <FormBars form={formHome} align="left" />
+            <FormBars form={formAway} align="left" />
+          </div>
+        ) : null}
+      </div>
+
       {canRemind ? (
-        // La campana mide 32×32 y no 22: era el control más repetido del
-        // calendario y quedaba por debajo del mínimo táctil de 24 px (118
-        // controles solo-icono así, medidos el 03/09/2026 en un iPhone). El
-        // icono sigue siendo de 12 px y en el mismo sitio —top/right compensan
-        // el crecimiento—, o sea que la tarjeta no cambia de aspecto: lo único
-        // que crece es la zona que se puede tocar.
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReminder() }}
-          className="absolute z-[3] flex items-center justify-center rounded-full transition-colors"
-          style={{ top: 1, right: 2, width: 32, height: 32 }}
+          className="relative z-[3] flex items-center justify-center rounded-full flex-shrink-0 transition-colors hover:bg-white/[0.06]"
+          style={{ width: 32, height: 32, color: isReminded ? accent : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' }}
           aria-label={isReminded ? 'Quitar recordatorio' : 'Recordar'}
           title={isReminded ? 'Quitar recordatorio' : 'Recordar'}
         >
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1.5A4.5 4.5 0 003.5 6v2.5L2 10.5h12L12.5 8.5V6A4.5 4.5 0 008 1.5z" stroke={isReminded ? accent : '#6A6A7A'} strokeWidth="1.3" fill={isReminded ? accent : 'none'} fillOpacity={isReminded ? 0.25 : 0} />
+          <svg width="18" height="18" viewBox="0 0 24 24" fill={isReminded ? 'currentColor' : 'none'} fillOpacity={isReminded ? 0.25 : 0} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M6 16V11a6 6 0 0112 0v5l1.5 2h-15z" /><path d="M10 20a2 2 0 004 0" />
           </svg>
         </button>
-      ) : null}
-
-      <div className="relative pointer-events-none" style={{ zIndex: 2, paddingLeft: contentPad, paddingRight: contentPad }}>
-        {/* Ceja CENTRADA encima del marcador: estado (EN VIVO·min / DESCANSO / FINAL) +
-            fecha (Recordatorios) + título de velada / competición. */}
-        {(isLive || finished || eyebrowText || dateLabel || stakes || showPredict) ? (
-          <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 5 }}>
-            {dateLabel ? (
-              <span className="flex-shrink-0 rounded-full" style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '1px 6px', color: accent, background: `${accent}14`, border: `1px solid ${accent}30`, fontFamily: 'var(--font-sport)' }}>
-                {dateLabel}
-              </span>
-            ) : null}
-            {isLive && !paused ? (
-              <span className="inline-flex items-center gap-1 rounded-full flex-shrink-0" style={{ padding: '2.5px 8px', background: 'rgba(255,77,46,0.2)', border: '1px solid rgba(255,77,46,0.5)', boxShadow: '0 0 10px rgba(255,77,46,0.2)' }}>
-                <span className="rounded-full" style={{ width: 5, height: 5, background: '#fff', boxShadow: '0 0 6px #fff', animation: 'live-pulse 1.6s ease-out infinite' }} />
-                <span className="text-[8.5px] font-black uppercase tracking-[0.05em] tabular-nums" style={{ color: '#fff', fontFamily: 'var(--font-sport)' }}>
-                  {liveLabel && liveLabel !== 'EN VIVO' ? `EN VIVO · ${liveLabel}` : 'EN VIVO'}
-                </span>
-              </span>
-            ) : paused ? (
-              <span className="text-[8.5px] font-black uppercase tracking-[0.05em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#FBBF24', background: 'rgba(251,191,36,0.14)', border: '1px solid rgba(251,191,36,0.3)', fontFamily: 'var(--font-sport)' }}>
-                {liveLabel}
-              </span>
-            ) : finished && event.finishNote ? (
-              /* Solo cuando el final NO fue el normal: "Abandono", "W.O.". El
-                 "Final" de siempre se retiró — el marcador ya dice que terminó y
-                 el ganador va en negrita, así que en un grupo de cinco partidos
-                 jugados la palabra se imprimía cinco veces sin añadir nada. */
-              <span className="text-[8.5px] font-black uppercase tracking-[0.06em] rounded-full flex-shrink-0" style={{ padding: '2.5px 9px', color: '#C9A96A', background: 'rgba(201,169,106,0.1)', border: '1px solid rgba(201,169,106,0.28)', fontFamily: 'var(--font-sport)' }}>
-                {event.finishNote}
-              </span>
-            ) : null}
-            {eyebrowText ? (
-              <span className="truncate" style={{ fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em', color: accent, fontFamily: 'var(--font-sport)', maxWidth: '52%' }}>
-                {eyebrowText}
-              </span>
-            ) : null}
-            {/* Motivo del partido derivado de la tabla ("Líder vs 2º",
-                "Duelo de descenso"…). Realza lo importante en vez de esconder
-                lo secundario, que era lo único que sabía hacer "Destacados". */}
-            {/* Puente al juego: solo en los partidos de la jornada abierta.
-                Es un <button> y no un <a> porque toda la fila ya es un enlace
-                a la ficha (mismo apaño que la campana de recordatorio). */}
-            {showPredict ? (
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPredict?.() }}
-                className="pointer-events-auto relative z-[3] inline-flex items-center gap-1 rounded-full flex-shrink-0 transition-colors hover:brightness-125"
-                style={{
-                  fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  padding: '2px 8px', fontFamily: 'var(--font-sport)', cursor: 'pointer',
-                  color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', border: '1px solid rgba(124,58,237,0.4)',
-                }}
-                aria-label={`Pronosticar ${home}${away ? ` contra ${away}` : ''} en la quiniela`}
-              >
-                Pronosticar
-              </button>
-            ) : null}
-            {stakes ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-full flex-shrink-0 truncate"
-                style={{
-                  fontSize: 8.5, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.06em',
-                  padding: '2px 8px', maxWidth: '52%', fontFamily: 'var(--font-sport)',
-                  color: stakes.tone === 'alta' ? '#FCD34D' : '#C9A96A',
-                  background: stakes.tone === 'alta' ? 'rgba(252,211,77,0.1)' : 'rgba(201,169,106,0.08)',
-                  border: `1px solid ${stakes.tone === 'alta' ? 'rgba(252,211,77,0.28)' : 'rgba(201,169,106,0.22)'}`,
-                }}
-              >
-                {stakes.tone === 'alta' ? '★ ' : ''}{stakes.label}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
-        {isMatchup ? (
-          /* Marcador central: nombres + escudos ABRAZAN la cápsula (no se van a los lados).
-             Bajo cada nombre, la forma reciente (últimos 5) si el SSR la trajo. */
-          <div className="grid items-center" style={{ gridTemplateColumns: hasCrests ? '1fr auto auto auto 1fr' : '1fr auto 1fr', gap: 7 }}>
-            <span className="min-w-0">
-              <TeamNameLink href={homeHref} name={rawHome} align="right">
-                <span className="block truncate text-right" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: homeLead ? 900 : 800, color: dimHome ? '#8A8A9E' : '#EDEDF5' }}>
-                  {dispHome}
-                </span>
-              </TeamNameLink>
-              {/* Con el marcador delante, el puesto de la tabla ya no sitúa nada:
-                  el contexto de previa se reserva para lo que aún no se ha jugado. */}
-              {finished ? null : <StandingLine standing={event.homeStanding} align="right" reserve={showStanding} />}
-              <FormBars form={formHome} align="right" reserve={showForm} />
-            </span>
-            {hasCrests ? crest(event.homeLogo, event.homePhoto, hFav) : null}
-            {scoreCapsule}
-            {hasCrests ? crest(event.awayLogo, event.awayPhoto, aFav) : null}
-            <span className="min-w-0">
-              <TeamNameLink href={awayHref} name={rawAway} align="left">
-                <span className="block truncate text-left" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: awayLead ? 900 : 800, color: dimAway ? '#8A8A9E' : '#EDEDF5' }}>
-                  {dispAway}
-                </span>
-              </TeamNameLink>
-              {finished ? null : <StandingLine standing={event.awayStanding} align="left" reserve={showStanding} />}
-              <FormBars form={formAway} align="left" reserve={showForm} />
-            </span>
-          </div>
-        ) : (
-          /* Evento sin rival (F1/golf): icono + nombre a lo ancho + hora en cápsula/ganador */
-          <div className="flex items-center gap-2.5">
-            <span className="flex items-center justify-center flex-shrink-0" style={{ width: 30, height: 30, borderRadius: 9, background: `color-mix(in srgb, ${accent} 20%, transparent)`, border: `1px solid color-mix(in srgb, ${accent} 38%, transparent)`, color: accent }}>
-              <SportIcon sport={event.sport} size={15} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <div className="truncate" style={{ fontSize: 15, fontFamily: 'var(--font-sport)', fontWeight: 800, color: '#EDEDF5' }}>
-                {home}
-              </div>
-              {winnerNote ? (
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[11px] leading-none flex-shrink-0" aria-hidden>{racing ? '🏁' : '🏆'}</span>
-                  <span className="truncate" style={{ fontSize: 11, fontWeight: 700, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>{winnerNote}</span>
-                </div>
-              ) : null}
-            </div>
-            {!isLive && !finished ? (
-              <span className="inline-flex items-center justify-center flex-shrink-0 tabular-nums" style={{ padding: '3px 11px', borderRadius: 10, background: `color-mix(in srgb, ${accent} 12%, rgba(0,0,0,0.3))`, border: `1px solid color-mix(in srgb, ${accent} 40%, rgba(255,255,255,0.14))`, fontSize: 15, fontWeight: 900, color: accent, fontFamily: 'var(--font-sport)' }}>
-                {kickoff || '—'}
-              </span>
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      {/* Contexto (sub-línea fina): fase · sede · canal. La fase (stage) y la sede
-          (venue) ya viajaban en el evento desde el feed de ESPN y no se pintaban. */}
-      {/* Set a set del tenis, en su propia línea bajo el marcador. */}
-      {tennisSets ? (
-        <div className="relative pointer-events-none flex items-center justify-center gap-1.5" style={{ zIndex: 2, marginTop: 7, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <TennisSetLine setsStr={tennisSets} accent={accent} />
-        </div>
-      ) : null}
-
-      {/* Historial (solo en los cruces con motivo). Va en su propia línea: es
-          una frase, no un dato suelto, y compite mal con sede/canal. */}
-      {h2hNote ? (
-        <div className="relative pointer-events-none flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 2, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <span className="truncate" style={{ fontSize: 10, fontWeight: 700, color: '#9A8B6A', fontFamily: 'var(--font-sport)' }}>
-            {h2hNote}
-          </span>
-        </div>
-      ) : null}
-
-      {/* La SEDE ya no se pinta aquí: vive en la ficha del partido, que es donde
-          hay sitio. En la lista ocupaba una línea entera por fila para un nombre
-          propio en gris — con el canal subido al grupo, era lo único que quedaba
-          en 18 de las 22 filas del día. La FASE (Mundial: "Semifinal") sí se
-          queda: es rara y cambia el significado del partido. */}
-      {(event.stage || channel) ? (
-        <div className="relative pointer-events-none flex items-center justify-center gap-1.5 min-w-0" style={{ zIndex: 2, marginTop: h2hNote ? 4 : 8, paddingTop: h2hNote ? 0 : 6, borderTop: h2hNote ? undefined : '1px solid rgba(255,255,255,0.07)', color: '#61616D' }}>
-          {event.stage ? (
-            <span className="truncate" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)' }}>
-              {event.stage}
-            </span>
-          ) : null}
-          {channel ? (
-            <>
-              {event.stage ? <span aria-hidden style={{ fontSize: 10, color: '#61616D' }}>·</span> : null}
-              <TvIcon size={10} className="flex-shrink-0" />
-              <span className="truncate flex-shrink-0" style={{ fontSize: 10, fontWeight: 600, color: '#8A8A9E', fontFamily: 'var(--font-sport)', maxWidth: '46%' }}>{channel}</span>
-            </>
-          ) : null}
-        </div>
+      ) : showPredict ? (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPredict?.() }}
+          className="relative z-[3] ts-chip flex-shrink-0"
+          style={{ height: 30, padding: '0 10px', fontSize: 11, color: '#C4B5FD', background: 'rgba(124,58,237,0.16)', borderColor: 'rgba(124,58,237,0.4)' }}
+          aria-label={`Pronosticar ${home}${away ? ` contra ${away}` : ''} en la quiniela`}
+        >
+          Pronosticar
+        </button>
       ) : null}
     </div>
   )
@@ -995,12 +805,13 @@ export function SearchInput({ value, onChange }: { value: string; onChange: (v: 
         placeholder="Buscar…"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full pl-7 py-1.5 rounded-lg text-[11px] font-medium outline-none"
+        className="w-full pl-7 rounded-full text-[13px] font-medium outline-none"
         style={{
-          paddingRight: value ? 34 : 8,
-          background: value ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.04)',
-          border: value ? '1px solid rgba(124,58,237,0.25)' : '1px solid rgba(255,255,255,0.06)',
-          color: '#D0D0E8',
+          height: 36,
+          paddingRight: value ? 34 : 10,
+          background: 'var(--bg-surface)',
+          border: value ? '1px solid rgba(124,58,237,0.4)' : '1px solid var(--border)',
+          color: 'var(--text-primary)',
           transition: 'all 0.15s ease',
         }}
       />
@@ -1053,59 +864,38 @@ export function DaySeparator({ dateKey, count, curated = false, liveCount = 0, m
   // FASE 3: cabecera de día como la app/maqueta — barra MORADA de marca para HOY
   // (identidad), gris neutro el resto; sin brillo ni gradiente de color. Los días
   // pasados atenúan el label. Contador con texto "N partidos".
-  const bar = isToday ? '#7C3AED' : '#3A3A48'
-  const chipColor = isToday ? '#C4B5FD' : '#8A8A9E'
   const subtitle = formatDateSubtitle(dateKey)
   const label = formatDateLabel(dateKey, tz, today)
 
+  // Cabecera de día como la maqueta 3 de noviembre: «HOY» en Barlow Condensed,
+  // la fecha larga al lado y el recuento en una píldora. Sin barra de color.
   return (
-    <div className="relative pt-7 pb-4 mb-3">
-      {/* Hairline superior sutil (separación de día), sin color de deporte */}
-      <div className="absolute top-0 left-0 right-0" style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-      <div className="flex items-end justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="block flex-shrink-0 rounded-sm" style={{ width: 4, height: 20, background: bar }} />
-          <div className="min-w-0">
-            {/* El título del día enlaza a su URL propia (/calendario/dia/…): da a
-                cada jornada una página indexable y un sitio al que volver. */}
-            <Link href={`/calendario/dia/${dateKey}`} prefetch={false} className="no-underline hover:brightness-125">
-              <h2 className="font-black leading-none uppercase tracking-[0.18em]"
-                style={{ fontFamily: 'var(--font-sport)', fontSize: 14, color: tone === 'past' ? '#B8B8C8' : '#F0F0FA' }}>
-                {label}
-              </h2>
-            </Link>
-            {subtitle && (
-              <p className="text-[10px] mt-1 first-letter:uppercase tracking-wide" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
-                {subtitle}
-              </p>
-            )}
-          </div>
-        </div>
-        {/* Resumen del día: "N partidos · M en vivo · K tuyos" (Fase 1 del rediseño).
-            Los extras solo aparecen si aportan (M>0 / K>0) para no alargar el chip. */}
-        <span className="flex items-center justify-center gap-1 h-[22px] px-2.5 rounded-full text-[10px] font-black tabular-nums flex-shrink-0"
-          style={{ background: isToday ? 'rgba(124,58,237,0.12)' : 'rgba(255,255,255,0.05)', color: chipColor, border: `1px solid ${isToday ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.08)'}`, fontFamily: 'var(--font-sport)' }}>
+    <div className="relative pt-6 pb-3 mb-1">
+      <div className="absolute top-0 left-0 right-0" style={{ height: 1, background: 'var(--border)' }} />
+      <div className="flex items-baseline gap-2.5 min-w-0">
+        <Link href={`/calendario/dia/${dateKey}`} prefetch={false} className="no-underline hover:brightness-125 flex-shrink-0">
+          <h2 className="font-extrabold leading-none uppercase" style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.04em', color: tone === 'past' ? '#B8B8C8' : isToday ? 'var(--text-primary)' : '#F0F0FA' }}>
+            {label}
+          </h2>
+        </Link>
+        {subtitle && (
+          <p className="text-[13px] truncate" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
+        )}
+        <span className="ml-auto inline-flex items-center justify-center gap-1 flex-shrink-0 rounded-full text-[11px] font-bold uppercase tabular-nums"
+          style={{ height: 22, padding: '0 9px', letterSpacing: '0.06em', background: 'var(--bg-surface)', border: '1px solid var(--border-2)', color: isToday ? '#C4B5FD' : 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
           {count} {curated ? (count === 1 ? 'destacado' : 'destacados') : count === 1 ? 'partido' : 'partidos'}
-          {liveCount > 0 && (
-            <span style={{ color: '#FF6349' }}>· {liveCount} en vivo</span>
-          )}
-          {mineCount > 0 && (
-            <span style={{ color: '#6EE7B7' }}>· {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>
-          )}
+          {liveCount > 0 && <span style={{ color: '#FF6349' }}>· {liveCount} en vivo</span>}
+          {mineCount > 0 && <span style={{ color: '#6EE7B7' }}>· {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>}
         </span>
-        {/* Chevron de plegado del DÍA. Solo hoy llega abierto; los demás se
-            despliegan de un toque. El resumen de arriba sigue diciendo lo que hay
-            dentro, así que plegado no es "vacío". */}
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
             aria-expanded={!collapsed}
             aria-label={collapsed ? `Desplegar ${label}` : `Plegar ${label}`}
-            className="flex-shrink-0 flex items-center justify-center rounded-full transition-colors hover:bg-white/[0.06]"
-            style={{ width: 32, height: 32, color: collapsed ? chipColor : '#5A5A6E', background: 'transparent', border: 'none', cursor: 'pointer' }}
+            className="flex-shrink-0 flex items-center justify-center rounded-full transition-colors hover:bg-white/[0.06] self-center"
+            style={{ width: 32, height: 32, color: collapsed ? '#C4B5FD' : '#5A5A6E', background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
-            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden
-              style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 180ms' }}>
+            <svg width="13" height="13" viewBox="0 0 12 12" fill="none" aria-hidden style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 180ms' }}>
               <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -1155,15 +945,14 @@ export function DayCompactRow({ dateKey, count, curated = false, liveCount = 0, 
       onClick={onExpand}
       aria-expanded={false}
       aria-label={`Desplegar ${label}: ${count} ${noun}`}
-      className="cal-press w-full flex items-center gap-3 px-3 mb-1.5 rounded-xl text-left transition-colors hover:bg-white/[0.05]"
+      className="cal-press w-full flex items-center gap-3 px-3.5 mb-1.5 rounded-2xl text-left transition-colors hover:bg-white/[0.05]"
       style={{
         height: 56,
-        background: isToday ? 'rgba(124,58,237,0.08)' : 'rgba(255,255,255,0.03)',
-        border: `1px solid ${isToday ? 'rgba(124,58,237,0.28)' : 'rgba(255,255,255,0.07)'}`,
+        background: 'var(--bg-card)',
+        border: `1px solid ${isToday ? 'rgba(124,58,237,0.35)' : 'var(--border)'}`,
         cursor: 'pointer',
       }}
     >
-      <span className="block flex-shrink-0 rounded-sm" style={{ width: 3, height: 28, background: isToday ? '#7C3AED' : '#3A3A48' }} />
       <span className="flex flex-col flex-shrink-0 min-w-0" style={{ width: 92 }}>
         <span
           className="font-black uppercase leading-none tracking-[0.12em] truncate"
@@ -1171,7 +960,7 @@ export function DayCompactRow({ dateKey, count, curated = false, liveCount = 0, 
         >
           {label}
         </span>
-        <span className="mt-1 text-[10px] font-bold tabular-nums leading-none truncate" style={{ color: '#7A7A8E', fontFamily: 'var(--font-sport)' }}>
+        <span className="mt-1 text-[11px] font-bold tabular-nums leading-none truncate" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {count} {noun}
           {liveCount > 0 && <span style={{ color: '#FF6349' }}> · {liveCount} en vivo</span>}
           {mineCount > 0 && liveCount === 0 && <span style={{ color: '#6EE7B7' }}> · {mineCount} {mineCount === 1 ? 'tuyo' : 'tuyos'}</span>}
@@ -1184,7 +973,7 @@ export function DayCompactRow({ dateKey, count, curated = false, liveCount = 0, 
             {star.away ? `${star.home} – ${star.away}` : star.home}
           </span>
           {comp && (
-            <span className="truncate text-[10px] font-bold uppercase tracking-wider leading-tight mt-0.5" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+            <span className="truncate text-[11px] font-bold uppercase tracking-wider leading-tight mt-0.5" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
               {comp}
             </span>
           )}
@@ -1193,7 +982,7 @@ export function DayCompactRow({ dateKey, count, curated = false, liveCount = 0, 
         <span className="flex-1" />
       )}
       {clock && (
-        <span className="flex-shrink-0 text-[13px] font-black tabular-nums" style={{ color: hasScore ? '#E8E8F4' : accent, fontFamily: 'var(--font-sport)' }}>
+        <span className="flex-shrink-0 text-[14px] font-bold tabular-nums" style={{ color: hasScore ? 'var(--text-primary)' : 'var(--green)', fontFamily: 'var(--font-display)' }}>
           {clock}
         </span>
       )}
@@ -1210,18 +999,18 @@ export function SectionHeader({ icon, label, color, count, hint }: {
   return (
     <div className="flex items-center gap-2 mb-3 px-1">
       <span className="inline-flex items-center" style={{ color }}>{icon}</span>
-      <span className="text-[10px] font-black uppercase tracking-[0.18em]"
+      <span className="text-[12px] font-bold uppercase tracking-[0.12em]"
         style={{ color, fontFamily: 'var(--font-sport)' }}>
         {label}
       </span>
       {count !== undefined && count > 0 && (
-        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black"
+        <span className="flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-[11px] font-bold"
           style={{ background: `${color}22`, color, fontFamily: 'var(--font-display)' }}>
           {count}
         </span>
       )}
       {hint && (
-        <span className="text-[9px] ml-auto" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[11px] ml-auto" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {hint}
         </span>
       )}
@@ -1229,58 +1018,12 @@ export function SectionHeader({ icon, label, color, count, hint }: {
   )
 }
 
-// Horizontal scrollable strip of live hero cards
+// Los directos huérfanos, en una lista a ancho completo (antes, un carrusel de
+// tarjetas de 300 px con flechas). Misma tarjeta-lista que el resto del día.
 export function LiveHeroStrip({ items }: { items: React.ReactNode[] }) {
-  const ref = useRef<HTMLDivElement>(null)
-
-  const scroll = (dir: 'left' | 'right') => {
-    if (!ref.current) return
-    ref.current.scrollBy({ left: dir === 'left' ? -320 : 320, behavior: 'smooth' })
-  }
-
   return (
-    <div className="relative">
-      <div
-        ref={ref}
-        className="cal-rail flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth"
-        style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
-      >
-        {items.map((item, i) => <div key={i}>{item}</div>)}
-      </div>
-      {items.length > 3 && (
-        <>
-          <button
-            onClick={() => scroll('left')}
-            className="hidden md:flex items-center justify-center absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all hover:scale-110"
-            style={{
-              background: 'rgba(20,20,30,0.85)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-            }}
-            aria-label="Anterior"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M15 6l-6 6 6 6" stroke="#C0C0D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          <button
-            onClick={() => scroll('right')}
-            className="hidden md:flex items-center justify-center absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full transition-all hover:scale-110"
-            style={{
-              background: 'rgba(20,20,30,0.85)',
-              border: '1px solid rgba(255,255,255,0.1)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-              backdropFilter: 'blur(8px)',
-            }}
-            aria-label="Siguiente"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 6l6 6-6 6" stroke="#C0C0D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </>
-      )}
+    <div className="ts-lista">
+      {items.map((item, i) => <div key={i}>{item}</div>)}
     </div>
   )
 }

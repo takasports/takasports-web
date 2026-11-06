@@ -172,22 +172,21 @@ export default function ExactScoreBlock({
   if (!myPick) {
     return (
       <div style={{
-        marginTop: 10, padding: '8px 10px', borderRadius: 10,
-        background: 'rgba(167,139,250,0.04)',
-        border: '1px dashed rgba(167,139,250,0.18)',
+        marginTop: 12, marginLeft: -14, marginRight: -14, marginBottom: -14, padding: '10px 14px',
+        borderTop: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
         <span style={{ display: 'inline-flex', lineHeight: 1, opacity: 0.6 }} aria-hidden><TargetIcon size={12} /></span>
         <span style={{
-          flex: 1, fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 700,
-          color: 'rgba(167,139,250,0.65)', letterSpacing: '0.02em',
+          flex: 1, fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
+          color: 'var(--text-secondary)', letterSpacing: 0,
         }}>
           Acierta el marcador · <strong style={{ color: '#C4B5FD' }}>{exactPts} pts</strong> si lo clavas
         </span>
         <span style={{
-          fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,
-          color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em', textTransform: 'uppercase',
-        }}>Elige ganador primero</span>
+          fontFamily: 'var(--font-sport)', fontSize: 11, fontWeight: 700,
+          color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>Tras el 1 X 2</span>
       </div>
     )
   }
@@ -301,7 +300,7 @@ export default function ExactScoreBlock({
           type="button"
           onClick={() => setEditorOpen(true)}
           disabled={submitting}
-          aria-label="Editar mi apuesta al marcador"
+          aria-label="Editar mi marcador"
           title="Puedes cambiarla o retirarla hasta que empiece el partido"
           style={{
             marginLeft: 'auto',
