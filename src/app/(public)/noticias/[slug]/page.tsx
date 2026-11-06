@@ -694,6 +694,15 @@ export default async function NoticiaPage({
 
   const sportSlug = article.sport ?? null
   const sportLabel = sportSlug ? getSportLabel(sportSlug, article.category) : null
+  // Tercer tramo de la miga móvil: la competición («LaLiga»), solo cuando es
+  // algo más que el propio deporte. `category` es la competición del pipeline.
+  const migaCompeticion = (() => {
+    const c = (article.matchKickoff?.competition ?? article.category ?? '').trim()
+    if (!c) return null
+    const corta = competicionCorta(article.matchRef, c)
+    if (!corta || corta.toLowerCase() === (sportLabel ?? '').toLowerCase() || corta.toLowerCase() === (sportSlug ?? '').toLowerCase()) return null
+    return corta
+  })()
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -1325,42 +1334,65 @@ export default async function NoticiaPage({
 
             {versiones.length > 0 && <IdiomaAuto actual={lang} versiones={versiones} />}
 
-            <div className="flex items-center justify-between gap-2 mb-4 pt-4 sm:pt-0 lg:hidden">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="sm:hidden"><BackButton compact /></span>
+            {/* Miga en el móvil (maqueta 1 de noviembre): «Inicio › Fútbol › LaLiga».
+                Sustituye al botón «Volver»: la miga ya vuelve, y el titular sube
+                de 420 px a 160. En escritorio sigue la miga de arriba. */}
+            {sportSlug && sportLabel && (
+              <nav
+                className="sm:hidden pt-3.5 text-[12px] flex items-center gap-1 min-w-0"
+                aria-label="Breadcrumb"
+                style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', letterSpacing: '0.02em' }}
+              >
+                <Link href="/" className="flex-shrink-0" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Inicio</Link>
+                <span aria-hidden="true">›</span>
+                <Link href={`/${sportSlug}`} className="flex-shrink-0" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>{sportLabel}</Link>
+                {migaCompeticion && (
+                  <>
+                    <span aria-hidden="true">›</span>
+                    <span className="truncate">{migaCompeticion}</span>
+                  </>
+                )}
+              </nav>
+            )}
+
+            <div className="flex items-center justify-between gap-2 mb-3 pt-2 sm:pt-0 lg:hidden">
+              <div className="flex items-center gap-2.5 flex-wrap min-w-0">
                 {article.takaStatus && article.takaStatus !== 'normal' && (
                   <StatusBadge status={article.takaStatus} accent={badgeColor} />
                 )}
                 {(article.sport || article.category) && (
                   <span
-                    className="text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full flex-shrink-0"
-                    style={{ background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
+                    className="text-[11px] font-bold uppercase tracking-[0.08em] px-2.5 rounded-full flex-shrink-0 inline-flex items-center"
+                    style={{ height: 22, background: badgeBg, color: badgeColor, border: `1px solid ${badgeBorder}`, fontFamily: 'var(--font-sport)' }}
                   >
                     {getSportLabel(article.sport, article.category)}
                   </span>
                 )}
                 {article.publishedAt && (
-                  <time dateTime={article.publishedAt} className="text-xs truncate" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
+                  <time dateTime={article.publishedAt} className="text-[13px] truncate" style={{ color: 'var(--text-secondary)' }} suppressHydrationWarning>
                     {timeAgo(article.publishedAt, article.language)}
                   </time>
                 )}
                 {readMinutes && (
-                  <span className="text-xs flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                    <span aria-hidden="true" style={{ color: badgeColor }}>·</span>
+                  <span className="text-[13px] flex-shrink-0 flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+                    <span aria-hidden="true">·</span>
                     {readMinutes} {tx.minCorto}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Un solo grupo de iconos de 40 px, sin círculos, pegado al borde
+                  (-mr-2.5 compensa el aire interno del último). */}
+              <div className="flex items-center flex-shrink-0 -mr-2.5">
                 {versiones.length > 0 && <IdiomaSelector actual={lang} versiones={versiones} variante="icono" />}
                 <SaveArticleButton
                   slug={article.slug ?? id}
                   title={article.title}
                   imageUrl={article.imageUrl}
                   sport={article.sport ?? article.category}
+                  plano
                 />
-                <ShareButton title={article.title} slug={article.slug ?? id} />
-                <ReadingModeToggle />
+                <ShareButton title={article.title} slug={article.slug ?? id} plano />
+                <ReadingModeToggle plano />
               </div>
             </div>
 
@@ -1416,10 +1448,12 @@ export default async function NoticiaPage({
               </div>
             )}
             <h1
-              className="font-black leading-tight mb-3"
+              className="font-black leading-[1.08] lg:leading-tight mb-3"
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: 'clamp(1.75rem, 5vw, 3rem)',
+                // 31 px en móvil (maqueta 1 de noviembre); con la raíz a 15 px,
+                // 1,75rem se quedaba en 26.
+                fontSize: 'clamp(31px, 5vw, 3rem)',
                 color: '#F8F8FF',
                 letterSpacing: '-0.015em',
               }}

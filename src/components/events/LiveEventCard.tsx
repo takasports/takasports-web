@@ -86,7 +86,7 @@ function short(name: string | null | undefined, abbr?: string): string {
 function Badge({ children, col }: { children: React.ReactNode; col: string }) {
   return (
     <span
-      className="text-[9px] font-black px-1.5 py-0.5 rounded"
+      className="text-[11px] font-bold px-1.5 py-0.5 rounded"
       style={{ color: col, background: `${col}14`, border: `1px solid ${col}30`, fontFamily: 'var(--font-sport)' }}
     >
       {children}
@@ -99,20 +99,20 @@ function Badge({ children, col }: { children: React.ReactNode; col: string }) {
 function GenericLive({ fix, col }: { fix: LiveFixture; col: string }) {
   return (
     <>
-      <TeamLogo logo={fix.homeLogo} name={fix.homeTeam} size={14} />
-      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
+      <TeamLogo logo={fix.homeLogo} name={fix.homeTeam} size={18} />
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.homeTeam, fix.homeAbbr)}
       </span>
       <span
-        className="font-black tabular-nums text-[11px]"
+        className="font-black tabular-nums text-[14px]"
         style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
       >
         {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
       </span>
-      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.awayTeam, fix.awayAbbr)}
       </span>
-      <TeamLogo logo={fix.awayLogo} name={fix.awayTeam} size={14} />
+      <TeamLogo logo={fix.awayLogo} name={fix.awayTeam} size={18} />
       <Badge col={col}>{getLiveLabel(fix.status, fix.elapsed)}</Badge>
     </>
   )
@@ -124,7 +124,7 @@ function TennisSets({ setsStr, col }: { setsStr: string; col: string }) {
   const sets = setsStr.split(' ')
   return (
     <span
-      className="font-black tabular-nums text-[10px]"
+      className="font-black tabular-nums text-[13px]"
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -164,21 +164,21 @@ function TennisLive({ fix, col }: { fix: LiveFixture; col: string }) {
       <span style={{ color: col, flexShrink: 0 }}>
         <SportIcon sport="tenis" size={12} />
       </span>
-      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.homeTeam, fix.homeAbbr)}
       </span>
       {fix.setsStr ? (
         <TennisSets setsStr={fix.setsStr} col={col} />
       ) : (
         <span
-          className="font-black tabular-nums text-[11px]"
+          className="font-black tabular-nums text-[14px]"
           style={{ color: '#F0F0F8', fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
           title="Sets ganados"
         >
           {fix.homeGoals ?? 0} – {fix.awayGoals ?? 0}
         </span>
       )}
-      <span className="text-[10px] font-semibold" style={{ color: '#B0B0C8', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.awayTeam, fix.awayAbbr)}
       </span>
       <Badge col={col}>{setLabel}</Badge>
@@ -194,16 +194,16 @@ function CombatLive({ fix, col }: { fix: LiveFixture; col: string }) {
       <span style={{ color: col, flexShrink: 0 }}>
         <SportIcon sport="ufc" size={12} />
       </span>
-      <span className="text-[10px] font-semibold" style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.homeTeam, fix.homeAbbr)}
       </span>
       <span
-        className="text-[10px] font-black"
+        className="text-[11px] font-black"
         style={{ color: col, fontFamily: 'var(--font-display)', letterSpacing: '0.1em' }}
       >
         vs
       </span>
-      <span className="text-[10px] font-semibold" style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {short(fix.awayTeam, fix.awayAbbr)}
       </span>
       <Badge col={col}>{fix.comp ? fix.comp.slice(0, 8) : 'EN VIVO'}</Badge>
@@ -221,7 +221,7 @@ function RacingLive({ fix, col }: { fix: LiveFixture; col: string }) {
       <span style={{ color: col, flexShrink: 0 }}>
         <SportIcon sport={fix.sport} size={12} />
       </span>
-      <span className="text-[10px] font-semibold" style={{ color: '#E8E8F0', fontFamily: 'var(--font-sport)' }}>
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
         {gpName}
       </span>
       <Badge col={col}>EN CARRERA · {getLiveLabel(fix.status, fix.elapsed)}</Badge>
@@ -292,31 +292,46 @@ export function UpcomingEventCard({ ev }: { ev: UpcomingEvent }) {
         ? `${short(ev.homeTeam, ev.homeAbbr)} vs ${short(ev.awayTeam, ev.awayAbbr)}`
         : ev.homeTeam
 
+  // Maqueta 1 de noviembre: escudos de 18 px, siglas a 13 px, la hora en el
+  // verde de marca y, si no es hoy, el día. «Hoy» sobra en la primera línea de
+  // cada página (y era lo que salía cortado como «Ho», V-03). El icono del
+  // deporte solo cuando no hay escudos que lo digan (motor y combate).
+  const sinEscudos = racing || combat
+  const fecha = ev.dateLabel && ev.dateLabel.toLowerCase() !== 'hoy' ? ev.dateLabel : null
   const inner = (
-    <div className="flex items-center gap-1.5">
-      <span style={{ color: col }}>
-        <SportIcon sport={ev.sport} size={13} />
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      {sinEscudos && (
+        <span style={{ color: col, display: 'inline-flex' }}>
+          <SportIcon sport={ev.sport} size={14} />
+        </span>
+      )}
+      {!sinEscudos && <TeamLogo logo={ev.homeLogo} name={ev.homeTeam} size={18} />}
+      <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
+        {sinEscudos ? label : (
+          <>
+            {short(ev.homeTeam, ev.homeAbbr)}
+            {ev.awayTeam && <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> – </span>}
+            {ev.awayTeam && short(ev.awayTeam, ev.awayAbbr)}
+          </>
+        )}
       </span>
-      {!racing && <TeamLogo logo={ev.homeLogo} name={ev.homeTeam} size={13} />}
-      <span className="text-[10px] font-semibold" style={{ color: '#8A8AA0', fontFamily: 'var(--font-sport)' }}>
-        {label}
-      </span>
-      {!racing && !combat && ev.awayTeam && <TeamLogo logo={ev.awayLogo} name={ev.awayTeam} size={13} />}
+      {!sinEscudos && ev.awayTeam && <TeamLogo logo={ev.awayLogo} name={ev.awayTeam} size={18} />}
       <span
-        className="text-[9px] font-black tabular-nums px-1.5 py-0.5 rounded"
-        style={{
-          color: col,
-          background: `${col}12`,
-          border: `1px solid ${col}25`,
-          fontFamily: 'var(--font-display)',
-          letterSpacing: '0.02em',
-        }}
+        className="text-[14px] font-bold tabular-nums"
+        style={{ color: 'var(--green)', fontFamily: 'var(--font-display)', marginLeft: 2 }}
       >
         {displayTime}
       </span>
-      <span className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-        {ev.dateLabel}
-      </span>
+      {fecha && (
+        <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          {fecha}
+        </span>
+      )}
+      {ev.comp && !racing && (
+        <span className="hidden md:inline text-[12px]" style={{ color: 'var(--text-muted)' }}>
+          {ev.comp}
+        </span>
+      )}
     </div>
   )
 

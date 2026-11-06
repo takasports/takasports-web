@@ -12,7 +12,12 @@ import { useShareStory } from '@/lib/useShareStory'
 // to Stories, así que NO se puede inyectar un link clicable en la historia de
 // otra persona. Lo que sí funciona es dejarle la URL en el portapapeles para que
 // la pegue en el sticker de enlace de Instagram — de ahí el copiado previo.
-export default function ShareButton({ title, slug }: { title: string; slug?: string }) {
+export default function ShareButton({ title, slug, plano = false }: {
+  title: string
+  slug?: string
+  /** Icono de 40 px sin círculo ni texto (cabecera móvil de la nota, maqueta 1 de noviembre). */
+  plano?: boolean
+}) {
   const [open, setOpen] = React.useState(false)
   const [copied, setCopied] = React.useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
@@ -87,17 +92,17 @@ export default function ShareButton({ title, slug }: { title: string; slug?: str
         onClick={() => setOpen(v => !v)}
         aria-label="Compartir artículo"
         aria-expanded={open}
-        className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80"
-        style={{ background: 'rgba(255,255,255,0.06)', color: '#8E8E9E', border: '1px solid var(--border)' }}
+        className={plano ? 'art-tool transition-opacity hover:opacity-80' : 'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs font-semibold transition-opacity hover:opacity-80'}
+        style={plano ? undefined : { background: 'rgba(255,255,255,0.06)', color: '#8E8E9E', border: '1px solid var(--border)' }}
       >
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+        <svg width={plano ? 20 : 13} height={plano ? 20 : 13} viewBox="0 0 13 13" fill="none">
           <circle cx="10.5" cy="2.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
           <circle cx="10.5" cy="10.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
           <circle cx="2.5" cy="6.5" r="1.5" stroke="currentColor" strokeWidth="1.3" />
           <path d="M4 5.8L9 3.2M4 7.2L9 9.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
         </svg>
         {/* En el móvil, solo el icono: la fila de metadatos no da para más (aria-label arriba). */}
-        <span className="hidden sm:inline">Compartir</span>
+        {!plano && <span className="hidden sm:inline">Compartir</span>}
       </button>
 
       {open && (

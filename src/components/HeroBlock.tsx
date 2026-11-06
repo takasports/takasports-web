@@ -72,7 +72,7 @@ function CompactStripItem({ art }: { art: Article }) {
               />
             )}
             <span
-              className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
               style={{
                 background: `${accent}26`,
                 color: accent,
@@ -100,7 +100,7 @@ function CompactStripItem({ art }: { art: Article }) {
           {art.title}
         </h3>
         {art.publishedAt && (
-          <p className="text-[10px] mt-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
+          <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
             {timeAgo(art.publishedAt)}
           </p>
         )}
@@ -252,7 +252,7 @@ function BigCard({
         <div className="flex items-center gap-2 mb-3">
           {fresh && (
             <span
-              className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full"
               style={{
                 background: 'rgba(16,185,129,0.12)',
                 color: '#10B981',
@@ -265,7 +265,7 @@ function BigCard({
           )}
           {label && (
             <span
-              className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full"
               style={{
                 background: `${accent}22`,
                 color: accent,
@@ -304,13 +304,13 @@ function BigCard({
 
         <div className="flex items-center gap-3">
           {article.publishedAt && (
-            <span className="text-xs" style={{ color: '#525266' }} suppressHydrationWarning>
+            <span className="text-[13px]" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
               {timeAgo(article.publishedAt)}
             </span>
           )}
           <span
-            className="text-xs font-semibold flex items-center gap-1 transition-all group-hover:gap-2"
-            style={{ color: '#8B5CF6' }}
+            className="text-[13px] font-semibold flex items-center gap-1 transition-all group-hover:gap-2"
+            style={{ color: '#C4B5FD' }}
           >
             Leer artículo
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -398,7 +398,7 @@ function SmallCard({
           )}
           {label && (
             <span
-              className="text-[9px] font-black uppercase tracking-widest"
+              className="text-[11px] font-bold uppercase tracking-[0.08em]"
               style={{ color: accent, fontFamily: 'var(--font-sport)' }}
             >
               {label}
@@ -418,13 +418,13 @@ function SmallCard({
         </h3>
 
         {article.short_summary && (
-          <p className="text-[10px] leading-snug line-clamp-1 mt-1" style={{ color: '#686884' }}>
+          <p className="text-[13px] leading-snug line-clamp-1 mt-1" style={{ color: 'var(--text-muted)' }}>
             {article.short_summary}
           </p>
         )}
 
         {article.publishedAt && (
-          <p className="text-[10px] mt-1" style={{ color: '#3D3D58' }} suppressHydrationWarning>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
             {timeAgo(article.publishedAt)}
           </p>
         )}
@@ -463,11 +463,11 @@ function SecondaryMini({ art }: { art: Article }) {
       </div>
       <div className="min-w-0 flex flex-col gap-1">
         {label && (
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
             {label}
           </span>
         )}
-        <h3 className="font-bold leading-snug line-clamp-2" style={{ fontFamily: 'var(--font-display)', fontSize: '0.8rem', color: '#D8D8F0' }}>
+        <h3 className="font-bold leading-snug line-clamp-2" style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: '#D8D8F0' }}>
           {art.title}
         </h3>
       </div>
@@ -612,8 +612,10 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
           touchStartX.current = null
         }}
       >
-        {/* ── Cabecera: contador + flechas ─────────────────── */}
-        <div className="flex items-center justify-end mb-2.5">
+        {/* ── Cabecera: contador + flechas (solo escritorio) ──────────
+            En móvil se quitan (V-11, 06/11/2026): eran 70 px para un control
+            que los puntos de debajo ya resuelven, y empujaban el titular. */}
+        <div className="hidden sm:flex items-center justify-end mb-2.5">
           <div className="flex items-center gap-2">
             <span
               className="text-[11px] font-black tabular-nums"
@@ -662,36 +664,8 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
           </div>
         </div>
 
-        {/* ── Secundarias deslizables (solo móvil; en escritorio van apiladas) ─ */}
-        {len > 1 && (
-          <div
-            className="sm:hidden mt-3"
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-black uppercase tracking-wider" style={{ color: '#9090B0', fontFamily: 'var(--font-sport)' }}>
-                Más noticias
-              </span>
-              <span className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
-                desliza
-                <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
-                  <path d="M3.5 2L7 5l-3.5 3" stroke="#6B6B8A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1">
-              {[len > 1 ? s1 : null, len > 2 ? s2 : null]
-                .filter((a): a is Article => Boolean(a))
-                .map((a) => (
-                  <SecondaryMini key={a._id} art={a} />
-                ))}
-            </div>
-          </div>
-        )}
-
         {/* ── Barra de progreso ─────────────────────────────── */}
-        <ProgressBar offset={offset % len} paused={paused} />
+        <div className="hidden sm:block"><ProgressBar offset={offset % len} paused={paused} /></div>
 
         {/* ── Dots de posición ──────────────────────────────── */}
         {/* El punto ERA el botón: 8×8 px, muy por debajo de los 24×24 que pide
@@ -699,7 +673,7 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
             así que se ve IGUAL y se pulsa tres veces mejor. El hueco baja de 6 a
             0 porque el propio relleno del botón ya separa. */}
         {len >= 3 && (
-          <div className="flex items-center gap-0 mt-3 justify-center lg:justify-start">
+          <div className="flex items-center gap-0 mt-2.5 justify-center lg:justify-start">
             {Array.from({ length: len }).map((_, i) => (
               <button
                 key={i}
@@ -720,16 +694,43 @@ export default function HeroBlock({ articles, stripPool }: { articles: Article[]
                   aria-hidden="true"
                   style={{
                     display: 'block',
-                    width: i === offset % len ? 24 : 8,
-                    height: 8,
-                    borderRadius: 4,
-                    background: i === offset % len ? '#7C3AED' : 'rgba(255,255,255,0.2)',
+                    width: i === offset % len ? 22 : 6,
+                    height: 6,
+                    borderRadius: 3,
+                    background: i === offset % len ? 'var(--purple)' : '#2A2A36',
                     transition: 'width 250ms ease, background 250ms ease',
-                    boxShadow: i === offset % len ? '0 0 8px rgba(124,58,237,0.5)' : 'none',
                   }}
                 />
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ── Secundarias deslizables (solo móvil; en escritorio van apiladas) ─ */}
+        {len > 1 && (
+          <div
+            className="sm:hidden mt-3"
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[12px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-sport)' }}>
+                Más noticias
+              </span>
+              <span className="text-[12px] inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                desliza
+                <svg width="11" height="11" viewBox="0 0 10 10" fill="none">
+                  <path d="M3.5 2L7 5l-3.5 3" stroke="#6B6B8A" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </div>
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1">
+              {[len > 1 ? s1 : null, len > 2 ? s2 : null]
+                .filter((a): a is Article => Boolean(a))
+                .map((a) => (
+                  <SecondaryMini key={a._id} art={a} />
+                ))}
+            </div>
           </div>
         )}
 

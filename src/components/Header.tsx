@@ -383,6 +383,38 @@ function SearchIcon() {
   )
 }
 
+// Iconos de 21-22 px de la cabecera móvil (maqueta 1 de noviembre): trazo de
+// 1,8 y sin círculo. Los de escritorio (13-15 px) siguen siendo los de arriba.
+function IconoMovil({ tipo }: { tipo: 'lupa' | 'perfil' | 'menu' | 'cerrar' }) {
+  const comun = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  if (tipo === 'lupa') {
+    return (
+      <svg width="21" height="21" viewBox="0 0 24 24" {...comun} aria-hidden="true">
+        <circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" />
+      </svg>
+    )
+  }
+  if (tipo === 'perfil') {
+    return (
+      <svg width="21" height="21" viewBox="0 0 24 24" {...comun} aria-hidden="true">
+        <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
+      </svg>
+    )
+  }
+  if (tipo === 'cerrar') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" {...comun} aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    )
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" {...comun} aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  )
+}
+
 // ── Level chip (XP compacto en el header) ───────────────────
 interface LevelData {
   level:      number
@@ -722,7 +754,9 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
           borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div className={`${INNER} flex items-center h-14 gap-4`}>
+        {/* 64 px en móvil (maqueta 1 de noviembre: la de 105 se comía la primera
+            pantalla con las dos tiras), 56 en escritorio como siempre. */}
+        <div className={`${INNER} flex items-center h-[64px] md:h-14 gap-4`}>
 
           {/* Logo */}
           <LogoFull
@@ -783,8 +817,9 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
             />
           </nav>
 
-          {/* Right */}
-          <div className="flex items-center gap-2 ml-auto">
+          {/* Right. En móvil los tres botones van pegados (gap 2) y sin círculo;
+              en escritorio conservan su hueco y su fondo (ver .hdr-btn). */}
+          <div className="flex items-center gap-0.5 md:gap-2 ml-auto">
             {/* Buscador. En pantallas anchas (xl+) = barra visible con placeholder
                 rotativo + atajo ⌘K. En el resto = lupa compacta (sin saturar). */}
             <button
@@ -812,10 +847,10 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               aria-label="Buscar"
               onClick={openSearch}
               title="Buscar (⌘K)"
-              className="flex xl:hidden items-center justify-center rounded-lg flex-shrink-0 transition-colors hover:border-white/15"
-              style={{ width: 38, height: 38, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)', color: '#828296' }}
+              className="hdr-btn xl:hidden! transition-colors"
             >
-              <SearchIcon />
+              <span className="hdr-ic-m"><IconoMovil tipo="lupa" /></span>
+              <span className="hdr-ic-d"><SearchIcon /></span>
             </button>
 
             {/* Level + XP chip — solo para usuarios autenticados */}
@@ -888,10 +923,10 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               <button
                 onClick={() => setAuthOpen(true)}
                 aria-label="Iniciar sesión"
-                className="profile-btn flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ width: 38, height: 38, background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.22)', color: '#9B7CF6', cursor: 'pointer' }}
+                className="hdr-btn hdr-btn--perfil profile-btn"
               >
-                <ProfileIcon />
+                <span className="hdr-ic-m"><IconoMovil tipo="perfil" /></span>
+                <span className="hdr-ic-d"><ProfileIcon /></span>
               </button>
             )}
             {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
@@ -903,20 +938,10 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
               aria-expanded={menuOpen}
               aria-controls="mobile-drawer"
               onClick={() => setMenuOpen((v) => !v)}
-              className="md:hidden flex items-center justify-center rounded-lg flex-shrink-0"
-              style={{ width: 38, height: 38, background: menuOpen ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.07)' }}
+              className="hdr-btn md:hidden!"
+              style={{ color: menuOpen ? '#C4B5FD' : undefined }}
             >
-              {menuOpen ? (
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 2L12 12M12 2L2 12" stroke="#9B7CF6" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              ) : (
-                <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-                  <rect y="0" width="16" height="2" rx="1" fill="#8E8E9E" />
-                  <rect x="2" y="5" width="12" height="2" rx="1" fill="#8E8E9E" />
-                  <rect y="10" width="16" height="2" rx="1" fill="#8E8E9E" />
-                </svg>
-              )}
+              <IconoMovil tipo={menuOpen ? 'cerrar' : 'menu'} />
             </button>
           </div>
         </div>

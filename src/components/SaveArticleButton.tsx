@@ -31,12 +31,14 @@ function escribirGuardadosLocales(slugs: string[]): void {
 }
 
 export default function SaveArticleButton({
-  slug, title, imageUrl, sport,
+  slug, title, imageUrl, sport, plano = false,
 }: {
   slug: string
   title: string
   imageUrl?: string | null
   sport?: string | null
+  /** Icono de 40 px sin círculo (cabecera móvil de la nota, maqueta 1 de noviembre). */
+  plano?: boolean
 }) {
   const [guardado, setGuardado] = useState(false)
   const [listo, setListo] = useState(false)
@@ -87,21 +89,23 @@ export default function SaveArticleButton({
       aria-pressed={guardado}
       aria-label={guardado ? 'Quitar de guardados' : 'Guardar para después'}
       title={guardado ? 'Quitar de guardados' : 'Guardar para después'}
-      className="inline-flex items-center justify-center rounded-full transition-colors"
+      className={plano ? 'art-tool transition-colors' : 'inline-flex items-center justify-center rounded-full transition-colors'}
       style={{
-        width: 36, height: 36,
-        background: guardado ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.04)',
-        border: `1px solid ${guardado ? 'rgba(124,58,237,0.38)' : 'var(--border)'}`,
-        color: guardado ? '#C4B5FD' : 'var(--text-muted)',
+        ...(plano ? {} : {
+          width: 36, height: 36,
+          background: guardado ? 'rgba(124,58,237,0.16)' : 'rgba(255,255,255,0.04)',
+          border: `1px solid ${guardado ? 'rgba(124,58,237,0.38)' : 'var(--border)'}`,
+        }),
+        color: guardado ? '#C4B5FD' : plano ? 'var(--text-primary)' : 'var(--text-muted)',
         cursor: 'pointer',
         // Hasta leer el almacén no sabemos el estado: sin esto el icono
         // parpadeaba de "sin guardar" a "guardado" en cada carga.
         opacity: listo ? 1 : 0,
       }}
     >
-      <svg width="15" height="15" viewBox="0 0 16 16" fill={guardado ? 'currentColor' : 'none'} aria-hidden>
+      <svg width={plano ? 20 : 15} height={plano ? 20 : 15} viewBox="0 0 16 16" fill={guardado ? 'currentColor' : 'none'} aria-hidden>
         <path d="M4 2.5h8a.5.5 0 0 1 .5.5v10.2a.3.3 0 0 1-.47.25L8 10.6l-4.03 2.85a.3.3 0 0 1-.47-.25V3a.5.5 0 0 1 .5-.5z"
-          stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+          stroke="currentColor" strokeWidth={plano ? 1.3 : 1.4} strokeLinejoin="round" />
       </svg>
     </button>
   )

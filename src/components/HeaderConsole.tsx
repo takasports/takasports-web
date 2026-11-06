@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import Header from './Header'
 import BreakingNewsBar from './BreakingNewsBar'
 import LiveStrip from './LiveStrip'
@@ -28,6 +29,10 @@ import LiveStrip from './LiveStrip'
 // hacer scroll. La altura es dinámica (breaking puede no estar; el directo se
 // colapsa en móvil), por eso se mide con ResizeObserver y no se hardcodea. El
 // fallback 56px cubre las rutas sin consola (hubs /futbol…, header simple).
+//
+// La hoja de una noticia: /noticias/<slug>, pero no /noticias ni /noticias/pagina/N.
+const esHojaDeNoticia = (ruta: string) => /^\/noticias\/(?!pagina(\/|$))[^/]+/.test(ruta)
+
 export default function HeaderConsole({
   breakingItems,
 }: {
@@ -36,10 +41,18 @@ export default function HeaderConsole({
   breakingItems?: { title: string; slug?: string; sport?: string }[]
 } = {}) {
   const ref = useRef<HTMLDivElement>(null)
+  const pathname = usePathname() ?? ''
   // UNA sola tira arriba. Con un partido en juego manda el directo y se retira
   // «Último momento»: dos tiras más la cabecera se comían un cuarto de la
   // pantalla del móvil antes del primer titular. Sin directo, vuelve el ticker.
   const [hayDirecto, setHayDirecto] = useState(false)
+
+  // En MÓVIL «Último momento» no sale nunca (maqueta 1 de noviembre, decidido
+  // el 06/11/2026): cabecera de 64 + una tira de 40, y nada más fijo. En la hoja
+  // de una noticia tampoco hay tira: quien llega de Google ve el titular. En
+  // escritorio no cambia nada. Se oculta por CSS y no por estado para que el
+  // HTML del servidor y el del cliente sean el mismo (ver useMounted).
+  const hoja = esHojaDeNoticia(pathname)
 
   useEffect(() => {
     const el = ref.current
@@ -59,8 +72,12 @@ export default function HeaderConsole({
   return (
     <div ref={ref} className="sticky top-0 z-50">
       <Header sticky={false} />
-      {!hayDirecto && <BreakingNewsBar items={breakingItems} />}
-      <LiveStrip onLiveChange={setHayDirecto} />
+      <div className="hidden md:block">
+        {!hayDirecto && <BreakingNewsBar items={breakingItems} />}
+      </div>
+      <div className={hoja ? 'hidden md:block' : undefined}>
+        <LiveStrip onLiveChange={setHayDirecto} />
+      </div>
     </div>
   )
 }

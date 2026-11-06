@@ -118,6 +118,10 @@ export default function LiveStrip({
   const curatedUpcoming = filterByFollowed(upcoming, { deportesSeguidos: [...followedSports] })
 
   return (
+    // Una tira de 40 px (maqueta 1 de noviembre). En móvil enseña UN solo
+    // partido —el directo si lo hay, si no el próximo— y la pastilla; el resto
+    // de eventos sale a partir de 768 px. Letras: 11 px los rótulos, 13 los
+    // nombres, 14 la hora (antes 8, 10 y 9: ilegibles en un teléfono real).
     <div
       role="region"
       aria-label={isLive ? 'Marcadores en vivo' : 'Próximos partidos'}
@@ -126,54 +130,55 @@ export default function LiveStrip({
       className="w-full"
       style={{
         background: 'rgba(9,9,15,0.92)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        height: 48,
+        borderBottom: '1px solid var(--border)',
+        height: 40,
         overflow: 'hidden',
       }}
     >
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 xl:px-10">
-        <div className="flex items-center h-10 gap-4 overflow-x-auto snap-strip" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex items-center h-10 gap-2.5 md:gap-3">
 
-          {/* Label pill — EN VIVO / PRÓXIMO */}
+          {/* Pastilla — EN DIRECTO / PRÓXIMO */}
           <div
-            className="flex items-center gap-1.5 flex-shrink-0 px-2 py-0.5 rounded"
-            style={
-              isLive
-                ? { background: 'rgba(255,77,46,0.14)', border: '1px solid rgba(255,77,46,0.32)' }
-                : { background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }
-            }
+            className="flex items-center gap-1.5 flex-shrink-0 rounded-md"
+            style={{
+              height: 22,
+              padding: '0 8px',
+              background: isLive ? 'rgba(255,77,46,0.16)' : 'rgba(124,58,237,0.18)',
+              border: `1px solid ${isLive ? 'rgba(255,77,46,0.32)' : 'rgba(124,58,237,0.28)'}`,
+            }}
           >
             <span
               className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
               style={{
-                background: isLive ? 'var(--color-live)' : '#7C3AED',
-                boxShadow:  isLive ? '0 0 7px var(--color-live)' : '0 0 6px #7C3AED',
+                background: isLive ? 'var(--color-live)' : 'var(--purple)',
+                boxShadow:  isLive ? '0 0 6px var(--color-live)' : '0 0 6px var(--purple)',
               }}
             />
             <span
-              className="text-[8px] font-black uppercase tracking-[0.2em]"
+              className="text-[11px] font-bold uppercase tracking-[0.08em] whitespace-nowrap"
               style={{
-                color: isLive ? 'var(--color-live)' : '#9B6DB5',
+                color: isLive ? 'var(--color-live)' : 'var(--text-primary)',
                 fontFamily: 'var(--font-sport)',
               }}
             >
-              {isLive ? 'En Directo' : 'Próximo'}
+              {isLive ? 'En directo' : 'Próximo'}
             </span>
           </div>
 
-          <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-
-          {/* Events */}
-          <div className="flex items-center gap-1 overflow-x-auto flex-1" style={{ scrollbarWidth: 'none' }}>
+          {/* Eventos. El primero siempre; los demás solo en escritorio. Cada uno
+              va con flex-shrink:0 y sin recortes: el «Ho» de «Hoy» (V-03) venía
+              de un contenedor con overflow que se comía el final. */}
+          <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
             {stripMode === 'live'
               ? liveFixtures.slice(0, 8).map((fix, i) => (
-                  <div key={`${fix.id}-${i}`} className="flex items-center gap-3 flex-shrink-0">
+                  <div key={`${fix.id}-${i}`} className={`${i > 0 ? 'hidden md:flex' : 'flex'} items-center gap-3 flex-shrink-0`}>
                     {i > 0 && <Sep />}
                     <LiveEventCard fix={fix} />
                   </div>
                 ))
               : curatedUpcoming.slice(0, 6).map((ev, i) => (
-                  <div key={`${ev.id}-${i}`} className="flex items-center gap-3 flex-shrink-0">
+                  <div key={`${ev.id}-${i}`} className={`${i > 0 ? 'hidden md:flex' : 'flex'} items-center gap-3 flex-shrink-0`}>
                     {i > 0 && <Sep />}
                     <UpcomingEventCard ev={ev} />
                   </div>
@@ -181,23 +186,23 @@ export default function LiveStrip({
             }
           </div>
 
-          {/* CTA + freshness */}
+          {/* CTA + frescura */}
           <div className="ml-auto flex-shrink-0 flex items-center gap-2">
             {ageLabel && isLive && (
               <span
-                className="hidden md:block text-[8px] tabular-nums"
+                className="hidden md:block text-[11px] tabular-nums"
                 style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
                 title="Última actualización de marcadores"
               >
                 {ageLabel}
               </span>
             )}
-            <Link href="/calendario" className="flex items-center gap-1 transition-opacity hover:opacity-70" style={{ textDecoration: 'none', color: 'var(--text-muted)' }}>
-              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            <Link href="/calendario" className="flex items-center gap-1 whitespace-nowrap transition-opacity hover:opacity-70" style={{ textDecoration: 'none', color: 'var(--text-muted)' }}>
+              <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 Ver calendario
               </span>
-              <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                <path d="M2 4.5h5M4.5 2.5l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
           </div>

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 
+// Solo en escritorio (md+). En móvil se retiró el 06/11/2026 (V-06): con la
+// barra inferior y el flotante de compartir eran tres capas fijas sobre el
+// texto; tocar la pestaña activa de la barra ya sube al principio.
 export default function ScrollToTop() {
   const [visible, setVisible] = useState(false)
 
@@ -17,7 +20,7 @@ export default function ScrollToTop() {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
       aria-label="Volver arriba"
-      className="fixed right-4 sm:right-6 z-[45] w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+      className="fixed right-4 sm:right-6 z-[45] w-10 h-10 rounded-full hidden md:flex items-center justify-center transition-all hover:scale-110 active:scale-95"
       style={{
         bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
         background: 'rgba(124,58,237,0.85)',

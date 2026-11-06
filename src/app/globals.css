@@ -61,9 +61,15 @@
      Se conserva el NOMBRE de la variable para no tocar los 44 sitios. */
   --font-headline: var(--font-display);
 
+  /* Verde de marca: la HORA de un partido por jugar (tira, calendario, tarjeta
+     de partido). El color de cada deporte queda para el rótulo de competición.
+     [Maquetas de noviembre, 06/11/2026] */
+  --green: #2EE59D;
+
   /* Borders */
   --border: rgba(255,255,255,0.06);
   --border-subtle: rgba(255,255,255,0.04);
+  --border-2: rgba(255,255,255,0.10);
 
   /* Fonts — las declara next/font en layout.tsx sobre <html>, que es ESTE mismo
      elemento. NO redeclararlas aquí.
@@ -159,10 +165,74 @@ body {
 /* ── Reserve space at page bottom on mobile for the floating bottom nav ── */
 @media (max-width: 1023px) {
   body {
-    /* 78px = cápsula de 64 + los 14 de aire que ya había. Subió de 72 cuando la
-       barra ganó las etiquetas de texto (03/09/2026). */
-    padding-bottom: calc(78px + max(env(safe-area-inset-bottom, 0px), 10px));
+    /* 86px = cápsula de 72 + los 14 de aire. La cápsula creció de 66 a 72 con
+       las etiquetas de 11 px (maqueta 1 de noviembre, 06/11/2026). */
+    padding-bottom: calc(86px + max(env(safe-area-inset-bottom, 0px), 14px));
   }
+}
+
+/* ── Cabecera móvil (maqueta 1, 06/11/2026) ──────────────────────────────────
+   Lupa, perfil y menú son tres iconos de 40 px SIN círculo ni borde: los tres
+   círculos de 56 px con borde parecían de «kit de UI», no de medio. En
+   escritorio no cambia nada: a partir de 768 px vuelven los botones de 38 px
+   con fondo que ya había. El icono de cada tamaño va en su propio <span>
+   (`.hdr-ic-m` móvil / `.hdr-ic-d` escritorio) porque los trazos del de 21 px
+   no escalan bien a 13. */
+.hdr-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.hdr-btn > .hdr-ic-m { display: inline-flex; }
+.hdr-btn > .hdr-ic-d { display: none; }
+@media (min-width: 768px) {
+  .hdr-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.07);
+    color: #828296;
+  }
+  .hdr-btn--perfil {
+    border-radius: 9999px;
+    background: rgba(124,58,237,0.1);
+    border-color: rgba(124,58,237,0.22);
+    color: #9B7CF6;
+  }
+  .hdr-btn:hover { border-color: rgba(255,255,255,0.15); }
+  .hdr-btn > .hdr-ic-m { display: none; }
+  .hdr-btn > .hdr-ic-d { display: inline-flex; }
+}
+
+/* Un solo flotante en móvil: compartir, encima de la cápsula (14 + 72 + 16).
+   En escritorio sigue apilado sobre «subir» (72 + 40 + 12). */
+.fab-compartir { bottom: calc(102px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) {
+  .fab-compartir { bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Botones de la hoja de noticia en móvil (guardar · compartir · modo claro):
+   iconos de 40 px sin círculo, como los de la cabecera. */
+.art-tool {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  cursor: pointer;
 }
 
 /* ── Hero height — sólo lg+, mobile queda auto ── */
