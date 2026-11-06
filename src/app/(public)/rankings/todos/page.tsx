@@ -3,10 +3,12 @@ import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import { SITE_URL } from '@/lib/constants'
 import { smallImage } from '@/lib/image-url'
+import { accentForSport } from '@/lib/sports'
+import { SportIcon } from '@/components/icons/GameIcons'
 
 export const metadata: Metadata = {
-  title: 'Reyes del deporte hispano · Ranking Taka',
-  description: 'El #1 de cada disciplina. Una foto del momento del deporte hispanohablante.',
+  title: 'El número 1 de cada deporte · Ranking Taka',
+  description: 'El #1 de cada deporte según el Ranking Taka. Una foto del momento, actualizada cada semana.',
   alternates: { canonical: `${SITE_URL}/rankings/todos` },
 }
 
@@ -64,13 +66,13 @@ export default async function ReyesPage() {
     <div style={{ background: 'var(--bg-base)', minHeight: '100vh', padding: '24px 16px 80px' }}>
       <div className="max-w-3xl mx-auto">
         <Link href="/rankings"
-          className="inline-block text-[10px] font-black uppercase tracking-[0.2em] mb-3"
+          className="inline-block text-[11px] font-bold uppercase tracking-[0.12em] mb-3"
           style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
           ← Volver al Ranking
         </Link>
         <h1 className="text-3xl font-black mb-1"
           style={{ color: '#E8E8F0', fontFamily: 'var(--font-display)' }}>
-          Reyes del <span style={{ color: '#C4B5FD' }}>deporte hispano</span>
+          El número 1 de <span style={{ color: '#C4B5FD' }}>cada deporte</span>
         </h1>
         <p className="text-sm mb-6" style={{ color: '#8E8E9E', fontFamily: 'var(--font-sport)' }}>
           El #1 de cada disciplina según el Ranking Taka. Una foto del momento — actualizada cada semana.
@@ -91,18 +93,21 @@ export default async function ReyesPage() {
                   textDecoration: 'none',
                 }}>
                 <div className="flex items-center gap-3 px-4 py-2.5">
-                  <span className="text-lg flex-shrink-0" title={meta?.label}>
-                    {meta?.emoji ?? '🏅'}
+                  <span className="flex-shrink-0 inline-flex" title={meta?.label} style={{ color: accentForSport(r.sport, '#A78BFA') }}>
+                    <SportIcon sport={meta?.label ?? r.sport ?? ''} size={18} />
                   </span>
                   {r.image_url ? (
                     <img src={smallImage(r.image_url, 80)} alt={r.name} width={40} height={40} loading="lazy" decoding="async"
                       style={{ borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: 10,
-                      background: 'rgba(124,58,237,0.18)', flexShrink: 0 }} />
+                    // Sin foto: inicial sobre el color del deporte, nunca un recuadro vacío (V-26).
+                    <div className="inline-flex items-center justify-center font-black" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                      background: `${accentForSport(r.sport, '#A78BFA')}1A`, color: accentForSport(r.sport, '#A78BFA'), border: `1px solid ${accentForSport(r.sport, '#A78BFA')}4D`, fontFamily: 'var(--font-display)', fontSize: 16 }}>
+                      {r.name.trim().charAt(0).toUpperCase()}
+                    </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-black uppercase tracking-[0.15em]"
+                    <p className="text-[11px] font-bold uppercase tracking-[0.1em]"
                       style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
                       {meta?.label ?? r.sport}
                     </p>
@@ -111,7 +116,7 @@ export default async function ReyesPage() {
                       {r.name}
                     </p>
                     {r.subtitle && (
-                      <p className="text-[10px] truncate"
+                      <p className="text-[11px] truncate"
                         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                         {r.subtitle}
                       </p>
@@ -123,7 +128,7 @@ export default async function ReyesPage() {
                       {Number(r.score).toFixed(1)}
                     </span>
                     {delta != null && Math.abs(delta) >= 0.1 && (
-                      <span className="block text-[9px] tabular-nums"
+                      <span className="block text-[11px] tabular-nums"
                         style={{ color: deltaColor, fontFamily: 'var(--font-display)' }}>
                         {delta >= 0 ? '+' : ''}{delta.toFixed(1)}
                       </span>

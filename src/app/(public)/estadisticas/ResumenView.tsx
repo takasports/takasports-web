@@ -275,7 +275,7 @@ export function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () =>
                 {r.name}
               </span>
               {r.sub && (
-                <span className="text-[10px] truncate hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                <span className="text-[11px] truncate hidden sm:block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                   · {r.sub}
                 </span>
               )}
@@ -290,10 +290,10 @@ export function ResumenCard({ card, onOpen }: { card: SummaryCard; onOpen: () =>
       {/* Footer CTA */}
       <div className="px-4 py-2.5 flex items-center justify-between"
         style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-        <span className="text-[9px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[11px] font-black uppercase tracking-[0.15em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {card.metric}
         </span>
-        <span className="text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1"
+        <span className="text-[11px] font-black uppercase tracking-widest inline-flex items-center gap-1"
           style={{ color: card.accent, fontFamily: 'var(--font-sport)' }}>
           Ver todo
           <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1.5 4h5M4 1.5l2.5 2.5L4 6.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -331,20 +331,20 @@ export function ResumenView({
       {/* Status bar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {liveCount > 0 && (
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full"
             style={{ background: 'rgba(74,222,128,0.10)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)', fontFamily: 'var(--font-sport)' }}>
             <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
             {liveCount} en vivo
           </span>
         )}
         {histCount > 0 && (
-          <span className="text-[10px] px-2.5 py-1 rounded-full font-bold"
+          <span className="text-[11px] px-2.5 py-1 rounded-full font-bold"
             style={{ background: 'rgba(148,163,184,0.08)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.15)', fontFamily: 'var(--font-sport)' }}>
             {histCount} {histCount === 1 ? 'histórico' : 'históricos'}
           </span>
         )}
         {lastUpdated && (
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             · {lastUpdated.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}

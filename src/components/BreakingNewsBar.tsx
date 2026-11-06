@@ -133,7 +133,7 @@ export default function BreakingNewsBar({
           style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-          <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap" style={{ color: '#ef4444' }}>
+          <span className="text-[11px] font-bold uppercase tracking-[0.08em] whitespace-nowrap" style={{ color: '#ef4444' }}>
             Último momento
           </span>
         </div>

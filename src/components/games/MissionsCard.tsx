@@ -36,7 +36,7 @@ export default function MissionsCard() {
           <span className="section-accent" />
           <h3 className="section-label">Misiones de hoy</h3>
         </div>
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+        <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
           {doneCount}/{items.length} completadas
         </span>
       </div>
@@ -49,7 +49,7 @@ export default function MissionsCard() {
         <>
           <div className="my-3 flex items-center gap-2">
             <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
-            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+            <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
               Semanal
             </span>
             <span className="h-px flex-1" style={{ background: 'rgba(255,255,255,0.06)' }} />
@@ -80,9 +80,9 @@ function MissionRow({ item }: { item: Item }) {
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-sm font-black truncate inline-flex items-center gap-1.5" style={{ color: mission.done ? '#86EFAC' : '#F0F0F5', fontFamily: 'var(--font-display)' }}>
             <span className="truncate">{template.title}</span>
-            {mission.done && <span aria-hidden className="text-[10px]">✓</span>}
+            {mission.done && <span aria-hidden className="text-[11px]">✓</span>}
           </p>
-          <span className="text-[10px] tabular-nums font-black flex-shrink-0" style={{ color: mission.done ? '#86EFAC' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px] tabular-nums font-black flex-shrink-0" style={{ color: mission.done ? '#86EFAC' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {progressLabel}
           </span>
         </div>
@@ -92,7 +92,7 @@ function MissionRow({ item }: { item: Item }) {
         </div>
       </div>
       <span
-        className="text-[10px] font-black whitespace-nowrap flex-shrink-0 px-1.5 py-0.5 rounded"
+        className="text-[11px] font-black whitespace-nowrap flex-shrink-0 px-1.5 py-0.5 rounded"
         style={{
           background: mission.done ? 'rgba(74,222,128,0.12)' : 'rgba(252,211,77,0.10)',
           color: mission.done ? '#86EFAC' : '#FCD34D',

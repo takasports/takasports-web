@@ -265,7 +265,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {espnHits.length > 0 && (
             <div className="pt-2 pb-1" style={{ borderBottom: (players.length || articles.length) ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
               <div className="px-4 pb-1">
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
                   Jugadores y equipos
                 </span>
               </div>
@@ -283,9 +283,9 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold truncate" style={{ color: '#EBEBF5' }}>{h.name}</div>
-                    <div className="text-[10px] truncate" style={{ color: '#7A7A8E' }}>{h.subtitle}</div>
+                    <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{h.subtitle}</div>
                   </div>
-                  <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+                  <span className="text-[11px] font-bold uppercase px-1.5 py-0.5 rounded flex-shrink-0"
                     style={{ background: h.type === 'team' ? 'rgba(34,197,94,0.15)' : 'rgba(124,58,237,0.18)',
                              color: h.type === 'team' ? '#4ade80' : '#C4B5FD' }}>
                     {h.type === 'team' ? 'Equipo' : 'Jugador'}
@@ -299,7 +299,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {players.length > 0 && (
             <div className="pt-2 pb-1">
               <div className="px-4 pb-1">
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
                   Rankings
                 </span>
               </div>
@@ -326,7 +326,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       <p className="text-[13px] font-semibold leading-tight truncate" style={{ color: '#EBEBF5' }}>
                         {player.name}
                       </p>
-                      <p className="text-[10px] truncate" style={{ color: 'var(--text-muted)' }}>
+                      <p className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>
                         {player.subtitle}
                       </p>
                     </div>
@@ -335,7 +335,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       <span className="text-[11px] font-black tabular-nums" style={{ color: accent }}>
                         {Number(player.score).toFixed(1)}
                       </span>
-                      <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                      <span className="text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
                         style={{ background: `${accent}15`, color: accent }}>
                         {player.catLabel}
                       </span>
@@ -356,7 +356,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
             <div className="pt-2 pb-1">
               {players.length > 0 && (
                 <div className="px-4 pb-1">
-                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)' }}>
                     Noticias
                   </span>
                 </div>
@@ -377,7 +377,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       {label && (
-                        <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
+                        <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: '#A78BFA', fontFamily: 'var(--font-sport)' }}>
                           {label}
                         </span>
                       )}
@@ -386,7 +386,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                       </p>
                     </div>
                     {article.publishedAt && (
-                      <span className="text-[10px] flex-shrink-0" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
+                      <span className="text-[11px] flex-shrink-0" style={{ color: 'var(--text-muted)' }} suppressHydrationWarning>
                         {timeAgo(article.publishedAt)}
                       </span>
                     )}
@@ -399,15 +399,15 @@ function SearchModal({ onClose }: { onClose: () => void }) {
 
         {/* Footer */}
         <div className="px-4 py-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {loading ? 'Buscando...' : totalResults > 0 ? `${totalResults} resultado${totalResults !== 1 ? 's' : ''}` : 'Escribe para buscar'}
           </span>
           {query.trim().length >= 2 ? (
-            <button onClick={submitSearch} className="text-[10px] font-semibold transition-opacity hover:opacity-70" style={{ color: '#A78BFA' }}>
+            <button onClick={submitSearch} className="text-[11px] font-semibold transition-opacity hover:opacity-70" style={{ color: '#A78BFA' }}>
               Ver todos los resultados ↵
             </button>
           ) : (
-            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>↵ abrir · Esc cerrar</span>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>↵ abrir · Esc cerrar</span>
           )}
         </div>
       </div>
@@ -887,7 +887,7 @@ export default function Header({ sticky = true }: { sticky?: boolean } = {}) {
                 Buscar {SEARCH_HINTS[hintIdx]}
               </span>
               <kbd
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                className="text-[11px] font-bold px-1.5 py-0.5 rounded flex-shrink-0"
                 style={{ fontFamily: 'inherit', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: '#9090A4' }}
               >
                 ⌘K

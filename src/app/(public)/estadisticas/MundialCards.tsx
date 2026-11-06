@@ -27,13 +27,13 @@ export function WorldCupCountdown() {
   // el 21/08/2026, seguía anunciándolo como en directo).
   const fase = now ? worldCupPhase(now) : null
   if (fase === 'terminado') return (
-    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
+    <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-full"
       style={{ background: 'rgba(148,163,184,0.12)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.28)' }}>
       Finalizado · 19 jul 2026
     </span>
   )
   if (fase === 'en-curso') return (
-    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full"
+    <span className="text-[11px] font-black uppercase px-2 py-0.5 rounded-full"
       style={{ background: 'rgba(34,197,94,0.2)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
       ● EN CURSO
     </span>
@@ -51,7 +51,7 @@ export function WorldCupCountdown() {
             style={{ fontFamily: 'var(--font-sport)', color: '#f59e0b' }}>
             {now ? String(v).padStart(2, '0') : '--'}
           </div>
-          <div className="text-[9px] uppercase tracking-widest mt-0.5"
+          <div className="text-[11px] uppercase tracking-widest mt-0.5"
             style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {l}
           </div>
@@ -78,12 +78,12 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
           <FreshnessBadge isLive={isLive} meta={meta} />
         </div>
         {wcStarted && (
-          <span className="text-[10px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>PTS</span>
+          <span className="text-[11px] font-black uppercase tracking-widest flex-shrink-0" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>PTS</span>
         )}
       </div>
 
       {wcStarted && (
-        <div className="px-4 pt-1.5 pb-1 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest"
+        <div className="px-4 pt-1.5 pb-1 flex items-center gap-1 text-[11px] font-black uppercase tracking-widest"
           style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(255,255,255,0.015)' }}>
           <span className="w-5 flex-shrink-0" />
           <span className="flex-1">Selección</span>
@@ -118,7 +118,7 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
                 background: isPromoted ? `${accent}06` : 'transparent',
                 borderLeft: isPromoted ? `3px solid ${accent}50` : '3px solid transparent',
               }}>
-              <span className="w-5 flex-shrink-0 text-[10px] font-black tabular-nums"
+              <span className="w-5 flex-shrink-0 text-[11px] font-black tabular-nums"
                 style={{ color: isPromoted ? accent : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {row.rank}
               </span>
@@ -140,7 +140,7 @@ export function WorldCupGroupCard({ block, accent, isLive, meta }: {
                   ))}
                 </>
               ) : (
-                <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Sin jugar</span>
+                <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>Sin jugar</span>
               )}
             </div>
           )

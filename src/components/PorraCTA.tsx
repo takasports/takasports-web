@@ -189,10 +189,10 @@ function deriveState(s: PorraStatus | null): BadgeState {
 
 function badgeStyle(tone: BadgeState['badgeTone']): React.CSSProperties {
   const base: React.CSSProperties = {
-    fontSize: 9,
-    fontWeight: 900,
-    letterSpacing: '0.08em',
-    padding: '2px 5px',
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    padding: '2px 6px',
     borderRadius: 4,
     marginLeft: 2,
     whiteSpace: 'nowrap',

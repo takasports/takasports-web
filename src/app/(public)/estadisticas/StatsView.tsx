@@ -47,7 +47,7 @@ function DirectoryGroup({ title, hubHref, teams }: Omit<DirGroup, 'sport'>) {
   return (
     <div className="mb-5">
       <h3
-        className="text-[10px] font-black uppercase tracking-widest mb-2"
+        className="text-[11px] font-black uppercase tracking-widest mb-2"
         style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
       >
         {hubHref ? (

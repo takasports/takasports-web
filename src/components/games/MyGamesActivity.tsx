@@ -78,13 +78,13 @@ export default function MyGamesActivity() {
             <FireIcon size={22} className="text-[#FB923C]" />
           </div>
           <div className="flex-1">
-            <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>
+            <p className="text-[11px] font-black uppercase tracking-widest" style={{ color: '#FB923C', fontFamily: 'var(--font-sport)' }}>
               Racha activa
             </p>
             <p className="font-black" style={{ fontFamily: 'var(--font-display)', color: '#F8F8FF', fontSize: 24, lineHeight: 1 }}>
               {data.streak.current} {data.streak.current === 1 ? 'día' : 'días'}
             </p>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
               Mejor racha: <strong style={{ color: '#FB923C' }}>{data.streak.best} días</strong> · {data.streak.total} {data.streak.total === 1 ? 'partida total' : 'partidas totales'}
             </p>
           </div>
@@ -105,13 +105,13 @@ export default function MyGamesActivity() {
               >
                 <div className="flex items-center justify-between">
                   <span
-                    className="text-[10px] font-black uppercase tracking-widest"
+                    className="text-[11px] font-black uppercase tracking-widest"
                     style={{ color: meta.accent, fontFamily: 'var(--font-sport)' }}
                   >
                     {meta.label}
                   </span>
                   <span
-                    className="text-[9px] font-black px-2 py-0.5 rounded-full"
+                    className="text-[11px] font-black px-2 py-0.5 rounded-full"
                     style={{ background: 'rgba(255,255,255,0.04)', color: '#5A5A7A', fontFamily: 'var(--font-sport)' }}
                   >
                     {g.plays} {g.plays === 1 ? 'partida' : 'partidas'}
@@ -125,14 +125,14 @@ export default function MyGamesActivity() {
                   >
                     {g.best_score}
                   </span>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>mejor score</span>
+                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>mejor score</span>
                 </div>
 
                 <div className="flex items-center justify-between pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
                     Última: <strong style={{ color: '#9090B0' }}>{g.last_score} pts</strong>
                   </span>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                     {fmtAgo(g.last_at)}
                   </span>
                 </div>

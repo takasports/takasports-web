@@ -94,7 +94,7 @@ function MatchCard({ m, featured }: { m: BracketMatch; featured?: boolean }) {
           <span style={{ width: 6, height: 6, borderRadius: 99, background: '#ef4444', display: 'inline-block' }} />
         )}
         <span
-          className="text-[9px] font-black uppercase tracking-wider"
+          className="text-[11px] font-black uppercase tracking-wider"
           style={{ color: live ? '#ef4444' : 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
         >
           {live ? 'En juego' : resolved ? 'Final' : kickoff(m.dateISO)}
@@ -142,8 +142,11 @@ export default function MundialBracket() {
   const treeRounds = useMemo(() => treeOrderedRounds(rounds), [rounds])
 
   if (state === 'loading') {
+    // Reserva una pantalla entera mientras llega el cuadro: sin ella el bloque
+    // medía 60 px y al llegar los datos empujaba todo lo de debajo (0,61 de
+    // CLS medido el 06/11/2026; con el hueco, 0,03).
     return (
-      <div className="px-4 py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)' }}>
+      <div className="px-4 py-10 text-center text-[13px]" style={{ color: 'var(--text-muted)', minHeight: '100vh' }}>
         Cargando el cuadro…
       </div>
     )
@@ -175,11 +178,11 @@ export default function MundialBracket() {
             <h3 className="text-[13px] font-black uppercase tracking-widest" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-sport)' }}>
               Cuadro de eliminatorias
             </h3>
-            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
               Camino al título · Mundial 2026
             </p>
           </div>
-          <span className="text-[10px] font-black uppercase tracking-wider shrink-0" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
+          <span className="text-[11px] font-black uppercase tracking-wider shrink-0" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
             {bracket.resolvedCount}/{bracket.totalCount} jugados
           </span>
         </div>
@@ -213,7 +216,7 @@ export default function MundialBracket() {
           <span className="text-[11px] font-black uppercase tracking-widest" style={{ color: ACCENT, fontFamily: 'var(--font-sport)' }}>
             {active.label}
           </span>
-          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
             {active.matches.length} {active.matches.length === 1 ? 'partido' : 'partidos'}
           </span>
         </div>
@@ -267,8 +270,8 @@ export default function MundialBracket() {
           .tk-round { display: flex; flex-direction: column; width: 226px; padding: 0 4px; }
           .tk-head { height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 4px; }
           .tk-trophy { font-size: 18px; line-height: 1; margin-bottom: 2px; }
-          .tk-head-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.14em; color: ${ACCENT}; font-family: var(--font-sport); }
-          .tk-head-count { font-size: 9px; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
+          .tk-head-label { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.14em; color: ${ACCENT}; font-family: var(--font-sport); }
+          .tk-head-count { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
           .tk-head-rule { width: 26px; height: 2px; background: ${ACCENT}66; border-radius: 2px; margin-top: 6px; }
           .tk-matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
           .tk-match { position: relative; }
@@ -277,7 +280,7 @@ export default function MundialBracket() {
           .tk-conn-item { flex: 1; margin: 25% 0; position: relative; border: 2px solid ${LINE}; border-left: none; border-radius: 0 7px 7px 0; }
           .tk-conn-item::after { content: ''; position: absolute; top: 50%; left: 100%; width: 6px; height: 2px; background: ${LINE}; transform: translateY(-50%); }
           .tk-third { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-          .tk-third-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); font-family: var(--font-sport); }
+          .tk-third-label { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); font-family: var(--font-sport); }
         `}</style>
       </div>
     </div>
