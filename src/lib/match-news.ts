@@ -57,8 +57,9 @@ export function matchNewsParams(input: {
   const center = Number.isNaN(start.getTime()) ? now : start
   const span = MATCH_NEWS_WINDOW_DAYS * 24 * 60 * 60 * 1000
   return {
-    home: `${home}*`,
-    away: `${away}*`,
+    // Palabra entera, sin `*`: «remo*» traía noticias de remontadas al Palmeiras–Remo.
+    home,
+    away,
     sport,
     from: new Date(center.getTime() - span).toISOString(),
     to: new Date(center.getTime() + span).toISOString(),

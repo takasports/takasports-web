@@ -22,8 +22,8 @@ describe('matchNewsParams', () => {
   it('Francia–Italia busca solo fútbol y en una ventana alrededor del partido', () => {
     const p = matchNewsParams({ homeTeam: 'Francia', awayTeam: 'Italia', sport: 'soccer', startDate: '2026-09-09T18:45:00Z' }, now)!
     expect(p.sport).toBe('futbol')
-    expect(p.home).toBe('francia*')
-    expect(p.away).toBe('italia*')
+    expect(p.home).toBe('francia')
+    expect(p.away).toBe('italia')
     const days = (Date.parse(p.to) - Date.parse(p.from)) / 86_400_000
     expect(days).toBe(MATCH_NEWS_WINDOW_DAYS * 2)
     expect(p.from).toBe('2026-08-28T18:45:00.000Z')
