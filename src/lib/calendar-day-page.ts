@@ -10,8 +10,9 @@
 
 /** Días hacia atrás que servimos (hay resultados archivados en past_events). */
 export const DAY_PAGE_PAST = 30
-/** Días hacia delante (el feed de ESPN llega a ~45). */
-export const DAY_PAGE_FUTURE = 45
+/** Días hacia delante. Una fecha buscada con 15 días o más da un 10,2 % de clics (919
+ *  apariciones, 5/10-4/11), y a 45 días Navidad y enero aún no existían. */
+export const DAY_PAGE_FUTURE = 70
 
 const MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',

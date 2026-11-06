@@ -26,6 +26,8 @@
  * que vuelva a haber fútbol.
  */
 
+import { unstable_cache } from 'next/cache'
+
 /** `2026-09-18` o `20260918` → `202609`. */
 function mesDe(iso: string): string {
   const limpio = iso.replace(/-/g, '')
@@ -72,6 +74,29 @@ export function diaDesplazado(dias: number, desde: Date = new Date()): string {
 
 type Evento = Record<string, unknown>
 
+// Un mes de NBA pesa 3-4 MB y la caché de Next no admite más de 2: se descargaba
+// entero en cada regeneración de la portada, el calendario y las páginas de día
+// (7-11 MB de JSON cada vez, que es lo que encarece Vercel). Sin lo que nadie lee se
+// queda en ~0,7 MB y cabe. Si algún día hace falta uno de estos campos, añadirlo aquí.
+const MESES_PESADOS = new Set(['basketball/nba'])
+
+/** Quita lo que el calendario no usa: líderes, estadísticas, vídeos, titulares y enlaces. */
+export function recortarEvento(ev: Evento): Evento {
+  const { links: _l, ...resto } = ev
+  const competitions = (resto.competitions as Evento[] | undefined)?.map((c) => {
+    const { highlights: _h, headlines: _t, ...comp } = c
+    const competitors = (comp.competitors as Evento[] | undefined)?.map((x) => {
+      const { leaders: _d, statistics: _s, ...competidor } = x
+      const team = competidor.team as Evento | undefined
+      if (!team) return competidor
+      const { links: _e, ...equipo } = team
+      return { ...competidor, team: equipo }
+    })
+    return { ...comp, competitors }
+  })
+  return { ...resto, competitions }
+}
+
 /**
  * Pide el marcador de una competición para una ventana de fechas y devuelve los
  * eventos, ya recortados a esa ventana y sin duplicados.
@@ -92,16 +117,28 @@ export async function eventosDeVentana<T = Record<string, unknown>>(opciones: {
   const { slug, desde, hasta, limite = 300, fetchOpciones, timeoutMs = 8000 } = opciones
   const meses = mesesDeVentana(desde, hasta)
 
+  const pedirMes = async (mes: string, opciones?: RequestInit): Promise<Evento[]> => {
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${mes}&limit=${limite}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), ...(opciones ?? fetchOpciones) })
+    if (!res.ok) throw new Error(`ESPN ${res.status}`)
+    const json = (await res.json()) as { events?: Evento[] }
+    return json.events ?? []
+  }
+
+  const mesRecortado = (mes: string): Promise<Evento[]> =>
+    unstable_cache(
+      async () => (await pedirMes(mes, { cache: 'no-store' })).map(recortarEvento),
+      ['espn-mes', slug, mes, String(limite)],
+      { revalidate: fetchOpciones?.next?.revalidate || 300 },
+    )()
+
   const respuestas = await Promise.allSettled(
     meses.map(async (mes) => {
-      const url = `https://site.api.espn.com/apis/site/v2/sports/${slug}/scoreboard?dates=${mes}&limit=${limite}`
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(timeoutMs),
-        ...fetchOpciones,
-      })
-      if (!res.ok) return [] as Evento[]
-      const json = (await res.json()) as { events?: Evento[] }
-      return json.events ?? []
+      if (MESES_PESADOS.has(slug)) {
+        // Fuera de Next (pruebas, scripts) no hay caché: se pide tal cual.
+        try { return await mesRecortado(mes) } catch { /* sigue */ }
+      }
+      return pedirMes(mes).catch(() => [] as Evento[])
     }),
   )
 

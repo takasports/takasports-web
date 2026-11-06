@@ -13,7 +13,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { mesesDeVentana, eventosDeVentana, diaDesplazado } from './espn-meses'
+import { mesesDeVentana, eventosDeVentana, diaDesplazado, recortarEvento } from './espn-meses'
 
 const RAIZ = resolve(__dirname, '../..')
 
@@ -191,5 +191,25 @@ describe('la ventana ancha del feed no se le escapa a nadie', () => {
     const src = readFileSync(join(RAIZ, 'src/app/match-sitemap.xml/route.ts'), 'utf8')
     expect(src).toMatch(/fetchEspnEvents\(\)/)
     expect(src).not.toMatch(/fetchEspnEvents\(\s*\{/)
+  })
+})
+
+describe('recortarEvento', () => {
+  it('quita lo pesado y conserva lo que usa el calendario', () => {
+    const ev = recortarEvento({
+      id: '1', links: [1], competitions: [{
+        id: 'c', headlines: [1], highlights: [1], broadcasts: ['ESPN'], competitors: [{
+          homeAway: 'home', score: '100', leaders: [1], statistics: [1], records: [1],
+          team: { id: '2', displayName: 'Bulls', logo: 'l', links: [1] },
+        }],
+      }],
+    })
+    expect(ev).toEqual({
+      id: '1', competitions: [{
+        id: 'c', broadcasts: ['ESPN'], competitors: [{
+          homeAway: 'home', score: '100', records: [1], team: { id: '2', displayName: 'Bulls', logo: 'l' },
+        }],
+      }],
+    })
   })
 })
