@@ -196,6 +196,35 @@ export async function getPastEventByRef(matchRef: string): Promise<SportEvent | 
   return rowToEvent(data[0] as PastEventRow)
 }
 
+/**
+ * Varios partidos por su matchRef en UNA consulta. Lo usan los listados de
+ * noticias para pintar el marcador y los escudos de las crónicas sin una
+ * llamada por tarjeta (lib/notas-partido.ts). Con tope de tiempo: es un adorno
+ * y no puede retener la página si Supabase tarda. Nunca lanza.
+ */
+export async function getPastEventsByRefs(matchRefs: string[]): Promise<Map<string, SportEvent>> {
+  const out = new Map<string, SportEvent>()
+  const refs = [...new Set(matchRefs.filter(Boolean))]
+  if (refs.length === 0) return out
+  const sb = readClient()
+  if (!sb) return out
+  try {
+    const { data, error } = await sb
+      .from('past_events')
+      .select('*')
+      .in('match_ref', refs)
+      .order('iso_date', { ascending: false })
+      .abortSignal(AbortSignal.timeout(2500))
+    if (error || !data) return out
+    for (const r of data as PastEventRow[]) {
+      if (r.match_ref && !out.has(r.match_ref)) out.set(r.match_ref, rowToEvent(r))
+    }
+  } catch {
+    /* sin marcador: la tarjeta cae a la hora y «Final» */
+  }
+  return out
+}
+
 export async function upsertPastEvents(events: SportEvent[]): Promise<number> {
   const admin = adminSupabase()
   if (!admin) return 0

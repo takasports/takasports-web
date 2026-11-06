@@ -220,6 +220,17 @@ body {
   .fab-compartir { bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* Tarjeta de partido de las notas (MatchNoteCard, maqueta 2 de noviembre).
+   El tamaño grande del hero baja al mediano en móvil: escudos de 48, columnas
+   de 88 y el aire de la tarjeta mediana. Las variables las pone el componente. */
+.mnc-cuerpo { padding: var(--mnc-pad-y, 18px) var(--mnc-pad-x, 14px); }
+.mnc-eq { width: var(--mnc-col, 88px); }
+@media (max-width: 639px) {
+  .mnc-cuerpo { padding: 18px 14px; }
+  .mnc-eq { width: var(--mnc-col-movil, 88px); }
+  .mnc-escudo > * { width: var(--mnc-escudo-movil, 48px) !important; height: var(--mnc-escudo-movil, 48px) !important; }
+}
+
 /* Botones de la hoja de noticia en móvil (guardar · compartir · modo claro):
    iconos de 40 px sin círculo, como los de la cabecera. */
 .art-tool {

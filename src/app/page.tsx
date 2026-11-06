@@ -8,6 +8,7 @@ import { fetchPublicReels } from '@/lib/instagram-public'
 import { getRanking } from '@/lib/rankings-data'
 import { SEED_REELS } from '@/lib/seed-reels'
 import { sinPreviasDelante } from '@/lib/previa-caducada'
+import { adjuntarPartidos } from '@/lib/notas-partido'
 import HeaderConsole from '@/components/HeaderConsole'
 import HomeContent from '@/components/HomeContent'
 import type { Reportaje } from '@/components/ReportajesBlock'
@@ -58,6 +59,10 @@ interface HomeArticle {
   isTaka?: boolean
   type?: string | null
   kickoffIso?: string | null
+  matchRef?: string | null
+  matchHome?: string | null
+  matchAway?: string | null
+  matchComp?: string | null
 }
 
 // Hero del día: artículos con priority alta publicados en las últimas 24h suben al top
@@ -123,13 +128,19 @@ export default async function Home() {
       : Promise.resolve([] as Reportaje[]),
   ])
 
-  const articles = sortForHome(rawArticles)
+  // Previas y crónicas con su partido (escudos, hora o marcador) para la
+  // tarjeta de partido: sin llamadas nuevas, con el calendario de ESPN que ya
+  // está en memoria y una consulta a past_events. Ver lib/notas-partido.
+  const articles = await adjuntarPartidos(sortForHome(rawArticles), { eventos: espnEvents })
 
   // Fallback de destacadas por deporte: si el filtro del home no encuentra
   // nada entre las 40 más recientes, mostramos las top-N de ese deporte.
   const featuredBySport: Record<string, HomeArticle[]> = {}
+  const perSportConPartido = await Promise.all(
+    perSportRaw.map(lista => adjuntarPartidos(sortForHome(lista ?? []).slice(0, 8), { eventos: espnEvents })),
+  )
   HOME_SPORT_SLUGS.forEach((slug, i) => {
-    featuredBySport[slug] = sortForHome(perSportRaw[i] ?? []).slice(0, 8)
+    featuredBySport[slug] = perSportConPartido[i]
   })
 
   // SSR: Sanity reels → live Instagram API → seed placeholders

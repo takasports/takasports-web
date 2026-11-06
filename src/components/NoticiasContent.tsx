@@ -1,5 +1,6 @@
 'use client'
 
+import type { PartidoDeNota } from '@/lib/notas-partido'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import NoticiasPortada from '@/components/NoticiasPortada'
@@ -21,6 +22,8 @@ interface Article {
   takaStatus?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  type?: string | null
+  partido?: PartidoDeNota | null
 }
 
 interface SanityReel {
@@ -231,7 +234,7 @@ export default function NoticiasContent({
               Noticias
             </HeadingTag>
           </div>
-          <p className="text-[10px] flex-shrink-0 pb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[12px] flex-shrink-0 pb-1" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             {editorialDate(renderedAt)}{filteredArticles.length > 0 ? ` · ${filteredArticles.length} historias` : ''}
           </p>
         </div>

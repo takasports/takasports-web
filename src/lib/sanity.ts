@@ -36,7 +36,15 @@ const LISTING_FIELDS = `
   "kickoffIso": matchKickoff.iso,
   "category": select(defined(headline) => competition, category),
   "isTaka": defined(headline),
-  "takaStatus": select(defined(headline) => status, null)
+  "takaStatus": select(defined(headline) => status, null),
+  // Lo que necesita la tarjeta de partido de los listados (maqueta 2 de
+  // noviembre): equipos y competición de la previa (las crónicas no traen
+  // matchKickoff) y el matchRef, con el que se buscan escudos y marcador en
+  // lo que la web ya tiene cargado (ver lib/notas-partido.ts).
+  matchRef,
+  "matchHome": matchKickoff.home,
+  "matchAway": matchKickoff.away,
+  "matchComp": matchKickoff.competition
 `
 
 // Reportajes — piezas de fondo marcadas a mano con type=="reportaje" en el Studio.

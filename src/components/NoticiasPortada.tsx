@@ -8,6 +8,8 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import { SportIcon } from '@/components/icons/GameIcons'
 import HCarousel from '@/components/HCarousel'
+import MatchNoteCard from '@/components/news/MatchNoteCard'
+import type { PartidoDeNota } from '@/lib/notas-partido'
 
 const ROTATION_MS     = 5000   // big cards
 const BIG_POOL        = 6      // artículos reservados para big cards (3 pares)
@@ -25,8 +27,11 @@ interface Article {
   category?: string
   sport?: string
   takaStatus?: string | null
+  type?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  /** Previa o crónica con partido resuelto → tarjeta de partido (maqueta 2 de noviembre). */
+  partido?: PartidoDeNota | null
 }
 
 function Badge({ sport, category }: { sport?: string; category?: string }) {
@@ -35,7 +40,7 @@ function Badge({ sport, category }: { sport?: string; category?: string }) {
   if (!label) return null
   return (
     <span
-      className="inline-block text-[9px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded mb-1.5"
+      className="inline-block text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded mb-1.5"
       style={{ background: `${accent}26`, color: accent, border: `1px solid ${accent}48`, fontFamily: 'var(--font-sport)' }}
     >
       {label}
@@ -66,6 +71,14 @@ function SportPlaceholder({ sport, category, size = 'big' }: { sport?: string; c
 // medido en PSI. Ahora solo el #0 es high priority, el #1 carga eager pero
 // con prioridad auto, dejando al browser decidir cuándo descargarlo.
 function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) {
+  // Nota de partido: tarjeta mediana (escudos de 48, hora de 44, titular de 22).
+  if (article.partido) {
+    return <MatchNoteCard article={{ ...article, partido: article.partido }} size={lcp ? 'md' : 'sm'} className="h-full" />
+  }
+  return <BigCardFoto article={article} lcp={lcp} />
+}
+
+function BigCardFoto({ article, lcp = false }: { article: Article; lcp?: boolean }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(800).height(520).url() : null)
@@ -123,12 +136,12 @@ function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) 
         )}
         <div className="flex items-center gap-2">
           {article.publishedAt && (
-            <span className="text-[10px]" style={{ color: '#40405A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
+            <span className="text-[11px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
               {timeAgo(article.publishedAt)}
             </span>
           )}
           <span
-            className="text-[10px] font-bold flex items-center gap-1 group-hover:gap-2 transition-all"
+            className="text-[11px] font-bold flex items-center gap-1 group-hover:gap-2 transition-all"
             style={{ color: accent, fontFamily: 'var(--font-sport)' }}
           >
             Leer <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M1.5 5h7M5.5 2L8.5 5l-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -141,6 +154,11 @@ function BigCard({ article, lcp = false }: { article: Article; lcp?: boolean }) 
 
 // ── Card de tira ───────────────────────────────────────────────
 function StripCard({ article }: { article: Article }) {
+  if (article.partido) return <MatchNoteCard article={{ ...article, partido: article.partido }} layout="compact" className="h-full" />
+  return <StripCardFoto article={article} />
+}
+
+function StripCardFoto({ article }: { article: Article }) {
   const href = `/noticias/${article.slug ?? article._id}`
   const { accent } = getSportStyle(article.sport, article.category)
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(400).height(280).url() : null)
@@ -189,7 +207,7 @@ function StripCard({ article }: { article: Article }) {
           {article.title}
         </h3>
         {article.publishedAt && (
-          <span className="text-[9px] mt-1 block" style={{ color: '#32324A', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
+          <span className="text-[11px] mt-1 block" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }} suppressHydrationWarning>
             {timeAgo(article.publishedAt)}
           </span>
         )}
@@ -305,7 +323,7 @@ export default function NoticiasPortada({ articles }: { articles: Article[] }) {
                 />
               </div>
 
-              <span className="flex-shrink-0 text-[10px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+              <span className="flex-shrink-0 text-[11px] tabular-nums" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
                 {pairIdx + 1} / {totalPairs}
               </span>
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { CATEGORY_TO_SLUG } from '@/lib/sports'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import ArticleCard from '@/components/news/ArticleCard'
+import type { PartidoDeNota } from '@/lib/notas-partido'
 import CategoriesFilter from './CategoriesFilter'
 import ViewToggle from './ViewToggle'
 
@@ -16,9 +17,10 @@ interface Article {
   publishedAt?: string
   category?: string
   sport?: string
-  type?: string
+  type?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  partido?: PartidoDeNota | null
 }
 
 

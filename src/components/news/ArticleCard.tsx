@@ -31,6 +31,8 @@ import { timeAgo } from '@/lib/timeAgo'
 import { getSportStyle, getSportLabel } from '@/lib/sports'
 import SportPlaceholder from '@/components/SportPlaceholder'
 import { ReportajeSello } from '@/components/ReportajesBlock'
+import MatchNoteCard from '@/components/news/MatchNoteCard'
+import type { PartidoDeNota } from '@/lib/notas-partido'
 
 /** Lo mínimo que necesita la tarjeta. Cada pantalla declara su propio `Article`
  *  (hay diez interfaces iguales en el repo); estructuralmente todas encajan. */
@@ -43,9 +45,13 @@ export interface ArticleCardData {
   publishedAt?: string
   category?: string
   sport?: string
-  type?: string
+  type?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  language?: string
+  /** Previa o crónica con su partido resuelto (lib/notas-partido): la tarjeta
+   *  pasa a ser la de partido. Sin él, la foto de siempre. */
+  partido?: PartidoDeNota | null
 }
 
 /** Ventana de la píldora «Nuevo». Estaba escrita tres veces (dos como
@@ -154,6 +160,16 @@ export default function ArticleCard({
   // El badge «Nuevo» solo puede decidirse DESPUÉS de montar (ver `esNuevo`).
   const montado = useMounted()
   const key = `${variant}-${size}` as keyof typeof MEDIDAS
+
+  // Nota de partido con datos: la tarjeta de partido (maqueta 2 de noviembre).
+  // En fila, la forma compacta (escudos y marcador en una cajita); en rejilla,
+  // la tarjeta pequeña con el titular debajo.
+  if (article.partido) {
+    const nota = { ...article, partido: article.partido }
+    return variant === 'grid'
+      ? <MatchNoteCard article={nota} size="sm" className={className} prefetch={prefetch} reveal={reveal} />
+      : <MatchNoteCard article={nota} layout="compact" className={className} prefetch={prefetch} reveal={reveal} />
+  }
   const m = MEDIDAS[key]
 
   // Valores por defecto = lo que ya hacía cada sitio antes de unificar.
@@ -170,7 +186,7 @@ export default function ArticleCard({
 
   const Kicker = label ? (
     <span
-      className={`${size === 'sm' ? 'text-[8px]' : 'text-[9px]'} font-black uppercase tracking-widest`}
+      className="text-[11px] font-bold uppercase tracking-[0.08em]"
       style={{ color: accent, fontFamily: 'var(--font-sport)' }}
     >
       {label}
@@ -182,7 +198,7 @@ export default function ArticleCard({
     // exacta en formato máquina la entiende Google, que es quien ordena noticias.
     <time
       dateTime={article.publishedAt}
-      className={`block ${variant === 'grid' ? 'text-[10px] mt-2' : 'text-[10px] mt-1'}`}
+      className={`block ${variant === 'grid' ? 'text-[11px] mt-2' : 'text-[11px] mt-1'}`}
       style={{ color: 'var(--text-faint)' }}
       suppressHydrationWarning
     >
@@ -192,7 +208,7 @@ export default function ArticleCard({
 
   const Titulo = (
     <h3
-      className={`news-title ${size === 'sm' ? 'text-[12.5px]' : variant === 'grid' ? 'text-xs' : 'text-[13px]'} font-semibold leading-snug line-clamp-2`}
+      className={`news-title ${size === 'sm' ? 'text-[13px]' : 'text-[13px]'} font-semibold leading-snug line-clamp-2`}
       style={{ color: 'var(--text-primary)' }}
     >
       {article.title}
@@ -256,7 +272,7 @@ export default function ArticleCard({
               {Kicker}
               {conNuevo && montado && esNuevo(article.publishedAt) && (
                 <span
-                  className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  className="text-[11px] font-bold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded"
                   style={{ background: 'rgba(124,58,237,0.18)', color: '#A78BFA', border: '1px solid rgba(124,58,237,0.25)' }}
                 >
                   Nuevo
@@ -267,7 +283,7 @@ export default function ArticleCard({
           )}
           {Titulo}
           {conSummary && article.short_summary && (
-            <p className="text-[11px] leading-relaxed mt-0.5 line-clamp-1 hidden lg:block" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[13px] leading-relaxed mt-0.5 line-clamp-1 hidden lg:block" style={{ color: 'var(--text-muted)' }}>
               {article.short_summary}
             </p>
           )}

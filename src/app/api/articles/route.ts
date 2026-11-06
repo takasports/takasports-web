@@ -4,6 +4,7 @@ import { captureException } from '@/lib/monitoring'
 import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import { withCoverUrls, type CoverRow } from '@/lib/cover-image'
 import { sinPreviasDelante } from '@/lib/previa-caducada'
+import { adjuntarPartidos } from '@/lib/notas-partido'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -49,6 +50,10 @@ function buildQuery(start: number, end: number, f: Filters) {
     sport,
     type,
     "kickoffIso": matchKickoff.iso,
+    matchRef,
+    "matchHome": matchKickoff.home,
+    "matchAway": matchKickoff.away,
+    "matchComp": matchKickoff.competition,
     "category": select(defined(headline) => competition, category),
     "priority": select(defined(headline) => "destacado", priority),
     "isTaka": defined(headline),
@@ -112,9 +117,10 @@ export async function GET(req: NextRequest) {
     // Reportajes del Studio: portada solo como asset → la app necesita imageUrl.
     // Solo en la primera página: es la que abre la portada de la app.
     const conPortada = withCoverUrls(rows ?? [])
-    const articles = page === 1
-      ? sinPreviasDelante(conPortada as (typeof conPortada[number] & { type?: string | null; kickoffIso?: string | null })[])
-      : conPortada
+    // Tarjeta de partido para previas y crónicas (web: /noticias al cambiar de
+    // deporte y «Ver más»). Ver lib/notas-partido.
+    type Fila = typeof conPortada[number] & { type?: string | null; kickoffIso?: string | null; matchRef?: string | null }
+    const articles = await adjuntarPartidos(page === 1 ? sinPreviasDelante(conPortada as Fila[]) : (conPortada as Fila[]))
 
     // Lista de artículos pública (varía por query, no por usuario): cacheable en
     // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así

@@ -3,6 +3,7 @@ import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
 import { stripExpiredThumbs } from '@/lib/reel-thumbs'
 import { sinPreviasDelante } from '@/lib/previa-caducada'
+import { adjuntarPartidos } from '@/lib/notas-partido'
 import type { Article } from '@/lib/types'
 import NoticiasContent from '@/components/NoticiasContent'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -36,7 +37,10 @@ export default async function NoticiasPage() {
     sanityClient.fetch(articlesQuery).catch(() => []),
     sanityClient.fetch(reelsQuery).catch(() => []),
   ])
-  const articles = sinPreviasDelante(rawArticles as (Article & { type?: string | null; kickoffIso?: string | null })[])
+  // Tarjeta de partido para previas y crónicas (ver lib/notas-partido).
+  const articles = await adjuntarPartidos(
+    sinPreviasDelante(rawArticles as (Article & { type?: string | null; kickoffIso?: string | null; matchRef?: string | null })[]),
+  )
 
   // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
   // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de

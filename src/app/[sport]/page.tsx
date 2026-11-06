@@ -6,6 +6,7 @@ import { getRanking } from '@/lib/rankings-data'
 import reelsData from '@/lib/reels-data.json'
 import { stripExpiredThumbs } from '@/lib/reel-thumbs'
 import { sinPreviasDelante } from '@/lib/previa-caducada'
+import { adjuntarPartidos } from '@/lib/notas-partido'
 import HeaderConsole from '@/components/HeaderConsole'
 import NoticiasContent from '@/components/NoticiasContent'
 import SportHubHeader from '@/components/SportHubHeader'
@@ -122,7 +123,8 @@ export default async function SportPage({
 
   // Filter out any null/undefined entries (Sanity can return nulls for broken references)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const safeArticles = sinPreviasDelante((articles as any[]).filter(Boolean))
+  // Tarjeta de partido para previas y crónicas (ver lib/notas-partido).
+  const safeArticles = await adjuntarPartidos(sinPreviasDelante((articles as any[]).filter(Boolean)))
   // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
   // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de
   // getMergedReels— con un respaldo estático que es aún más viejo: las 6 del

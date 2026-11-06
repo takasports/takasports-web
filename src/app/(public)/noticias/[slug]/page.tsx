@@ -58,6 +58,9 @@ import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 import SectionHeader from '@/components/ui/SectionHeader'
+import MatchNoteCard from '@/components/news/MatchNoteCard'
+import type { PartidoDeNota } from '@/lib/notas-partido'
+import { getPastEventByRef } from '@/lib/past-events'
 import { excludeCurrentArticle } from '@/lib/related-articles'
 
 export const revalidate = 3600
@@ -588,6 +591,42 @@ export default async function NoticiaPage({
 
   const imgUrl = article.imageUrl ?? (article.image?.asset ? urlFor(article.image).width(1400).height(600).url() : null)
   const esPlaca = Boolean(imgUrl && /\/api\/og\//.test(imgUrl))
+  // La placa de previa/crónica ya no se ve en la web (maqueta 2 de noviembre,
+  // V-08): en su lugar va la tarjeta de partido, con los escudos y el marcador
+  // de la ficha de ESPN que esta página ya pide. La placa sigue en Open Graph
+  // y en compartir, que no se tocan. Sin equipos no hay tarjeta y queda la foto.
+  // Segunda fuente, por si ESPN no responde: el archivo de resultados (una
+  // consulta, con escudos y marcador). Solo en las notas de partido con placa.
+  const partidoArchivado = tipoPartido && esPlaca && article.matchRef
+    ? await getPastEventByRef(article.matchRef).catch(() => null)
+    : null
+  const partidoTarjeta: PartidoDeNota | null = (() => {
+    if (!tipoPartido || !esPlaca || !article.matchRef) return null
+    const f = fichaVisualPartido
+    const pa = partidoArchivado
+    const home = article.matchKickoff?.home ?? f?.home.nombre ?? pa?.home
+    const away = article.matchKickoff?.away ?? f?.away.nombre ?? pa?.away ?? undefined
+    if (!home || !away) return null
+    const golesFicha = f?.terminado === true && f.home.goles != null && f.away.goles != null
+    const golesArchivo = pa?.homeScore != null && pa?.awayScore != null
+    const terminado = golesFicha || golesArchivo
+    const comp = article.matchKickoff?.competition ?? f?.liga ?? pa?.comp ?? article.category
+    return {
+      matchRef: article.matchRef,
+      home, away,
+      homeLogo: f?.home.escudo ?? pa?.homeLogo ?? undefined,
+      awayLogo: f?.away.escudo ?? pa?.awayLogo ?? undefined,
+      homeAbbr: pa?.homeAbbr,
+      awayAbbr: pa?.awayAbbr,
+      iso: article.matchKickoff?.iso ?? f?.iso ?? pa?.isoDate ?? undefined,
+      competicion: comp ?? undefined,
+      competicionCorta: competicionCorta(article.matchRef, comp) ?? undefined,
+      venue: f?.estadio ?? pa?.venue ?? undefined,
+      homeScore: golesFicha ? f!.home.goles : golesArchivo ? pa!.homeScore : undefined,
+      awayScore: golesFicha ? f!.away.goles : golesArchivo ? pa!.awayScore : undefined,
+      estado: terminado || tipoPartido === 'cronica' ? 'final' : 'previa',
+    }
+  })()
   const canonical = `${SITE_URL}/noticias/${article.slug ?? id}`
   // Imagen para datos estructurados / Discover. Orden: imagen líder real del
   // artículo (la misma que publica el image-sitemap, resuelve 200) → tarjeta OG
@@ -1476,7 +1515,18 @@ export default async function NoticiaPage({
               <NotaHermanaLink tipo="cronica" slug={hermana.slug} partido={partidoHermana} accent={badgeColor} />
             )}
 
-            {imgUrl && (
+            {partidoTarjeta && (
+              <div className="mb-6">
+                <MatchNoteCard
+                  article={{ title: article.title, sport: article.sport, category: article.category ?? undefined, type: article.type, partido: partidoTarjeta }}
+                  size="md"
+                  titulo={false}
+                  asLink={false}
+                />
+              </div>
+            )}
+
+            {imgUrl && !partidoTarjeta && (
               <div
                 // Proporción de la caja, en vez de un alto en clamp.
                 //

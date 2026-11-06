@@ -14,12 +14,19 @@ import { useMounted } from '@/hooks/useMounted'
 // del NAVEGADOR, así que SIEMPRE detrás de `useMounted()` — ver el porqué en
 // ArticleCard.
 import { esNuevo } from '@/components/news/ArticleCard'
+import MatchNoteCard from '@/components/news/MatchNoteCard'
+import type { PartidoDeNota } from '@/lib/notas-partido'
 import HCarousel from '@/components/HCarousel'
 
 const STRIP_COLS = 5
 
 // ── Tira compacta inferior — 5 artículos ───────────────────────
 function CompactStripItem({ art }: { art: Article }) {
+  if (art.partido) return <MatchNoteCard article={{ ...art, partido: art.partido }} layout="compact" className="h-full" />
+  return <CompactStripFoto art={art} />
+}
+
+function CompactStripFoto({ art }: { art: Article }) {
   const href = `/noticias/${art.slug ?? art._id}`
   const { accent } = getSportStyle(art.sport, art.category)
   const label = getSportLabel(art.sport, art.category)
@@ -135,8 +142,11 @@ interface Article {
   publishedAt?: string
   category?: string
   sport?: string
+  type?: string | null
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  /** Previa o crónica con partido resuelto → tarjeta de partido (maqueta 2 de noviembre). */
+  partido?: PartidoDeNota | null
 }
 
 const INTERVAL = 6500
@@ -206,6 +216,18 @@ function BigCard({
   const imgUrl = imgFailed ? null : rawImgUrl
   const fresh = useMounted() && esNuevo(article.publishedAt)
   const { elRef } = useTilt({ max: 4, scale: 1.01, speed: 0.1 })
+
+  // Nota de partido: la tarjeta grande de la maqueta (escudos de 80, hora de
+  // 76, titular y entradilla), sin foto ni Ken Burns.
+  if (article.partido) {
+    return (
+      // `hero-big-col`: el mismo suelo de altura que la tarjeta con foto, para
+      // que el carrusel no mueva lo de debajo al pasar de una a otra (CLS).
+      <div className="hero-big-col h-full flex flex-col" style={{ opacity: visible ? 1 : 0, transition: `opacity ${visible ? FADE_IN : FADE_OUT}ms ease` }}>
+        <MatchNoteCard article={{ ...article, partido: article.partido }} size="lg" entradilla leer className="h-full flex-1" />
+      </div>
+    )
+  }
 
   return (
     <div ref={elRef} className="h-full">
@@ -344,6 +366,14 @@ function SmallCard({
   const fadeMs = visible ? FADE_IN : FADE_OUT
   const { elRef } = useTilt({ max: 3, scale: 1.015, speed: 0.1 })
 
+  if (article.partido) {
+    return (
+      <div style={{ flex: 1, minHeight: 0, opacity: visible ? 1 : 0, transition: `opacity ${fadeMs}ms ease ${visible ? delay : 0}ms` }}>
+        <MatchNoteCard article={{ ...article, partido: article.partido }} size="sm" className="h-full" />
+      </div>
+    )
+  }
+
   return (
     <div ref={elRef} style={{ flex: 1 }}>
     <Link
@@ -439,6 +469,17 @@ function SmallCard({
 // secundarias van apiladas con imagen (SmallCard); en móvil estaban ocultas,
 // ahora se deslizan aquí.
 function SecondaryMini({ art }: { art: Article }) {
+  if (art.partido) {
+    return (
+      <div data-carousel-card className="snap-start shrink-0" style={{ width: '78%' }}>
+        <MatchNoteCard article={{ ...art, partido: art.partido }} layout="compact" className="h-full" />
+      </div>
+    )
+  }
+  return <SecondaryMiniFoto art={art} />
+}
+
+function SecondaryMiniFoto({ art }: { art: Article }) {
   const href = `/noticias/${art.slug ?? art._id}`
   const label = getSportLabel(art.sport, art.category)
   const { accent } = getSportStyle(art.sport, art.category)

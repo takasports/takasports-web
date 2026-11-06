@@ -1,5 +1,6 @@
 'use client'
 
+import type { PartidoDeNota } from '@/lib/notas-partido'
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -41,6 +42,8 @@ interface Article {
   priority?: string
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
+  type?: string | null
+  partido?: PartidoDeNota | null
 }
 
 interface SanityReel {
