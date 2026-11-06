@@ -187,7 +187,8 @@ export default function MatchNoteCard({
   const p = article.partido
   const { accent } = getSportStyle(article.sport, article.category)
   const comp = competicionDeTarjeta(article)
-  const etiqueta = ETIQUETA[article.type ?? ''] ?? 'Partido'
+  // Una previa de un partido ya jugado no se anuncia como previa: la tarjeta da el resultado.
+  const etiqueta = article.type === 'previa' && p?.estado === 'final' ? 'Jugado' : (ETIQUETA[article.type ?? ''] ?? 'Partido')
   const c = centro(p)
   const href = `/noticias/${article.slug ?? article._id ?? ''}`
   const m = MEDIDAS[size]

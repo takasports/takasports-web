@@ -643,7 +643,8 @@ export function MatchRowInner({ event, liveScore, isReminded, onToggleReminder, 
   const abreviable = (nombre: string, abbr?: string): React.ReactNode =>
     nombre.length > 18 && abbr ? (
       <>
-        <span className="sm:hidden">{abbr}</span>
+        {/* «GS» no dice nada: con siglas de dos letras, mejor el apellido del equipo. */}
+        <span className="sm:hidden">{abbr.length >= 3 ? abbr : nombre.split(' ').pop()}</span>
         <span className="hidden sm:inline">{nombre}</span>
       </>
     ) : nombre
