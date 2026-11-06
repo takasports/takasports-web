@@ -16,6 +16,7 @@ import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { useQuinielaMe } from '@/lib/quiniela-me-store'
 import { accentForSport } from '@/lib/sports'
 import type { SearchHit } from '@/app/api/search/players/route'
+import type { MatchHit } from '@/app/api/search/matches/route'
 import dynamic from 'next/dynamic'
 
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false })
@@ -87,6 +88,9 @@ function SearchModal({ onClose }: { onClose: () => void }) {
   const [articles, setArticles] = useState<SearchArticle[]>([])
   const [players, setPlayers] = useState<SearchPlayer[]>([])
   const [espnHits, setEspnHits] = useState<SearchHit[]>([])
+  // Partidos (próximos y jugados), arriba del todo: el calendario es lo más
+  // usado de Taka y hasta ahora el buscador no encontraba partidos. [06/11/2026]
+  const [matchHits, setMatchHits] = useState<MatchHit[]>([])
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
@@ -112,6 +116,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
       setArticles([])
       setPlayers([])
       setEspnHits([])
+      setMatchHits([])
       setLoading(false)
       return
     }
@@ -119,10 +124,15 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     debounceRef.current = setTimeout(async () => {
       trackSearch(q)
       try {
-        const [contentRes, espnRes] = await Promise.all([
+        const [contentRes, espnRes, matchRes] = await Promise.all([
           fetch(`/api/search?q=${encodeURIComponent(q)}`),
           fetch(`/api/search/players?q=${encodeURIComponent(q)}`),
+          fetch(`/api/search/matches?q=${encodeURIComponent(q)}`).catch(() => null),
         ])
+        if (matchRes?.ok) {
+          const d = await matchRes.json()
+          setMatchHits(Array.isArray(d.matches) ? d.matches.slice(0, 5) : [])
+        } else { setMatchHits([]) }
         if (contentRes.ok) {
           const data = await contentRes.json()
           if (Array.isArray(data)) { setArticles(data); setPlayers([]) }
@@ -136,6 +146,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         setArticles([])
         setPlayers([])
         setEspnHits([])
+        setMatchHits([])
       } finally {
         setLoading(false)
       }
@@ -143,7 +154,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [query])
 
-  const totalResults = articles.length + players.length + espnHits.length
+  const totalResults = articles.length + players.length + espnHits.length + matchHits.length
 
   // Enter (o "Ver todos") lleva a la página de búsqueda completa /buscar?q=,
   // que antes estaba huérfana (nada enlazaba a ella) y cuyo "↵ abrir" no hacía
@@ -208,6 +219,45 @@ function SearchModal({ onClose }: { onClose: () => void }) {
           {!loading && query.trim().length < 2 && (
             <div className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               Escribe al menos 2 caracteres para buscar
+            </div>
+          )}
+
+          {/* Partidos — próximos y jugados, los primeros */}
+          {matchHits.length > 0 && (
+            <div className="pt-2 pb-1" style={{ borderBottom: (espnHits.length || players.length || articles.length) ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+              <div className="px-4 pb-1">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  Partidos
+                </span>
+              </div>
+              {matchHits.map((m) => {
+                const hora = m.isoDate
+                  ? new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(m.isoDate))
+                  : m.time
+                const dia = m.isoDate
+                  ? new Intl.DateTimeFormat('es-ES', { timeZone: 'Europe/Madrid', day: 'numeric', month: 'short' }).format(new Date(m.isoDate))
+                  : ''
+                const marcador = m.jugado && m.homeScore != null && m.awayScore != null ? `${m.homeScore} – ${m.awayScore}` : null
+                const href = m.matchRef ? `/partido/${m.matchRef}` : '/calendario'
+                return (
+                  <Link key={m.id} href={href} prefetch={false} onClick={onClose}
+                    className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-white/[0.04]" style={{ textDecoration: 'none' }}>
+                    <span className="flex items-center gap-1 flex-shrink-0" style={{ width: 48 }}>
+                      {m.homeLogo ? <Image src={m.homeLogo} alt="" width={22} height={22} unoptimized style={{ objectFit: 'contain' }} /> : <span style={{ width: 22 }} />}
+                      {m.awayLogo ? <Image src={m.awayLogo} alt="" width={22} height={22} unoptimized style={{ objectFit: 'contain' }} /> : <span style={{ width: 22 }} />}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold truncate" style={{ color: '#EBEBF5' }}>
+                        {m.away ? `${m.home} – ${m.away}` : m.home}
+                      </div>
+                      <div className="text-[11px] truncate" style={{ color: 'var(--text-muted)' }}>{[m.comp, dia].filter(Boolean).join(' · ')}</div>
+                    </div>
+                    <span className="text-[13px] font-bold tabular-nums flex-shrink-0" style={{ color: marcador ? '#EBEBF5' : 'var(--green)', fontFamily: 'var(--font-display)' }}>
+                      {marcador ?? hora}
+                    </span>
+                  </Link>
+                )
+              })}
             </div>
           )}
 

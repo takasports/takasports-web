@@ -4,7 +4,7 @@ import { captureException } from '@/lib/monitoring'
 import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import { withCoverUrls, type CoverRow } from '@/lib/cover-image'
 import { sinPreviasDelante } from '@/lib/previa-caducada'
-import { adjuntarPartidos } from '@/lib/notas-partido'
+import { adjuntarPartidos, camposPartidoApi } from '@/lib/notas-partido'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -120,7 +120,13 @@ export async function GET(req: NextRequest) {
     // Tarjeta de partido para previas y crónicas (web: /noticias al cambiar de
     // deporte y «Ver más»). Ver lib/notas-partido.
     type Fila = typeof conPortada[number] & { type?: string | null; kickoffIso?: string | null; matchRef?: string | null }
-    const articles = await adjuntarPartidos(page === 1 ? sinPreviasDelante(conPortada as Fila[]) : (conPortada as Fila[]))
+    const conPartido = await adjuntarPartidos(page === 1 ? sinPreviasDelante(conPortada as Fila[]) : (conPortada as Fila[]))
+    // Cada nota de partido (previa o crónica) sale además con los campos
+    // planos que lee la app: matchHome, matchAway, matchHomeLogo,
+    // matchAwayLogo, matchCompetition y matchScore («1-0» o null).
+    const articles = conPartido.map((a) =>
+      a.type === 'previa' || a.type === 'cronica' ? { ...a, ...camposPartidoApi(a) } : a,
+    )
 
     // Lista de artículos pública (varía por query, no por usuario): cacheable en
     // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así

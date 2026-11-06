@@ -48,7 +48,8 @@ export interface NotaConPartido {
   category?: string | null
 }
 
-const ES_NOTA = (a: NotaConPartido) => (a.type === 'previa' || a.type === 'cronica') && !!a.matchRef
+// Las carreras (`racing_…`) no tienen dos lados: su previa se queda con la foto.
+const ES_NOTA = (a: NotaConPartido) => (a.type === 'previa' || a.type === 'cronica') && !!a.matchRef && !/^racing_/.test(a.matchRef)
 
 /** Primer apellido del tenista para que quepa en la tarjeta: «Carlos Alcaraz» → «Alcaraz». */
 function nombreCorto(nombre: string, tenis: boolean): string {
@@ -72,11 +73,12 @@ export async function adjuntarPartidos<T extends NotaConPartido>(
   if (notas.length === 0) return articulos
 
   const refs = notas.map((a) => a.matchRef as string)
-  const hayCronicas = notas.some((a) => a.type === 'cronica')
   const hayPrevias = notas.some((a) => a.type === 'previa')
 
+  // El archivo se mira para TODAS las notas: una previa de un partido ya
+  // jugado enseña el marcador real, como su crónica.
   const [pasados, proximos] = await Promise.all([
-    hayCronicas ? getPastEventsByRefs(refs).catch(() => new Map<string, SportEvent>()) : Promise.resolve(new Map<string, SportEvent>()),
+    getPastEventsByRefs(refs).catch(() => new Map<string, SportEvent>()),
     hayPrevias
       ? (opciones.eventos ? Promise.resolve(opciones.eventos) : fetchEspnEvents().catch(() => [] as SportEvent[]))
       : Promise.resolve([] as SportEvent[]),
@@ -137,4 +139,31 @@ export async function adjuntarPartidos<T extends NotaConPartido>(
     }
     return { ...a, partido }
   })
+}
+
+/** Lo que la API pública añade a cada nota de partido, plano y estable, para
+ *  la app: nombres, escudos, competición y marcador («1-0» o null). Sin
+ *  partido resuelto caen a lo que trae Sanity (equipos de la previa) y a null. */
+export interface CamposPartidoApi {
+  matchHome: string | null
+  matchAway: string | null
+  matchHomeLogo: string | null
+  matchAwayLogo: string | null
+  matchCompetition: string | null
+  matchScore: string | null
+}
+
+export function camposPartidoApi(a: NotaConPartido & { partido?: PartidoDeNota | null }): CamposPartidoApi {
+  const p = a.partido ?? null
+  const marcador = p && p.estado === 'final' && p.homeScore != null && p.awayScore != null
+    ? `${p.homeScore}-${p.awayScore}`
+    : null
+  return {
+    matchHome: p?.home ?? a.matchHome ?? null,
+    matchAway: p?.away ?? a.matchAway ?? null,
+    matchHomeLogo: p?.homeLogo ?? null,
+    matchAwayLogo: p?.awayLogo ?? null,
+    matchCompetition: p?.competicionCorta ?? p?.competicion ?? a.matchComp ?? a.category ?? null,
+    matchScore: marcador,
+  }
 }
