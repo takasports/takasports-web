@@ -59,6 +59,7 @@ import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
 import SectionHeader from '@/components/ui/SectionHeader'
 import MatchNoteCard from '@/components/news/MatchNoteCard'
+import Etiquetas from '@/components/articulo/Etiquetas'
 import type { PartidoDeNota } from '@/lib/notas-partido'
 import { getPastEventByRef } from '@/lib/past-events'
 import { excludeCurrentArticle } from '@/lib/related-articles'
@@ -297,7 +298,7 @@ function StatusBadge({ status, accent }: { status: string; accent: string }) {
   if (status === 'breaking') {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full animate-pulse"
+        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full animate-pulse"
         style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.35)', fontFamily: 'var(--font-sport)' }}
       >
         <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -308,7 +309,7 @@ function StatusBadge({ status, accent }: { status: string; accent: string }) {
   if (status === 'featured') {
     return (
       <span
-        className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
+        className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] px-2.5 py-1 rounded-full"
         style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}35`, fontFamily: 'var(--font-sport)' }}
       >
         ⭐ Destacado
@@ -357,7 +358,7 @@ function ArticleSidebar({
                     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Madrid',
                   })}
                 </time>
-                <p className="text-[10px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
+                <p className="text-[11px]" style={{ color: 'var(--text-faint)' }} suppressHydrationWarning>
                   {timeAgo(article.publishedAt, article.language)}
                 </p>
               </div>
@@ -387,21 +388,7 @@ function ArticleSidebar({
 
         </div>
 
-        {article.tags && article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-            {article.tags.map((tag) => (
-              <Link
-                prefetch={false}
-                key={tag}
-                href={`/tag/${encodeURIComponent(tag)}`}
-                className="text-[10px] px-2.5 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
-              >
-                #{tag}
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* Las etiquetas ya no van en la columna lateral (V-13): al final de la hoja. */}
 
         {/* La barra lateral es sticky, o sea que en escritorio esto ya SIGUE al
             lector mientras baja — el equivalente de la flecha flotante del
@@ -420,7 +407,7 @@ function ArticleSidebar({
 
       {nextArticle && (
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             Siguiente
           </p>
           <Link
@@ -441,7 +428,7 @@ function ArticleSidebar({
             )}
             <div className="flex flex-col justify-center min-w-0">
               {(nextArticle.sport || nextArticle.category) && (
-                <span className="text-[9px] font-black uppercase tracking-widest mb-0.5"
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] mb-0.5"
                   style={{ color: getSportStyle(nextArticle.sport, nextArticle.category).accent, fontFamily: 'var(--font-sport)' }}>
                   {getSportLabel(nextArticle.sport, nextArticle.category)}
                 </span>
@@ -456,7 +443,7 @@ function ArticleSidebar({
 
       {related.length > 0 && (
         <div>
-          <p className="text-[10px] font-black uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.08em] mb-3" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
             También te puede interesar
           </p>
           <div className="flex flex-col gap-2">
@@ -476,7 +463,7 @@ function ArticleSidebar({
                     </div>
                   )}
                   <div className="min-w-0">
-                    <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
                       {getSportLabel(rel.sport, rel.category)}
                     </span>
                     <h3 className="news-title text-xs font-semibold leading-snug line-clamp-2 mt-0.5" style={{ color: 'var(--text-primary)' }}>
@@ -1710,22 +1697,14 @@ export default async function NoticiaPage({
               </section>
             )}
 
+            {/* Etiquetas al final de la hoja, cinco a la vista y «+N» (V-13),
+                en todas las pantallas. La caja de autor sigue solo en móvil. */}
+            {article.tags && article.tags.length > 0 && (
+              <div className="mt-10">
+                <Etiquetas tags={article.tags} />
+              </div>
+            )}
             <div className="lg:hidden">
-              {article.tags && article.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-10">
-                  {article.tags.map((tag) => (
-                    <Link
-                      prefetch={false}
-                      key={tag}
-                      href={`/tag/${encodeURIComponent(tag)}`}
-                      className="text-xs px-3 py-1 rounded-full transition-colors hover:border-purple-500/40 hover:text-purple-300"
-                      style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid var(--border)', textDecoration: 'none' }}
-                    >
-                      #{tag}
-                    </Link>
-                  ))}
-                </div>
-              )}
               {/* Caja de autor de marca: siempre visible (articleAuthor con
                   fallback). Avatar teñido del deporte (--sport-accent). */}
               <CajaAutor
@@ -1766,7 +1745,7 @@ export default async function NoticiaPage({
             <div className="lg:hidden">
               {nextArticle && (
                 <div className="mt-12 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] mb-4" style={{ color: 'var(--text-muted)' }}>
                     {tx.siguiente}
                   </p>
                   <Link
@@ -1781,7 +1760,7 @@ export default async function NoticiaPage({
                     )}
                     <div className="flex flex-col justify-center flex-1 min-w-0">
                       {(nextArticle.sport || nextArticle.category) && (
-                        <span className="text-[9px] font-black uppercase tracking-widest mb-1"
+                        <span className="text-[11px] font-bold uppercase tracking-[0.08em] mb-1"
                           style={{ color: getSportStyle(nextArticle.sport, nextArticle.category).accent, fontFamily: 'var(--font-sport)' }}>
                           {getSportLabel(nextArticle.sport, nextArticle.category)}
                         </span>
@@ -1814,7 +1793,7 @@ export default async function NoticiaPage({
                             {relImg && <Image src={relImg} alt={rel.title} width={400} height={110} className="w-full h-full object-cover" />}
                           </div>
                           <div className="p-3">
-                            <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: relAccent, fontFamily: 'var(--font-sport)' }}>
+                            <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: relAccent, fontFamily: 'var(--font-sport)' }}>
                               {getSportLabel(rel.sport, rel.category)}
                             </span>
                             <h3 className="news-title text-xs font-semibold leading-snug line-clamp-2 mt-0.5" style={{ color: '#F0F0F5' }}>
@@ -1857,7 +1836,7 @@ export default async function NoticiaPage({
                       style={{ width: 3, height: 14, borderRadius: 2, background: badgeColor, display: 'inline-block' }}
                     />
                     <h2
-                      className="text-[10px] font-black uppercase tracking-widest"
+                      className="text-[11px] font-bold uppercase tracking-[0.08em]"
                       style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}
                     >
                       {tx.fuentes}
@@ -1930,7 +1909,7 @@ export default async function NoticiaPage({
           <div className="mx-auto mt-16 hidden lg:block" style={{ maxWidth: 1160 }}>
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '2.5rem' }}>
               <p
-                className="text-[10px] font-black uppercase tracking-widest mb-4"
+                className="text-[11px] font-bold uppercase tracking-[0.08em] mb-4"
                 style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}
               >
                 {tx.siguiente}
@@ -1954,7 +1933,7 @@ export default async function NoticiaPage({
                 <div className="flex-1 min-w-0">
                   {(nextArticle.sport || nextArticle.category) && (
                     <span
-                      className="text-[9px] font-black uppercase tracking-widest block mb-1"
+                      className="text-[11px] font-bold uppercase tracking-[0.08em] block mb-1"
                       style={{ color: getSportStyle(nextArticle.sport, nextArticle.category).accent, fontFamily: 'var(--font-sport)' }}
                     >
                       {getSportLabel(nextArticle.sport, nextArticle.category)}
@@ -1992,7 +1971,7 @@ export default async function NoticiaPage({
               style={{ background: `linear-gradient(135deg, ${badgeColor}12, ${badgeColor}06)`, border: `1px solid ${badgeBorder}`, textDecoration: 'none' }}
             >
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}>
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: badgeColor, fontFamily: 'var(--font-sport)' }}>
                   Más sobre
                 </span>
                 <span className="font-black text-sm" style={{ color: '#F0F0F5', fontFamily: 'var(--font-display)' }}>

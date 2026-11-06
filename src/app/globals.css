@@ -1578,6 +1578,12 @@ html[data-cap="full"] .ts-keys__row {
   margin-top: 0.02em;
   letter-spacing: -0.02em;
 }
+/* En modo lectura claro la capitular va en el color del titular: el verde del
+   fútbol sobre blanco daba 1,6:1 (V-12). El color de deporte queda en el rótulo. */
+html[data-lectura="claro"] .ts-lectura .ts-dropcap::first-letter {
+  color: var(--body-heading);
+  -webkit-text-fill-color: var(--body-heading);
+}
 
 /* ── /jugador — Radar "perfil de rendimiento" ──
    El polígono de datos entra con un pop de escala desde el centro, SOLO bajo
