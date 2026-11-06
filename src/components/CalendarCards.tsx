@@ -414,7 +414,7 @@ const STANDING_H = 14
 export function FormBars({ form, align, reserve }: { form?: FormResult[]; align: 'left' | 'right'; reserve?: boolean }) {
   if (!form || form.length === 0) return reserve ? <span className="block" style={{ height: FORM_H }} /> : null
   const color = (r: FormResult) => r === 'W' ? '#34D399' : r === 'D' ? '#6B7280' : 'rgba(255,77,46,0.75)'
-  const title = form.slice(0, 5).map(r => r === 'W' ? 'V' : r === 'D' ? 'E' : 'D').join('-')
+  const title = form.slice(0, 5).map(r => r === 'W' ? 'G' : r === 'D' ? 'E' : 'P').join('-')
   return (
     <span
       className={`flex items-center gap-[2.5px] mt-[3px] ${align === 'right' ? 'justify-end' : 'justify-start'}`}

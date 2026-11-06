@@ -20,6 +20,7 @@
 import { adminSupabase } from './supabase-admin'
 import { readIgTokenRecord, refreshIgToken, readSyncStatus, writeSyncStatus, readIgInsights, writeIgInsights } from './ig-token'
 import { fetchIgImage, fetchThumbByShortcode } from './ig-media'
+import sharp from 'sharp'
 import { igUrlExpired, shortcodeOf, thumbBySc } from './reel-thumbs'
 import { detectSport, extractTitle } from './instagram'
 import { sendTelegram } from './telegram'
@@ -31,6 +32,17 @@ import {
 const BUCKET = 'reels'
 const REELS_OBJECT = 'reels.json'
 const AUTH_URL = 'https://www.takasportsmedia.com/api/instagram/auth'
+
+/** Las portadas llegan a 350-470 KB y se pintan a 180 px de ancho. Si algo falla
+ *  se guarda la original: mejor una portada pesada que ninguna. */
+async function reducirPortada(body: Buffer): Promise<{ body: Buffer; contentType?: string }> {
+  try {
+    const out = await sharp(body).rotate().resize({ width: 480, withoutEnlargement: true }).jpeg({ quality: 72, mozjpeg: true }).toBuffer()
+    return { body: out, contentType: 'image/jpeg' }
+  } catch {
+    return { body }
+  }
+}
 
 export interface SyncedReel {
   id: string
@@ -313,8 +325,9 @@ export async function syncInstagramReels(opts: { dry?: boolean; notify?: boolean
       const fresh = c.rawThumb && !igUrlExpired(c.rawThumb) ? await fetchIgImage(c.rawThumb) : null
       const img = fresh ?? (await fetchThumbByShortcode(c.shortcode))
       if (img) {
-        const { error } = await admin.storage.from(BUCKET).upload(thumbPath(c.shortcode), Buffer.from(img.body), {
-          contentType: img.contentType, upsert: true, cacheControl: '31536000',
+        const reducida = await reducirPortada(Buffer.from(img.body))
+        const { error } = await admin.storage.from(BUCKET).upload(thumbPath(c.shortcode), reducida.body, {
+          contentType: reducida.contentType ?? img.contentType, upsert: true, cacheControl: '31536000',
         })
         if (error) errors.push(`upload ${c.shortcode}: ${error.message}`)
         else { thumb = publicThumbUrl(supaUrl, c.shortcode); newThumbs++; have.add(file) }

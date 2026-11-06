@@ -7,14 +7,14 @@ import { RANKED_FUTBOL_ENABLED } from '@/lib/feature-flags'
 // Cuando se ponga RANKED_FUTBOL_ENABLED=true, el copy se actualiza solo.
 // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
 const title = RANKED_FUTBOL_ENABLED
-  ? 'Predicciones — Ranked Fútbol, UFC y Mundial'
-  : 'Predicciones — Ranked UFC y Mundial 2026'
+  ? 'Predicciones — La Jornada de fútbol y Ranked UFC'
+  : 'Predicciones — Ranked UFC'
 const description = RANKED_FUTBOL_ENABLED
-  ? 'Predice resultados de LaLiga, UFC y el Mundial 2026. Compite en el Ranked global, crea ligas privadas o únete a ligas de creadores.'
-  : 'Predice resultados de UFC y el Mundial 2026. Compite en el Ranked global, crea ligas privadas o únete a ligas de creadores.'
+  ? 'Predice los partidos de LaLiga y las veladas de UFC. Compite en la clasificación global, crea ligas privadas o únete a ligas de creadores.'
+  : 'Predice las veladas de UFC. Compite en la clasificación global, crea ligas privadas o únete a ligas de creadores.'
 const ogDescription = RANKED_FUTBOL_ENABLED
-  ? 'Predice, compite y sube en el Ranked. Fútbol · UFC · Mundial 2026.'
-  : 'Predice, compite y sube en el Ranked. UFC · Mundial 2026.'
+  ? 'Predice, compite y sube en la clasificación. Fútbol · UFC.'
+  : 'Predice, compite y sube en la clasificación. UFC.'
 
 export const metadata: Metadata = {
   title,

@@ -22,7 +22,9 @@ export default function RankRow({
   const [expanded, setExpanded] = useState(false)
   const displayScore = getDisplayScore(entry)
   const trend = trendIcon(getEffectiveTrend(entry))
-  const scoreDiff = entry.scorePrev !== undefined ? displayScore - entry.scorePrev : null
+  // `delta_week`, no `score_prev`: esa es una foto antigua (45 fichas en 50 exacto)
+  // y daba «+36,6» a quien no se había movido. Sin cambio no se enseña nada.
+  const scoreDiff = entry.deltaWeek ? entry.deltaWeek : null
   const sc = scoreColor(displayScore)
   const sportAccent = entry.sport ? getSportStyle(entry.sport).accent : '#7C3AED'
   const avatarEmoji = (entry.emoji && entry.emoji !== entry.country)
@@ -126,8 +128,8 @@ export default function RankRow({
         )}
         {/* Sparkline siempre visible cuando hay scorePrev — también en mobile */}
         {scoreDiff !== null && (
-          <div className="flex flex-shrink-0" title={`Anterior: ${entry.scorePrev?.toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
-            <ScoreSparkline prev={entry.scorePrev} now={displayScore} />
+          <div className="flex flex-shrink-0" title={`Anterior: ${(displayScore - scoreDiff).toFixed(1)} → Ahora: ${displayScore.toFixed(1)}`}>
+            <ScoreSparkline prev={displayScore - scoreDiff} now={displayScore} />
           </div>
         )}
         {entry.handles && (

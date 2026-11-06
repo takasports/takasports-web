@@ -33,6 +33,7 @@ import { estimateOutcome, matchDominance, type OutcomeEstimate, type Dominance }
 import { accentForSport } from '@/lib/sports'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
+import { letraForma } from '@/lib/forma'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -739,7 +740,7 @@ function TennisForm({ match }: { match: MatchDetail }) {
                     color: m.won == null ? 'var(--text-muted)' : m.won ? '#4ade80' : '#EF4444',
                     fontFamily: 'var(--font-display)',
                   }}>
-                  {m.won == null ? '·' : m.won ? 'V' : 'D'}
+                  {m.won == null ? '·' : m.won ? 'G' : 'P'}
                 </span>
               ))}
             </div>
@@ -1474,7 +1475,7 @@ function FormPips({ form }: { form: FormResult[] }) {
             className="inline-flex items-center justify-center font-black text-[9px]"
             style={{ width: 16, height: 16, borderRadius: 4, background: `${c}22`, color: c, border: `1px solid ${c}40`, fontFamily: 'var(--font-sport)' }}
           >
-            {r}
+            {letraForma(r)}
           </span>
         )
       })}
@@ -2050,7 +2051,7 @@ function MatchContent({ match, h2h, forms, matchRef, notas }: { match: MatchDeta
                 </Section>
               )}
               {match.basketball.leaders.length > 0 && (
-                <Section title="Líderes del partido">
+                <Section title={startedMatch ? 'Líderes del partido' : 'Promedios de la temporada'}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {match.basketball.leaders.map((l, i) => <LeaderCard key={i} leader={l} leagueSlug={match.leagueSlug} />)}
                   </div>

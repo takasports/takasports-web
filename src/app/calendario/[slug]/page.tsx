@@ -24,6 +24,9 @@ import { fetchLeagueTableRows, fetchTopScorers, fetchTournamentGroups, byGroup, 
 import { LeagueTableBlock } from '@/app/partido/[ref]/LeagueTable'
 import { TopScorers } from '@/components/TopScorers'
 
+// Sin fuente de partidos hoy: enlazarlas llevaba a una página vacía.
+const SIN_PARTIDOS = new Set(['copa-america', 'motogp'])
+
 // ISR cada 5 min: estas páginas ganaron resultados en vivo (Mundial, ligas), así
 // que durante un torneo no pueden servir un marcador de hasta 1 hora de antigüedad.
 export const revalidate = 300
@@ -615,7 +618,7 @@ export default async function CompetitionCalendarPage({
         <section className="mt-14 pt-8" style={{ borderTop: '1px solid var(--border)' }}>
           <h2 className="section-label mb-4">Otros calendarios</h2>
           <div className="flex flex-wrap gap-2">
-            {COMPETITIONS.filter((c) => c.slug !== comp.slug).map((c) => (
+            {COMPETITIONS.filter((c) => c.slug !== comp.slug && !SIN_PARTIDOS.has(c.slug)).map((c) => (
               <Link
                 key={c.slug}
                 href={`/calendario/${c.slug}`}

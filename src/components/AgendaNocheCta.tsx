@@ -14,7 +14,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { getPublicKey, getPushTopics, isPushSupported, removePushTopic, subscribeToPush } from '@/lib/push-client'
-import { trackPushSubscribe, trackPushUnsubscribe } from '@/lib/analytics'
+import { trackOferta, trackPushSubscribe, trackPushUnsubscribe } from '@/lib/analytics'
+import { useVistoUnaVez } from '@/lib/use-visto-una-vez'
 
 const TOPIC = 'agenda'
 const ACENTO = '#A78BFA'
@@ -27,6 +28,7 @@ export default function AgendaNocheCta() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [cuando, setCuando] = useState('mañana')
+  useVistoUnaVez(ref, () => trackOferta({ oferta: 'agenda_noche', accion: 'visto', origen: 'dia' }))
 
   useEffect(() => {
     // Misma condición que el script de AgendaNoche, para las navegaciones
@@ -40,6 +42,7 @@ export default function AgendaNocheCta() {
   }, [])
 
   const activar = async () => {
+    trackOferta({ oferta: 'agenda_noche', accion: 'pulsado', origen: 'dia' })
     setBusy(true)
     setMsg(null)
     const res = await subscribeToPush([TOPIC])

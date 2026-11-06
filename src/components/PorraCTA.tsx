@@ -17,6 +17,8 @@ export interface PorraMatch {
   /** Partido destacado de la jornada — paga x2 en tendencia + dobla
    *  el bonus de marcador exacto si lo añades. */
   featured?: boolean
+  espnId?: string
+  leagueSlug?: string
 }
 
 export interface PorraSettlement {

@@ -3,6 +3,7 @@ import { createClient } from '@sanity/client'
 import { captureException } from '@/lib/monitoring'
 import { REPORTAJE_GROQ_FILTER } from '@/lib/constants'
 import { withCoverUrls, type CoverRow } from '@/lib/cover-image'
+import { sinPreviasDelante } from '@/lib/previa-caducada'
 
 const sanity = createClient({
   projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
@@ -46,6 +47,8 @@ function buildQuery(start: number, end: number, f: Filters) {
     "image": select(defined(headline) => mainImage, image),
     publishedAt,
     sport,
+    type,
+    "kickoffIso": matchKickoff.iso,
     "category": select(defined(headline) => competition, category),
     "priority": select(defined(headline) => "destacado", priority),
     "isTaka": defined(headline),
@@ -107,7 +110,11 @@ export async function GET(req: NextRequest) {
       sanity.fetch<number>(buildCountQuery(filters), params),
     ])
     // Reportajes del Studio: portada solo como asset → la app necesita imageUrl.
-    const articles = withCoverUrls(rows ?? [])
+    // Solo en la primera página: es la que abre la portada de la app.
+    const conPortada = withCoverUrls(rows ?? [])
+    const articles = page === 1
+      ? sinPreviasDelante(conPortada as (typeof conPortada[number] & { type?: string | null; kickoffIso?: string | null })[])
+      : conPortada
 
     // Lista de artículos pública (varía por query, no por usuario): cacheable en
     // el CDN. La barra de titulares (BreakingNewsBar) la pide en CADA página, así

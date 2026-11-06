@@ -11,12 +11,12 @@ import MundialWrapper from './MundialWrapper'
 
 export const metadata: Metadata = {
   // Sin sufijo " | TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
-  title: 'Mundial 2026 — Predice cada partido',
-  description: 'Predice los resultados del Mundial 2026. Pick 1·X·2, acumula puntos y compite en el ranking global. Gratis.',
+  title: 'Mundial 2026 — Así fue en Taka',
+  description: 'El Mundial 2026 ya terminó: consulta el cuadro completo y la clasificación final de las predicciones de TakaSports.',
   alternates: { canonical: `${SITE_URL}/mundial` },
   openGraph: {
-    title: 'Mundial 2026 — Predice en TakaSports',
-    description: 'Predice cada partido del Mundial 2026, acumula puntos y sube en el ranking. Gratis.',
+    title: 'Mundial 2026 — Así fue en TakaSports',
+    description: 'Cuadro completo y clasificación final de las predicciones del Mundial 2026.',
     url: `${SITE_URL}/mundial`,
     siteName: 'TakaSports',
     locale: 'es_ES',

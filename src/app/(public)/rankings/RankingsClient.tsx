@@ -198,14 +198,11 @@ export default function RankingsClient({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbData])
 
-  // Filtra categoría DB por deporte; cae a estático si la DB no tiene ese deporte
-  // (así los deportes de score bajo —F1, tenis— que no entran en el top-N de la DB
-  // siguen mostrándose desde el dataset curado).
-  const dbSportFilter = (cat: string, fallback: RankingEntry[], sport: string): RankingEntry[] => {
-    const fromDb = db(cat, fallback).filter(e => e.sport === sport)
-    if (fromDb.length > 0) return fromDb
-    return fallback.filter(e => e.sport === sport)
-  }
+  // Filtra categoría DB por deporte. Si la DB ha respondido manda ella, aunque ese
+  // deporte salga vacío: la lista escrita a mano enseñaba a Norris con 88,9 cuando
+  // su nota real era 71,8. Lo estático queda solo para cuando la DB no responde.
+  const dbSportFilter = (cat: string, fallback: RankingEntry[], sport: string): RankingEntry[] =>
+    db(cat, fallback).filter(e => e.sport === sport)
 
   // ── Resolver entries por track ────────────────────────────────────
   let entries: RankingEntry[] = []

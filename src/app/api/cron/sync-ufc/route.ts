@@ -167,6 +167,8 @@ async function handle(req: Request) {
     .eq('status', 'resolved')
   const resolvedIds = new Set((resolvedRows ?? []).map((r: { id: string }) => r.id))
 
+  const vistosPorVelada = new Map<string, Set<string>>()
+
   for (const ppv of ppvEvents) {
     // Nombre COMPLETO de la velada (p.ej. "UFC Fight Night: Kape vs. Horiguchi").
     // Antes se usaba shortName ("UFC Fight Night"), idéntico para TODAS las
@@ -203,6 +205,11 @@ async function handle(req: Request) {
       const method = isResolved ? parseMethod(fight.status?.type?.detail) : null
 
       const fightId = `ufc-espn-${fight.id ?? ppv.id + '-' + nameA.slice(0, 8) + '-' + nameB.slice(0, 8)}`
+
+      if (ppv.id) {
+        if (!vistosPorVelada.has(ppv.id)) vistosPorVelada.set(ppv.id, new Set())
+        vistosPorVelada.get(ppv.id)!.add(fightId)
+      }
 
       if (resolvedIds.has(fightId) && !isResolved) continue
 
@@ -264,13 +271,32 @@ async function handle(req: Request) {
     }
   }
 
+  // Cambios de cartel: ESPN da otro id al combate nuevo y deja de listar el antiguo,
+  // que se quedaba abierto y salía duplicado (Walker–Cortes Acosta, dos veces) sin
+  // resultado posible. Solo veladas con cartel real: una respuesta a medias no debe
+  // cerrar combates buenos.
+  let retirados = 0
+  for (const [ppvId, vistos] of vistosPorVelada) {
+    if (vistos.size < 3) continue
+    const { data: abiertos } = await admin
+      .from('ranked_events')
+      .select('id')
+      .eq('sport', 'ufc')
+      .eq('status', 'open')
+      .eq('meta->>ppv_id', ppvId)
+    const fuera = (abiertos ?? []).map((r: { id: string }) => r.id).filter(id => !vistos.has(id))
+    if (!fuera.length) continue
+    const { error } = await admin.from('ranked_events').update({ status: 'closed' }).in('id', fuera)
+    if (!error) retirados += fuera.length
+  }
+
   if (scoringFailures > 0) {
     await sendTelegram(
       `⚠️ sync-ufc: ${scoringFailures} combate(s) con el resultado guardado pero el scoring de predicciones FALLÓ. Revisar score_ufc_prediction / point_transactions.`,
     )
   }
 
-  return NextResponse.json({ ok: true, fetched: ppvEvents.length, upserted, scored, scoringFailures })
+  return NextResponse.json({ ok: true, fetched: ppvEvents.length, upserted, scored, scoringFailures, retirados })
 }
 
 export async function GET(req: Request)  { return handle(req) }

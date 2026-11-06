@@ -33,6 +33,7 @@ const LISTING_FIELDS = `
   publishedAt,
   sport,
   type,
+  "kickoffIso": matchKickoff.iso,
   "category": select(defined(headline) => competition, category),
   "isTaka": defined(headline),
   "takaStatus": select(defined(headline) => status, null)

@@ -95,6 +95,17 @@ export function trackStatsGroupOpen(params: {
   track('stats_group_open', params)
 }
 
+// ── Ofertas para apuntarse ───────────────────────────────────────
+// Sin esto no se sabe si una oferta falla o si simplemente nadie llega a verla: el
+// aviso de cada noche llevaba 8 días con 0 apuntados y solo se podía estimar.
+export function trackOferta(params: {
+  oferta: 'agenda_noche' | 'newsletter'
+  accion: 'visto' | 'pulsado'
+  origen?: string
+}) {
+  track('oferta', params)
+}
+
 // ── La Porra ─────────────────────────────────────────────────────
 // Eventos de los surfaces de captación: header pill, home hero, widget
 // inline en artículos, toast post-jornada. Permiten comparar qué surface

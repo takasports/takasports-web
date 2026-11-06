@@ -136,7 +136,7 @@ export function FreshnessBadge({ isLive, meta }: { isLive?: boolean; meta?: Bloc
         role="status"
         aria-label={`Datos en vivo${meta?.source ? ` desde ${meta.source}` : ''}${fetchedAt ? `, actualizados ${fetchedAt}` : ''}`}
         style={{ background: 'rgba(74,222,128,0.14)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.32)', fontFamily: 'var(--font-sport)' }}>
-        ● LIVE
+        ● AL DÍA
       </span>
     )
   }
@@ -234,7 +234,7 @@ export function PlayoffSeriesCard({ block, accent, isLive, meta }: {
                 {isActive && (
                   <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full"
                     style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)', fontFamily: 'var(--font-sport)' }}>
-                    LIVE
+                    EN JUEGO
                   </span>
                 )}
               </div>

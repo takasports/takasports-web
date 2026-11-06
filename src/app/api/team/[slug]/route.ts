@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getZone, zoneFromNote } from '@/lib/league-zones'
+import { puestoEspn } from '@/lib/espn-standings'
 import type { StandingZone } from '@/lib/league-zones'
 import { getPhotosByEspnId, upsertSportEntities, type SeedEntity } from '@/lib/sport-entities'
 import { FOOTBALL_LEAGUE_SLUGS } from '@/lib/football-leagues'
@@ -363,11 +364,7 @@ async function fetchTeamTable(leagueSlug: string, teamId: string): Promise<TeamT
 
     // ESPN no siempre devuelve las entradas ordenadas por posición (p. ej. MLS),
     // y abajo usamos el índice como puesto. Ordenamos por el stat 'rank' de ESPN.
-    const rankOf = (e: Record<string, unknown>) => {
-      const st = asArr(e.stats) as Array<{ name: string; value?: number }>
-      return (st.find(s => s.name === 'rank')?.value as number) ?? 999
-    }
-    entries.sort((a, b) => rankOf(a) - rankOf(b))
+    entries.sort((a, b) => puestoEspn(a) - puestoEspn(b))
 
     return entries.map((e, i) => {
       const team  = asObj(e.team) ?? {}
@@ -443,7 +440,10 @@ export async function GET(
 
     // Schedule → results (all: past + upcoming)
     const events = asArr(scheduleJson?.events)
+    // Del más nuevo al más viejo en todos los deportes: ESPN da el fútbol así y
+    // la NBA al revés, y la web y la app pintan la lista tal cual llega.
     const results = buildResults(events, teamId, leagueSlug, leagueLabel)
+      .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
 
     // Roster
     const athletes = asArr(rosterJson?.athletes)

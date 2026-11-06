@@ -182,7 +182,7 @@ export default function ExactScoreBlock({
           flex: 1, fontFamily: 'var(--font-sport)', fontSize: 10, fontWeight: 700,
           color: 'rgba(167,139,250,0.65)', letterSpacing: '0.02em',
         }}>
-          Apuesta al marcador · <strong style={{ color: '#C4B5FD' }}>{exactPts} pts</strong> si lo clavas
+          Acierta el marcador · <strong style={{ color: '#C4B5FD' }}>{exactPts} pts</strong> si lo clavas
         </span>
         <span style={{
           fontFamily: 'var(--font-sport)', fontSize: 8, fontWeight: 800,

@@ -5,7 +5,9 @@
 // already/error. Reset tras 4s en éxito para que el usuario no vea estado
 // pegado al volver a la home.
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { trackOferta } from '@/lib/analytics'
+import { useVistoUnaVez } from '@/lib/use-visto-una-vez'
 
 type Status = 'idle' | 'sending' | 'ok' | 'already' | 'error'
 
@@ -18,11 +20,14 @@ export default function NewsletterForm({ source = 'web', variant = 'stacked' }: 
   const [email, setEmail] = useState('')
   const [consent, setConsent] = useState(false)
   const [status, setStatus] = useState<Status>('idle')
+  const formRef = useRef<HTMLFormElement>(null)
+  useVistoUnaVez(formRef, () => trackOferta({ oferta: 'newsletter', accion: 'visto', origen: source }))
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (status === 'sending') return
     if (!consent) { setStatus('error'); return }
+    trackOferta({ oferta: 'newsletter', accion: 'pulsado', origen: source })
     setStatus('sending')
     try {
       const res = await fetch('/api/newsletter/subscribe', {
@@ -59,6 +64,7 @@ export default function NewsletterForm({ source = 'web', variant = 'stacked' }: 
 
   return (
     <form
+      ref={formRef}
       onSubmit={onSubmit}
       className={variant === 'inline' ? 'flex flex-col sm:flex-row gap-2 sm:gap-3' : 'flex flex-col gap-3'}
       style={{ maxWidth: 480 }}

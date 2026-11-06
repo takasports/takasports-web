@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { sanityClient, articlesQuery, reelsQuery, urlFor } from '@/lib/sanity'
 import reelsData from '@/lib/reels-data.json'
 import { stripExpiredThumbs } from '@/lib/reel-thumbs'
+import { sinPreviasDelante } from '@/lib/previa-caducada'
+import type { Article } from '@/lib/types'
 import NoticiasContent from '@/components/NoticiasContent'
 import ScrollToTop from '@/components/ScrollToTop'
 import NewsletterSection from '@/components/NewsletterSection'
@@ -30,10 +32,11 @@ export default async function NoticiasPage() {
   // El deep-link/compartido sigue funcionando: tras hidratar, el chip del deporte se activa y
   // carga sus noticias. El canonical fijo a /noticias evita competir con los hubs /[sport],
   // y la vista filtrada deja de ser una URL distinta indexable (sustituye al noindex anterior).
-  const [articles, reels] = await Promise.all([
+  const [rawArticles, reels] = await Promise.all([
     sanityClient.fetch(articlesQuery).catch(() => []),
     sanityClient.fetch(reelsQuery).catch(() => []),
   ])
+  const articles = sinPreviasDelante(rawArticles as (Article & { type?: string | null; kickoffIso?: string | null })[])
 
   // Sin URLs muertas, sea cual sea el origen. Instagram firma las miniaturas con
   // caducidad y estas páginas leen los reels de Sanity —saltándose el filtro de

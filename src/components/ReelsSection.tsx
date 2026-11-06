@@ -303,15 +303,19 @@ function ReelCard({ reel, onClick }: { reel: Reel; onClick: () => void }) {
         width: 180,
         height: 300,
         borderRadius: 16,
-        background: reel.thumbnailUrl
-          ? `url(${reel.thumbnailUrl}) center/cover no-repeat`
-          : `linear-gradient(160deg, ${accent}18, #09090F)`,
+        background: `linear-gradient(160deg, ${accent}18, #09090F)`,
         boxShadow: `0 12px 36px rgba(0,0,0,0.55), 0 0 0 1.5px ${accent}28`,
         border: `1.5px solid ${accent}22`,
         cursor: 'pointer',
         padding: 0,
       }}
     >
+      {/* <img> y no `background`: como fondo se descargaban las 32 portadas al abrir
+          la página, unos 10 MB, aunque nadie llegara a verlas. */}
+      {reel.thumbnailUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={reel.thumbnailUrl} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+      )}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.15) 45%,transparent 65%)' }} />
       {/* Gradiente superior más fuerte para tapar texto bakeado en thumbnails de Instagram */}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.35) 30%,transparent 55%)' }} />

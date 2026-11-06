@@ -414,7 +414,7 @@ export const SPORTS: SportConfig[] = [
             ],
           },
           {
-            id: 'nba-efficiency', title: 'True Shooting % (TS%)', metric: 'TS%',
+            id: 'nba-efficiency', title: 'Eficiencia (EFF)', metric: 'EFF',
             rows: [
               { rank: 1, name: 'Nikola Jokić',          team: 'DEN', value: '66.5%', sub: 'Temp. 24/25', flag: '🇷🇸', trend: 'up' },
               { rank: 2, name: 'Shai Gilgeous-Alexander', team: 'OKC', value: '63.7%', sub: 'Temp. 24/25', flag: '🇨🇦', trend: 'up' },

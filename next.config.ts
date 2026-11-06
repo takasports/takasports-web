@@ -25,6 +25,10 @@ const nextConfig: NextConfig = {
     // degrada a meta refresh con 200. Ver lib/team-name-redirects.ts.
     const teamNameRedirects = await fetchTeamNameRedirects(SITE_URL)
     return [
+      // /nba está en el pie y siempre sale vacía: las noticias van en /baloncesto.
+      { source: '/nba', destination: '/baloncesto', permanent: true },
+      // La clasificación de la quiniela retirada lee una tabla sin filas.
+      { source: '/juegos/leaderboard/quiniela', destination: '/liga-taka', permanent: false },
       // Canonical domain: non-www → www (permanent 301 for SEO link equity)
       {
         source: '/:path*',

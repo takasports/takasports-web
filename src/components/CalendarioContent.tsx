@@ -31,6 +31,7 @@ import { subscribeToPush } from '@/lib/push-client'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { isLiveStatus, liveSportPassesFilter } from '@/lib/live-events'
 import { BellIcon, CalendarIcon, ClipboardIcon, LiveDotIcon, SearchIcon, SportIcon } from '@/components/icons/GameIcons'
+import { fetchPorraStatus } from '@/lib/porra-status-client'
 
 const DESTACADOS_MIN = 4
 // Referencia estable para el valor por defecto (un `[]` en la firma sería un
@@ -246,23 +247,21 @@ export default function CalendarioContent({
 
   const goToPredicciones = useCallback(() => { router.push('/predicciones') }, [router])
 
-  // Jornada abierta de la quiniela → qué partidos del calendario se pueden
-  // pronosticar. El matchRef del evento es `{slug con _}_{espnId}`, que es
-  // exactamente lo que reconstruimos aquí desde leagueSlug + espnId.
+  // Partidos abiertos de La Jornada → cuáles del calendario se pueden pronosticar.
+  // El matchRef del evento es `{slug con _}_{espnId}`, que es exactamente lo que
+  // reconstruimos aquí desde leagueSlug + espnId.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await fetch('/api/quiniela')
-        if (!res.ok) return
-        const data = await res.json() as { matches?: Array<{ espnId?: string; leagueSlug?: string }> }
+        const data = await fetchPorraStatus()
         const refs = new Set<string>()
-        for (const m of data.matches ?? []) {
+        for (const m of data?.upcoming ?? []) {
           if (m.espnId && m.leagueSlug) refs.add(`${m.leagueSlug.replace('/', '_')}_${m.espnId}`)
         }
         if (!cancelled && refs.size) setPredictableRefs(refs)
       } catch {
-        /* sin quiniela disponible → simplemente no aparece el chip */
+        /* sin Jornada disponible → simplemente no aparece el chip */
       }
     })()
     return () => { cancelled = true }

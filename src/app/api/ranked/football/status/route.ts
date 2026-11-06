@@ -97,6 +97,10 @@ export async function GET(req: NextRequest) {
         homeLogo: e.meta?.home_logo ?? undefined,
         awayLogo: e.meta?.away_logo ?? undefined,
         featured: e.featured,
+        // El calendario monta con esto el `matchRef` de los partidos que se pueden
+        // pronosticar.
+        espnId:     e.meta?.espn_id ?? undefined,
+        leagueSlug: e.meta?.league_slug ?? undefined,
       })),
   }
 

@@ -43,8 +43,8 @@ export default function NotFound() {
               Página no encontrada
             </h1>
             <p className="text-sm max-w-sm" style={{ color: 'var(--text-muted)' }}>
-              El contenido que buscás no existe o fue movido.
-              Volvé al inicio o buscá otra noticia.
+              La página que buscas no existe o se ha movido.
+              Vuelve al inicio o busca otra noticia.
             </p>
           </div>
 

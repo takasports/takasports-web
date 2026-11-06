@@ -21,7 +21,7 @@ interface Row {
   score: number
   rank: number | null
   image_url: string | null
-  score_prev: number | null
+  delta_week: number | null
 }
 
 // Solo disciplinas con datos reales (jugadores/jugadoras) en el Índice — el
@@ -45,7 +45,7 @@ async function loadKings(): Promise<Row[]> {
   // Defensa explícita: nunca traemos creadores/periodistas/clubes acá.
   const fetches = SPORTS_ORDER.map(({ sport }) =>
     sb.from('ranking_view')
-      .select('id,name,subtitle,sport,category,score,rank,image_url,score_prev')
+      .select('id,name,subtitle,sport,category,score,rank,image_url,delta_week')
       .in('category', ['jugadores', 'jugadoras'])
       .eq('sport', sport)
       .order('score', { ascending: false })
@@ -79,7 +79,7 @@ export default async function ReyesPage() {
         <div className="space-y-2">
           {kings.map((r) => {
             const meta = SPORTS_ORDER.find((s) => s.sport === r.sport)
-            const delta = r.score_prev != null ? r.score - Number(r.score_prev) : null
+            const delta = r.delta_week ? Number(r.delta_week) : null
             const deltaColor = delta != null && delta >= 0 ? '#22c55e' : '#f87171'
             return (
               <Link key={r.id} href={`/rankings/${r.id}`}

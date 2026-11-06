@@ -93,5 +93,8 @@ export async function resolvePlayerSlug(slug: string): Promise<PlayerRef | null>
   const espnId = extractEspnId(slug)
   if (!espnId) return null
   const found = await lookupPlayerByEspnId(espnId)
-  return found ? { espnId, leagueSlug: found.leagueSlug } : null
+  // sport_entities solo tiene fútbol y tenis: sin este respaldo todos los enlaces
+  // a jugadores de la NBA de la ficha de partido acababan en «no encontrado». Un id
+  // que tampoco exista allí sigue dando 404, porque ESPN no devuelve nada.
+  return { espnId, leagueSlug: found?.leagueSlug ?? 'basketball/nba' }
 }

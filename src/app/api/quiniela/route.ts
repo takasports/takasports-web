@@ -496,8 +496,12 @@ export async function getQuinielaData(): Promise<QuinielaData> {
 // hits sin invocar la función. 300s coincide con el revalidate interno del fetch.
 const QUINIELA_CACHE = 'public, s-maxage=300, stale-while-revalidate=900'
 
+// La quiniela está retirada: ni se puede puntuar ni coincide con La Jornada. La app
+// instalada aún lee esta ruta para el bloque «Quiniela» de Inicio y el chip
+// «Pronosticar» del calendario, que invitaban a partidos que no existen. Con la lista
+// vacía los dos se ocultan solos, sin versión nueva. [06/11/2026]
 export async function GET() {
-  const data = await getQuinielaData()
+  const data: QuinielaData = { jornada: '', matches: [] }
   return NextResponse.json(data, {
     headers: { 'Cache-Control': QUINIELA_CACHE, 'CDN-Cache-Control': QUINIELA_CACHE },
   })

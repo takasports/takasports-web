@@ -15,6 +15,7 @@ import RelatedArticlesByEntity from '@/components/RelatedArticlesByEntity'
 import { SITE_URL, SITE_NAME, LOGO_URL, ICON_URL } from '@/lib/constants'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
+import { letraForma } from '@/lib/forma'
 
 // Solo estas 5 ligas tienen página /liga/[id]. team.leagueSlug llega como
 // "soccer/esp.1" (con el deporte delante), así que enlazar a /liga/${leagueSlug}
@@ -187,7 +188,7 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
             fontFamily: 'var(--font-sport)',
           }}
         >
-          {r.result ?? (isUpcoming ? '—' : '•')}
+          {letraForma(r.result) || (isUpcoming ? '—' : '•')}
         </div>
 
         {/* Date */}
@@ -251,10 +252,16 @@ function ResultRow({ r, teamId }: { r: TeamResult; teamId: string }) {
   )
 }
 
+// La respuesta puede venir en cualquier orden según el deporte y la caché: la
+// forma de un equipo de fútbol llegó a ser la de agosto. [06/11/2026]
+function porFechaDesc(results: TeamResult[]): TeamResult[] {
+  return [...results].sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+}
+
 function ResultsTab({ results, teamId }: { results: TeamResult[]; teamId: string }) {
   // Split past + upcoming
-  const past = results.filter(r => r.result || r.status === 'STATUS_IN_PROGRESS').reverse()
-  const upcoming = results.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS')
+  const past = porFechaDesc(results.filter(r => r.result || r.status === 'STATUS_IN_PROGRESS'))
+  const upcoming = porFechaDesc(results.filter(r => !r.result && r.status !== 'STATUS_IN_PROGRESS')).reverse()
 
   return (
     <div>
@@ -426,10 +433,8 @@ function TeamContent({ team }: { team: TeamDetail }) {
 
       {/* Recent form */}
       {(() => {
-        const form = team.results
-          .filter(r => r.result === 'W' || r.result === 'D' || r.result === 'L')
-          .slice(-5)
-          .reverse()
+        const form = porFechaDesc(team.results.filter(r => r.result === 'W' || r.result === 'D' || r.result === 'L'))
+          .slice(0, 5)
         if (form.length === 0) return null
         return (
           <div className="flex items-center gap-3 mb-6">
@@ -448,7 +453,7 @@ function TeamContent({ team }: { team: TeamDetail }) {
                     className="w-7 h-7 rounded-md flex items-center justify-center text-[12px] font-black"
                     style={{ background: `${color}22`, color, fontFamily: 'var(--font-sport)' }}
                   >
-                    {r.result}
+                    {letraForma(r.result)}
                   </div>
                 )
               })}

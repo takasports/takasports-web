@@ -104,7 +104,7 @@ export default function ScoreHistoryChart({
               background: `${color}14`, color, border: `1px solid ${color}33`,
               fontFamily: 'var(--font-display)',
             }}>
-            {up ? '↑' : '↓'} {Math.abs(last.v - first.v).toFixed(1)} pts vs hace {points.length - 1}s
+            {up ? '↑' : '↓'} {Math.abs(last.v - first.v).toFixed(1)} pts en {points.length - 1} sem.
           </span>
         )}
       </div>

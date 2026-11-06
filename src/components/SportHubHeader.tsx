@@ -28,7 +28,7 @@ const SPORT_DESCRIPTIONS: Record<string, string> = {
   futbol:     'Noticias, fichajes, resultados de LaLiga, Premier, Champions y más. Ranking Taka: los mejores del mundo en tiempo real.',
   baloncesto: 'NBA, Euroliga, ACB y más: traspasos, resultados, estadísticas y el ranking de los mejores jugadores según el Ranking Taka.',
   formula1:   'Resultados de cada GP, clasificaciones, noticias de los equipos y el análisis Taka de los pilotos del momento.',
-  tenis:      'ATP, WTA, Grand Slams y Ryder Cup. Resultados, rankings y análisis de los tenistas más influyentes.',
+  tenis:      'ATP, WTA, Grand Slams y Copa Davis. Resultados, rankings y análisis de los tenistas más influyentes.',
   ufc:        'Carteleras UFC y MMA: resultados de peleas, noticias de fichajes y el ranking Taka de los luchadores del momento.',
   wwe:        'WWE Raw, SmackDown y PPVs: resultados, storylines y el ranking de los creadores de contenido en wrestling.',
   rugby:      'Six Nations, Rugby Championship y Premiership. Resultados, análisis y el índice Taka del rugby mundial.',
@@ -57,7 +57,7 @@ function formatEventDate(dateStr?: string): string {
   const isTomorrow = d.toDateString() === tomorrow.toDateString()
   const time = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })
   if (isToday) return `HOY ${time}`
-  if (isTomorrow) return `MÑN ${time}`
+  if (isTomorrow) return `Mañana ${time}`
   const dayName = d.toLocaleDateString('es-ES', { weekday: 'short', timeZone: 'Europe/Madrid' }).toUpperCase()
   return `${dayName} ${time}`
 }

@@ -121,7 +121,7 @@ export function FormaPartido({ home, away, forma, accent }: { home: EquipoVisual
       <span className="cas-forma__eq">{eq.nombre}</span>
       <span className="cas-forma__res">
         {r.map((x, i) => (
-          <span key={i} title={x === 'V' ? 'Victoria' : x === 'E' ? 'Empate' : 'Derrota'} style={{ background: COLOR_FORMA[x] ?? '#64748B', opacity: i === 0 ? 1 : 0.85 }}>{x}</span>
+          <span key={i} title={x === 'V' ? 'Victoria' : x === 'E' ? 'Empate' : 'Derrota'} style={{ background: COLOR_FORMA[x] ?? '#64748B', opacity: i === 0 ? 1 : 0.85 }}>{x === 'V' ? 'G' : x === 'D' ? 'P' : x}</span>
         ))}
       </span>
     </div>

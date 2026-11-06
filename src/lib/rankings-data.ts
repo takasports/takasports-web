@@ -276,6 +276,7 @@ function rowToEntry(row: any): RankingEntry {
     gender:       row.gender ?? undefined,
     featured:     row.featured ?? undefined,
     scorePrev:    row.score_prev !== null ? Number(row.score_prev) : undefined,
+    deltaWeek:    row.delta_week != null ? Number(row.delta_week) : undefined,
     scoreSport:   row.score_sport !== null && row.score_sport !== undefined ? Number(row.score_sport) : undefined,
     rankSport:    row.rank_sport  !== null && row.rank_sport  !== undefined ? Number(row.rank_sport)  : undefined,
     trendReason:  row.trend_reason ?? undefined,
@@ -316,6 +317,9 @@ const DB_CATEGORIES: RankingCategory[] = [
 // este límite. Si en el futuro hace falta navegar más profundo, paginar
 // via API (no traer todo al cliente).
 const MAX_ROWS_PER_CAT = 200
+// «Deportistas» se filtra por deporte en el navegador y el fútbol se comía las 200
+// primeras filas: la NBA enseñaba 10 de 80 y F1 ninguna. Son ~480 fichas: van todas.
+const MAX_ROWS_DEPORTISTAS = 600
 
 /**
  * Obtiene un ranking por categoría.
@@ -377,7 +381,7 @@ export async function getAllRankings(
         .select('*')
         .eq('category', cat)
         .order('rank', { ascending: true })
-        .range(0, MAX_ROWS_PER_CAT - 1)
+        .range(0, (cat === 'jugadores' ? MAX_ROWS_DEPORTISTAS : MAX_ROWS_PER_CAT) - 1)
         .then(({ data, error }) => ({ cat, rows: (!error && data) ? data : null }))
     )
     const results = await Promise.all(fetches)

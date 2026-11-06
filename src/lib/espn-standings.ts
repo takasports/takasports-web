@@ -137,6 +137,21 @@ export interface LeagueTable {
  * rellena la fila en agosto mientras la tabla viva no dice nada
  * (ver lib/last-season.ts).
  */
+/**
+ * Puesto de una fila de la clasificación de ESPN. El fútbol trae `rank`; la NBA
+ * no, trae `playoffSeed`, y encima entrega las filas de peor a mejor: sin este
+ * respaldo todas valían 999 y el 8-1 salía «15º Este». [06/11/2026]
+ */
+export function puestoEspn(entry: Record<string, unknown>): number {
+  const stats = asArr(entry.stats) as Array<{ name: string; value?: number; displayValue?: string }>
+  const de = (nombre: string): number | null => {
+    const s = stats.find(x => x.name === nombre)
+    const v = Number(s?.value ?? s?.displayValue)
+    return Number.isFinite(v) && v > 0 ? v : null
+  }
+  return de('rank') ?? de('playoffSeed') ?? 999
+}
+
 export async function fetchLeagueTable(leagueSlug: string, year?: number): Promise<LeagueTable> {
   try {
     // `year` (no `season`): dentro se lee `json.season`, y compartir nombre lo tapaba.
@@ -166,11 +181,7 @@ export async function fetchLeagueTable(leagueSlug: string, year?: number): Promi
     for (const g of groups) {
       const entries = asArr(asObj(g.standings)?.entries) as Record<string, unknown>[]
       if (!entries.length) continue
-      const rankOf = (e: Record<string, unknown>) => {
-        const st = asArr(e.stats) as Array<{ name: string; value?: number }>
-        return (st.find(s => s.name === 'rank')?.value as number) ?? 999
-      }
-      entries.sort((a, b) => rankOf(a) - rankOf(b))
+      entries.sort((a, b) => puestoEspn(a) - puestoEspn(b))
       const groupName = multi ? asString(g.name) : undefined
 
       entries.forEach((e, i) => {

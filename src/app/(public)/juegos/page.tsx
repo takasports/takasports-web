@@ -16,7 +16,7 @@ import { SITE_URL } from '@/lib/constants'
 export const metadata: Metadata = {
   // Sin sufijo " — TakaSports": el root layout ya aplica title.template '%s | TakaSports'.
   title: 'Juegos · Predicciones, trivia y fantasy deportivo',
-  description: 'Mundial, Predicciones, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid. Compite cada semana en el ranking global de TakaSports.',
+  description: 'La Jornada, CrackQuiz, Mi Once, Sopa de Cracks y TakaGrid. Compite cada semana en el ranking global de TakaSports.',
   alternates: { canonical: `${SITE_URL}/juegos` },
   openGraph: {
     type:        'website',
@@ -38,7 +38,7 @@ const JSON_LD = {
   '@type':    'CollectionPage',
   url:        `${SITE_URL}/juegos`,
   name:       'Juegos de TakaSports',
-  description: 'Colección de juegos deportivos: Mundial, Predicciones, CrackQuiz, Mi Once, Sopa de Cracks, TakaGrid.',
+  description: 'Colección de juegos deportivos: La Jornada, CrackQuiz, Mi Once, Sopa de Cracks, TakaGrid.',
   publisher:  { '@type': 'Organization', name: 'TakaSports', url: SITE_URL },
   mainEntity: {
     '@type':           'ItemList',

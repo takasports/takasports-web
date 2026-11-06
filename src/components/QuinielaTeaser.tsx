@@ -57,9 +57,13 @@ export default function QuinielaTeaser() {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         setLoaded(true)
-        if (data?.matches?.length) {
-          setMatches(data.matches.slice(0, 3))
-          setTotal(data.totalMatches ?? data.matches.length)
+        // Solo lo que aún se puede jugar: la Jornada en curso incluye partidos ya
+        // terminados, y se ofrecía 1-X-2 de encuentros de hace tres días.
+        const porJugar = ((data?.matches ?? []) as (QuinielaMatch & { kickoff?: string })[])
+          .filter(m => !m.kickoff || Date.parse(m.kickoff) > Date.now())
+        if (porJugar.length) {
+          setMatches(porJugar.slice(0, 3))
+          setTotal(porJugar.length)
           if (data.jornada) setJornada(data.jornada)
         }
       })
@@ -70,7 +74,7 @@ export default function QuinielaTeaser() {
 
   return (
     <Link
-      href="/quiniela"
+      href="/predicciones"
       className="group block rounded-2xl overflow-hidden transition-all hover:-translate-y-0.5"
       style={{
         background: 'rgba(124,58,237,0.04)',
@@ -90,7 +94,7 @@ export default function QuinielaTeaser() {
             }}
           >
             <span className="w-1 h-1 rounded-full" style={{ background: '#A78BFA' }} />
-            LA FECHA
+            LA JORNADA
           </span>
           <span className="text-[11px]" style={{ color: '#7a7a92' }}>{jornada}</span>
         </div>

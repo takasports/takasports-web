@@ -86,7 +86,7 @@ const GAMES: Game[] = [
     // el rótulo "Predicciones abiertas" y el botón "Jugar el Mundial": el
     // escaparate de /juegos llevaba semanas empujando a un cuadro cerrado.
     id: 'mundial',
-    name: 'La Fecha',
+    name: 'La Jornada',
     tagline: 'Los partidos que importan de cada día.',
     description: 'Cada día publicamos los partidos destacados. Acierta la tendencia, clava el marcador y llévate el Partido del Día, que puntúa doble.',
     accent: '#4ADE80',
@@ -95,7 +95,7 @@ const GAMES: Game[] = [
     href: '/predicciones',
     icon: <IconQuiniela />,
     heroNote: 'Nueva Fecha cada día · Predicciones abiertas',
-    ctaLabel: 'Jugar La Fecha',
+    ctaLabel: 'Jugar La Jornada',
     format: 'Diario',
     category: 'Predicciones',
     difficulty: 2,

@@ -7,6 +7,7 @@ import { fetchEspnEvents } from '@/lib/espn'
 import { fetchPublicReels } from '@/lib/instagram-public'
 import { getRanking } from '@/lib/rankings-data'
 import { SEED_REELS } from '@/lib/seed-reels'
+import { sinPreviasDelante } from '@/lib/previa-caducada'
 import HeaderConsole from '@/components/HeaderConsole'
 import HomeContent from '@/components/HomeContent'
 import type { Reportaje } from '@/components/ReportajesBlock'
@@ -55,6 +56,8 @@ interface HomeArticle {
   image?: { asset: { _ref: string } } | null
   imageUrl?: string | null
   isTaka?: boolean
+  type?: string | null
+  kickoffIso?: string | null
 }
 
 // Hero del día: artículos con priority alta publicados en las últimas 24h suben al top
@@ -63,14 +66,14 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 function sortForHome(articles: HomeArticle[]): HomeArticle[] {
   const now = Date.now()
-  return [...articles].sort((a, b) => {
+  return sinPreviasDelante([...articles].sort((a, b) => {
     const ageA = now - new Date(a.publishedAt ?? 0).getTime()
     const ageB = now - new Date(b.publishedAt ?? 0).getTime()
     const boostA = ageA < DAY_MS ? (PRIORITY_BOOST[a.priority ?? 'normal'] ?? 1) : 0
     const boostB = ageB < DAY_MS ? (PRIORITY_BOOST[b.priority ?? 'normal'] ?? 1) : 0
     if (boostA !== boostB) return boostB - boostA
     return ageA - ageB
-  })
+  }), now)
 }
 
 export default async function Home() {

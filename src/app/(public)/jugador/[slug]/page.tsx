@@ -121,9 +121,9 @@ function positionEs(player: Pick<PlayerDetail, 'leagueSlug' | 'position'>): stri
 }
 
 const RESULT_STYLE: Record<string, { letter: string; color: string }> = {
-  W: { letter: 'V', color: '#22c55e' },
+  W: { letter: 'G', color: '#22c55e' },
   D: { letter: 'E', color: '#f59e0b' },
-  L: { letter: 'D', color: '#ef4444' },
+  L: { letter: 'P', color: '#ef4444' },
 }
 
 function formatShortDate(iso: string): string {
@@ -154,7 +154,7 @@ function MatchRow({ r, teamId }: { r: TeamResult; teamId: string }) {
             fontFamily: 'var(--font-sport)',
           }}
         >
-          {r.result ?? '•'}
+          {r.result ? (RESULT_STYLE[r.result]?.letter ?? r.result) : '•'}
         </div>
         <div className="text-[11px] text-[var(--text-muted)] w-16 flex-shrink-0">{formatShortDate(r.date)}</div>
         <div className="flex-1 flex items-center gap-2 min-w-0">
