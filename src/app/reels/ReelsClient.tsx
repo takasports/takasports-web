@@ -67,6 +67,20 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const slideRefs = useRef<Array<HTMLElement | null>>([])
   const tickingRef = useRef(false)
+  // En escritorio (md+) /reels es una rejilla de portadas enlazadas a Instagram
+  // (V-35, 5.10): el teléfono dibujado con «Toca para sonido» solo tiene
+  // sentido en el móvil, que se queda como está. Las dos vistas se pintan y se
+  // reparten por CSS (misma salida en servidor y cliente); el vídeo o el iframe
+  // del reel activo solo se monta cuando de verdad estamos en móvil, para que
+  // la rejilla no cargue un reproductor escondido.
+  const [enMovil, setEnMovil] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const sync = () => setEnMovil(!mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   // Scroll-spy: el reel activo es el que ocupa más viewport.
   const computeActive = useCallback(() => {
@@ -132,7 +146,63 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
   }
 
   return (
-    <div className="reels-stage">
+    <>
+    <div className="hidden md:block max-w-[1440px] mx-auto px-6 xl:px-10 pt-6 pb-16">
+      <div className="flex items-center gap-2.5 mb-1.5">
+        <span className="section-accent" />
+        <span className="section-label">En vídeo</span>
+      </div>
+      <h2 className="font-extrabold leading-none" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 3.5vw, 44px)', color: '#F8F8FF', letterSpacing: '-0.01em' }}>
+        Reels
+      </h2>
+      <p className="text-[14px] mt-1.5 mb-6" style={{ color: 'var(--text-secondary)' }}>
+        {reels.length} {reels.length === 1 ? 'reel' : 'reels'} · se abren en Instagram
+      </p>
+      <div className="grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {reels.map((reel, i) => {
+          const { accent } = getSportStyle(reel.sport)
+          const thumb = reel.thumbnail_url ?? null
+          return (
+            <a
+              key={reel.id}
+              href={reel.instagram_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${reel.title || `Reel ${i + 1}`} — ver en Instagram`}
+              className="news-card group relative block overflow-hidden rounded-2xl no-underline"
+              style={{ aspectRatio: '9 / 16', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+            >
+              {thumb ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={thumb} alt="" loading={i < 10 ? 'eager' : 'lazy'} decoding="async" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(180deg, ${accent}22, var(--bg-card))` }} />
+              )}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(9,9,15,0.92) 0%, rgba(9,9,15,0.35) 45%, transparent 70%)' }} />
+              <span className="absolute top-3 left-3 inline-flex items-center justify-center rounded-full" style={{ width: 32, height: 32, background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(6px)' }} aria-hidden>
+                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 1.5l7 4.5-7 4.5z" fill="#fff" /></svg>
+              </span>
+              <div className="absolute inset-x-0 bottom-0 p-3.5">
+                {reel.sport && (
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.08em] mb-1" style={{ color: accent, fontFamily: 'var(--font-sport)' }}>
+                    {getSportLabel(reel.sport)}
+                  </span>
+                )}
+                {reel.title && (
+                  <span className="block text-[14px] font-bold leading-snug line-clamp-3" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
+                    {reel.title}
+                  </span>
+                )}
+                <span className="block text-[11px] font-bold uppercase tracking-[0.08em] mt-2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>
+                  Ver en Instagram ↗
+                </span>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+    </div>
+    <div className="reels-stage md:hidden">
       <style>{`
         .reels-stage { height: calc(100dvh - 56px); background:#000; display:flex; align-items:center; justify-content:center; }
         .reels-phone { position:relative; width:100%; height:100%; }
@@ -175,7 +245,7 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
         // Solo el reel ACTIVO monta el iframe del embed. Así, al hacer scroll,
         // el de arriba se desmonta (se para el vídeo/audio) y nunca suenan dos
         // a la vez. Los demás muestran su thumbnail.
-        const isActive = i === activeIdx
+        const isActive = enMovil && i === activeIdx
         const { accent } = getSportStyle(reel.sport)
         const thumb = reel.thumbnail_url ?? null
         return (
@@ -362,5 +432,6 @@ export default function ReelsClient({ reels }: { reels: PublicReel[] }) {
         </div>{/* /reels-screen */}
       </div>{/* /reels-phone */}
     </div>
+    </>
   )
 }
