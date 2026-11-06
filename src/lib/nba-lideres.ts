@@ -41,3 +41,13 @@ export function categoriaLiderNBA(categoria: string | undefined | null): string 
   if (!raw) return ''
   return CATEGORIAS[raw.toLowerCase()] ?? raw
 }
+
+const SIGLAS: Record<string, string> = {
+  TO: 'PÉR', TOPG: 'PÉR/P', MPG: 'MIN/P', DREB: 'REB DEF', OREB: 'REB OF',
+  'FG%': 'TC%', 'FT%': 'TL%', '3P%': 'T3%', PF: 'FALTAS',
+}
+
+/** «6 TO, 39 MIN» → «6 PÉR, 39 MIN». El resumen que manda ESPN va con siglas en inglés. */
+export function siglasLiderNBA(resumen: string): string {
+  return resumen.replace(/[A-Z0-9]+%?/g, s => SIGLAS[s] ?? s)
+}

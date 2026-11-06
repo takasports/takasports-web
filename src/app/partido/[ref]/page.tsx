@@ -34,6 +34,7 @@ import { accentForSport } from '@/lib/sports'
 import { canonicalPlayerSlug } from '@/lib/player-slug'
 import { canonicalTeamSlug } from '@/lib/team-slug'
 import { letraForma } from '@/lib/forma'
+import { siglasLiderNBA } from '@/lib/nba-lideres'
 
 // Cache 2 min en ISR. Partidos en vivo se refrescan a 30s vía LiveRefresh
 // (router.refresh client-side), partidos finalizados aprovechan el cache.
@@ -657,7 +658,7 @@ function LeaderCard({ leader, leagueSlug }: { leader: BasketballLeader; leagueSl
       <div className="text-right">
         <p className="font-black tabular-nums" style={{ color: accent, fontFamily: 'var(--font-display)', fontSize: 20, lineHeight: 1 }}>{leader.value}</p>
         {leader.summary && (
-          <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{leader.summary}</p>
+          <p className="text-[9px]" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sport)' }}>{siglasLiderNBA(leader.summary)}</p>
         )}
       </div>
     </div>

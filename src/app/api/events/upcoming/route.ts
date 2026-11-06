@@ -90,7 +90,11 @@ async function fetchUpcomingFromLeague(
       const statusName: string = competition.status?.type?.name ?? ''
       if (statusName !== 'STATUS_SCHEDULED') continue
 
-      const isoDate: string = ev.date ?? ''
+      // En F1 `ev.date` es la primera sesión del fin de semana: el viernes salía «GP de
+      // São Paulo · Hoy 16:30» con la carrera el domingo.
+      const carrera = (ev.competitions as { type?: { abbreviation?: string }; date?: string }[] | undefined)
+        ?.find(c => c.type?.abbreviation === 'Race')?.date
+      const isoDate: string = carrera ?? ev.date ?? ''
       if (!isoDate) continue
 
       const dateLabel = toDateLabel(isoDate)

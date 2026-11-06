@@ -6,6 +6,14 @@ import { SOURCE_TZ } from './timezone'
 // Auth: none required
 // All endpoints: POST with JSON body
 
+/** «2026-11-09», «2026-11-15» → «9–15 nov». Si no son fechas, se dejan como llegan. */
+function rangoFechas(desde: string, hasta: string): string {
+  const d = new Date(desde), h = new Date(hasta)
+  if (Number.isNaN(d.getTime()) || Number.isNaN(h.getTime())) return `${desde} – ${hasta}`
+  const fmt = (x: Date) => x.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', timeZone: 'UTC' }).replace('.', '')
+  return d.getUTCMonth() === h.getUTCMonth() ? `${d.getUTCDate()}–${fmt(h)}` : `${fmt(d)} – ${fmt(h)}`
+}
+
 const PP_BASE = 'https://premierpadel.com/premierpadel/api/beforeauth'
 const DAYS_AHEAD = 21
 
@@ -282,7 +290,7 @@ export async function fetchPadelEvents(): Promise<SportEvent[]> {
             accent,
             isoDate: eventDay + 'T00:00:00Z',
             venue: location,
-            stage: `${startIso} – ${endIso}`,
+            stage: rangoFechas(startIso, endIso),
             source: 'padel' as const,
           })
         }

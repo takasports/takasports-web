@@ -93,7 +93,7 @@ export async function generateMetadata({
     : `Calendario ${comp.displayName} ${season}: ${que}, horarios y resultados`
   const description = proxima
     ? `Jornada ${proxima.numero} de ${comp.shortName}, ${rangoJornada(proxima.desde, proxima.hasta)}: todos los partidos con horario y dónde verlos. Resultados de lo último y clasificación. Temporada ${season}.`
-    : `${comp.description} Resultados de lo último y próximos ${que} con horario y dónde verlos. Temporada ${season}.`
+    : `${comp.description} Resultados de lo último y ${que.endsWith('as') ? 'próximas' : 'próximos'} ${que} con horario y dónde verlos. Temporada ${season}.`
   return {
     title,
     description,
@@ -123,9 +123,10 @@ function dayKey(ev: SportEvent): string {
 
 function formatDayHeader(isoDay: string): string {
   try {
-    return new Date(`${isoDay}T12:00:00`).toLocaleDateString('es-ES', {
+    const dia = new Date(`${isoDay}T12:00:00`).toLocaleDateString('es-ES', {
       weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     })
+    return dia.charAt(0).toUpperCase() + dia.slice(1)
   } catch { return isoDay }
 }
 
@@ -242,7 +243,6 @@ function ResultsSection({ title, days }: { title: string; days: Array<[string, S
                 fontWeight: 800,
                 color: '#E8E8F4',
                 letterSpacing: '-0.005em',
-                textTransform: 'capitalize',
               }}
             >
               <Link href={`/calendario/dia/${day}`} prefetch={false} className="hover:underline" style={{ color: 'inherit' }}>
@@ -273,7 +273,6 @@ function DiaDePartidos({ day, eventos, nivel }: { day: string; eventos: SportEve
           fontWeight: 800,
           color: '#E8E8F4',
           letterSpacing: '-0.005em',
-          textTransform: 'capitalize',
         }}
       >
         {formatDayHeader(day)}
