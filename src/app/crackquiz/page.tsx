@@ -1142,7 +1142,7 @@ export default function CrackQuizPage() {
         steps={[
           { emoji: '⏱️', title: `${QUESTIONS_PER_ROUND} preguntas, ${QUESTION_TIME}s cada una`, body: 'Cuanto antes respondas, más puntos vale el acierto. Si se acaba el tiempo, cuenta como fallo.' },
           { emoji: '🔥', title: 'Encadena aciertos', body: `Cada acierto seguido suma un extra, hasta +${STREAK_BONUS_MAX}. Un fallo lo reinicia, así que el combo se cuida.` },
-          { emoji: '🎲', title: 'Doble o nada', body: 'Antes de la última pregunta puedes apostar el combo acumulado: si aciertas lo duplicas, si fallas lo pierdes.' },
+          { emoji: '🎲', title: 'Reto final', body: 'Antes de la última pregunta puedes arriesgar el combo acumulado: si aciertas lo duplicas, si fallas lo pierdes.' },
         ]}
       />
 
@@ -1216,10 +1216,10 @@ export default function CrackQuizPage() {
                 }}
               >
                 <p className="text-[11px] font-black uppercase tracking-[0.2em] mb-2 inline-flex items-center justify-center gap-1.5" style={{ color: '#FB923C' }}>
-                  <FireIcon size={14} /> Doble o nada
+                  <FireIcon size={14} /> Reto final
                 </p>
                 <p className="text-2xl font-black mb-2" style={{ fontFamily: 'var(--font-display)', color: '#FCD34D' }}>
-                  Te quedas con tu combo o lo apuestas
+                  Te quedas con tu combo o lo arriesgas
                 </p>
                 <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.7)' }}>
                   Llevas <span className="font-black" style={{ color: '#FCD34D' }}>+{comboBank} pts</span> de combo bancado.
@@ -1242,7 +1242,7 @@ export default function CrackQuizPage() {
                       boxShadow: '0 6px 20px rgba(251,146,60,0.35)',
                     }}
                   >
-                    <DiceIcon size={14} className="inline-block align-middle mr-1" />Apostar +{comboBank}
+                    <DiceIcon size={14} className="inline-block align-middle mr-1" />Arriesgar +{comboBank}
                   </button>
                 </div>
               </div>

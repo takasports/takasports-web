@@ -8,6 +8,10 @@ import { supabaseForRequest } from '@/lib/supabase-server'
 import { apiError, readJson, sanitizeNickname } from '@/lib/api-utils'
 import { captureException } from '@/lib/monitoring'
 
+// Reportes de personas distintas a partir de los cuales un mensaje deja de servirse
+// (ver chat/report/route.ts y la migración 141).
+const CHAT_HIDE_AT = 3
+
 // Fallback in-memory si Supabase no está disponible o la tabla no existe
 const memChat = new Map<string, Array<{ id: string; nickname: string; message: string; created_at: string; user_id?: string | null }>>()
 
@@ -80,6 +84,7 @@ export async function GET(req: NextRequest) {
       .from('quiniela_league_chat')
       .select('id, nickname, message, created_at')
       .eq('league_id', liga)
+      .lt('flagged_count', CHAT_HIDE_AT)
       .order('created_at', { ascending: false })
       .limit(limit)
     if (error) {
