@@ -57,6 +57,7 @@ import { SITE_URL, LOGO_URL, ICON_URL, SOCIAL_SAMEAS, REPORTAJE_GROQ_FILTER, REP
 import RankingMentionCards from '@/components/articles/RankingMentionCards'
 import ArticleQuiz from '@/components/articles/ArticleQuiz'
 import { matchEntriesInText } from '@/lib/rankings-match'
+import { conTopeValor } from '@/lib/enriquecer-con-tope'
 import SectionHeader from '@/components/ui/SectionHeader'
 import MatchNoteCard from '@/components/news/MatchNoteCard'
 import Etiquetas from '@/components/articulo/Etiquetas'
@@ -800,7 +801,7 @@ export default async function NoticiaPage({
   // los renders de párrafo. Aplica tanto a bodyText como a bodyPortable.
   // El contexto se comparte para respetar cap global y "primer match por entidad".
   const hasBody = paragraphs.length > 0 || (article.bodyPortable && article.bodyPortable.length > 0)
-  const autolinkIndex = hasBody ? await getEntityIndex() : null
+  const autolinkIndex = hasBody ? await conTopeValor('índice de enlaces', getEntityIndex()) : null
   const autolinkCtx = autolinkIndex ? createAutolinkContext(article.sport ?? null) : null
   const autolink: { index: EntityIndex; ctx: AutolinkContext } | undefined =
     autolinkIndex && autolinkCtx ? { index: autolinkIndex, ctx: autolinkCtx } : undefined
@@ -815,7 +816,7 @@ export default async function NoticiaPage({
           .join(' ')
       : '')
   const rankingMentions = hasBody
-    ? await matchEntriesInText(article.title, bodyTextForMatch, article.tags ?? [], 3)
+    ? (await conTopeValor('menciones del Índice', matchEntriesInText(article.title, bodyTextForMatch, article.tags ?? [], 3))) ?? []
     : []
 
   // Enlaza los nombres de jugador del cuerpo a su ficha. El sitio posiciona
@@ -831,7 +832,7 @@ export default async function NoticiaPage({
     const texto = textoDeBloques(crudos)
     const candidatos = extraerNombresCandidatos(texto)
     const fichas = candidatos.length
-      ? await resolverFichas(candidatos, adminSupabase() as never)
+      ? (await conTopeValor('fichas de jugador', resolverFichas(candidatos, adminSupabase() as never))) ?? new Map<string, string>()
       : new Map<string, string>()
     // Primero los jugadores y DESPUÉS el glosario: la segunda pasada no entra en
     // los fragmentos que marcó la primera, así que el orden fija la prioridad.

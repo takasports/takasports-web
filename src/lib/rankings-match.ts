@@ -7,6 +7,7 @@
 // Sin LLM, sin API externa, sin coste. Cacheado por revalidate de Next.
 
 import { createClient } from '@supabase/supabase-js'
+import { unstable_cache } from 'next/cache'
 import { esCaraFutbolEspn } from '@/lib/espn-image'
 
 export interface MatchedEntry {
@@ -104,6 +105,31 @@ export function entryMentioned(hayRaw: string, entryName: string, needle: string
   return clean && (!conflict || exact)
 }
 
+// Es la misma lista para todas las noticias, y tras cada despliegue se regeneran
+// todas a la vez: pedirla una por una ayudó a tumbar Supabase el 06/11/2026.
+// Falla lanzando para que un error no se quede cacheado una hora.
+const cargarTopYApodos = unstable_cache(
+  async () => {
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } },
+    )
+    // Top 500 entries — los relevantes para noticias suelen ser top del mundo
+    const { data: entries, error } = await sb
+      .from('ranking_view')
+      .select('id,name,subtitle,sport,category,score,rank,image_url,trend,score_prev')
+      .order('score', { ascending: false })
+      .limit(500)
+    if (error) throw new Error(error.message)
+    // Aliases (apodos): "El Sheik" → ufc-topuria, etc.
+    const { data: aliases } = await sb.from('entry_aliases').select('alias, entry_id')
+    return { entries, aliases }
+  },
+  ['rankings-match-top-apodos-v1'],
+  { revalidate: 3600 },
+)
+
 export async function matchEntriesInText(
   title: string,
   body: string | null | undefined,
@@ -122,23 +148,8 @@ export async function matchEntriesInText(
   const tagSet = new Set(tags.map(norm))
   if (haystack.length < 10) return []
 
-  const sb = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { auth: { persistSession: false } },
-  )
-
-  // Top 500 entries — los relevantes para noticias suelen ser top del mundo
-  const { data: entries } = await sb
-    .from('ranking_view')
-    .select('id,name,subtitle,sport,category,score,rank,image_url,trend,score_prev')
-    .order('score', { ascending: false })
-    .limit(500)
-
+  const { entries, aliases } = await cargarTopYApodos()
   if (!entries) return []
-
-  // Aliases (apodos): "El Sheik" → ufc-topuria, etc.
-  const { data: aliases } = await sb.from('entry_aliases').select('alias, entry_id')
 
   const aliasMap = new Map<string, string>()
   for (const a of aliases ?? []) aliasMap.set(norm(a.alias), a.entry_id)

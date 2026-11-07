@@ -147,7 +147,7 @@ function FeaturedPlayerCard({ player, teamColor, leagueSlug, teamLogo }: { playe
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           <span
-            className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full"
+            className="text-[11px] font-bold uppercase tracking-[0.08em] px-2 py-0.5 rounded-full whitespace-nowrap"
             style={{ background: `${accent}33`, color: accent, fontFamily: 'var(--font-sport)' }}
           >
             Figura del equipo

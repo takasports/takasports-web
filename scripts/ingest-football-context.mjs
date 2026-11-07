@@ -232,10 +232,11 @@ async function main() {
       ])
       standings = s
       players = p
-      if (!standings || !players.length) { console.error(`  SKIP ${league.name}`); continue }
+      if (!standings || !players.length) { console.error(`  SKIP ${league.name}`); process.exitCode = 1; continue }
       console.log(`  ${league.name}: ${standings.size} equipos, ${players.length} jugadores`)
     } catch (err) {
       console.error(`  ERROR ${league.name}: ${err.message}`)
+      process.exitCode = 1   // el resto se escribe, pero el paso no debe salir «ok»
       await sleep(1200)
       continue
     }

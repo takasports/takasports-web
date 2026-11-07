@@ -211,12 +211,14 @@ async function main() {
   // todas las ligas y solo después se puntúa.
   console.log('\nFetching Understat leagues...')
   const allPlayers = []
+  const ligasSinDatos = []
   for (const league of LEAGUES) {
     let players
     try {
       players = await fetchLeague(league)
     } catch (err) {
       console.error(`  ERROR ${league.name}: ${err.message}`)
+      ligasSinDatos.push(league.name)
       players = []
     }
     for (const p of players) {
@@ -230,6 +232,13 @@ async function main() {
       })
     }
     await sleep(800)
+  }
+
+  // El percentil con una población a medias daría notas falsas, y salir «ok» sin
+  // datos escondió la caída de Understat de noviembre: mejor fallar en alto.
+  if (ligasSinDatos.length) {
+    console.error(`Sin datos de: ${ligasSinDatos.join(', ')}. No se escribe nada.`)
+    process.exit(1)
   }
 
   const percentileScores = scoreByPercentile(allPlayers)
