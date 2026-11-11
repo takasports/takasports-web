@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { LogoMark } from '@/components/Logo'
+import { checkPasswordPolicy, passwordErrorMessage, PASSWORD_HINT } from '@/lib/password-policy'
 
 // Página de la última etapa del flujo "¿Olvidaste tu contraseña?".
-// El correo de recuperación enlaza al callback OAuth (exchangeCodeForSession),
-// que deja la sesión de recuperación lista y redirige aquí. Comprobamos que
+// El correo de recuperación enlaza a /api/auth/callback (token_hash + verifyOtp
+// en servidor), que deja la sesión de recuperación lista y redirige aquí. Comprobamos que
 // exista sesión, pedimos la nueva contraseña y la guardamos con updateUser.
 type Status = 'checking' | 'ready' | 'invalid' | 'saving' | 'done'
 
@@ -30,13 +31,16 @@ export default function ResetPasswordPage() {
   async function save() {
     const supabase = createClient()
     if (!supabase) { setStatus('invalid'); return }
-    if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    const policyError = checkPasswordPolicy(password)
+    if (policyError) { setError(policyError); return }
     if (password !== confirmPwd) { setError('Las contraseñas no coinciden'); return }
     setStatus('saving')
     setError(null)
     const { error } = await supabase.auth.updateUser({ password })
     if (error) {
-      setError('No se pudo guardar la contraseña. El enlace puede haber caducado; pídelo de nuevo.')
+      // Antes TODO error se contaba como «el enlace puede haber caducado», y lo
+      // que fallaba era la política de contraseñas (422 weak_password).
+      setError(passwordErrorMessage(error, 'No se pudo guardar la contraseña. Inténtalo de nuevo.'))
       setStatus('ready')
     } else {
       setStatus('done')
@@ -123,7 +127,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              placeholder="Nueva contraseña (mín. 8 caracteres)"
+              placeholder={PASSWORD_HINT}
               disabled={status === 'saving'}
               className="w-full rounded-2xl px-4 py-3 text-sm outline-none"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#E0E0F8', fontFamily: 'var(--font-sport)', fontSize: 13 }}

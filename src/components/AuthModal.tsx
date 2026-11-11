@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { LogoMark } from './Logo'
+import { checkPasswordPolicy, passwordErrorMessage, PASSWORD_HINT } from '@/lib/password-policy'
 
 type AuthMode = 'social' | 'password' | 'register'
 
@@ -113,7 +114,8 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
   async function signUp() {
     if (!supabase) { setError('Auth no configurado'); return }
     if (!email.trim() || !email.includes('@')) { setError('Introduce un email válido'); return }
-    if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return }
+    const policyError = checkPasswordPolicy(password)
+    if (policyError) { setError(policyError); return }
     if (password !== confirmPwd) { setError('Las contraseñas no coinciden'); return }
     setLoading('password')
     setError(null)
@@ -125,7 +127,9 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
     })
     setLoading(null)
     if (error) {
-      setError(error.message.includes('already') ? 'Ya existe una cuenta con ese email. Inicia sesión o recupera tu contraseña.' : 'No se pudo crear la cuenta.')
+      setError(error.message.includes('already')
+        ? 'Ya existe una cuenta con ese email. Inicia sesión o recupera tu contraseña.'
+        : passwordErrorMessage(error, 'No se pudo crear la cuenta.'))
     } else if (data.user && data.user.identities && data.user.identities.length === 0) {
       // Con "Confirm email" activo, Supabase devuelve éxito ofuscado para emails ya
       // registrados (user con identities:[] y sin error) para no filtrar qué emails
@@ -393,7 +397,7 @@ export default function AuthModal({ onClose, initialMode, next }: AuthModalProps
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && mode === 'password') signInWithPassword() }}
-                  placeholder={mode === 'register' ? 'Contraseña (mín. 8 caracteres)' : 'Contraseña'}
+                  placeholder={mode === 'register' ? PASSWORD_HINT : 'Contraseña'}
                   disabled={loading !== null}
                   className="w-full rounded-2xl px-4 py-3 text-sm outline-none"
                   style={{
