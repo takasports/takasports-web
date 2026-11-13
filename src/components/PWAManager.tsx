@@ -5,34 +5,33 @@
 // 1) App CTA (SOLO Android): en iOS ya hay app nativa y la invitación la da el
 //    Smart App Banner NATIVO de Apple (meta `itunes` en layout.tsx → barra fina
 //    con "OBTENER"/"ABRIR"), así que aquí NO se pinta nada en iOS para no duplicar.
-//    En Android aún no hay app nativa: se ofrece instalar la web como app (A2HS)
-//    capturando `beforeinstallprompt` (Chromium). Si el navegador no lo dispara,
-//    no se muestra nada. En escritorio NO aparece nunca (Chrome desktop también
-//    dispara el evento). Descartable: al cerrar se silencia 14 días. No compite
-//    con el aviso de cookies (espera al consentimiento).
+//    En Android la app está en prueba cerrada en Google Play (desde el 12/11/2026)
+//    y hacen falta testers: el aviso lleva a /android (ver `@/lib/android-beta`).
+//    Hasta entonces ofrecía instalar la web como app (A2HS); ese aviso se quitó,
+//    pero se sigue capturando `beforeinstallprompt` para que Chrome no pinte su
+//    propia barra de «Instalar» encima del nuestro. Al cerrarlo o tocarlo vuelve
+//    a los 15 minutos; deja de salir cuando el visitante toca «Instalar» en el
+//    paso 3 de /android. En escritorio NO aparece nunca. No compite con el aviso
+//    de cookies (espera al consentimiento).
 // 2) Actualizar: detecta un service worker en espera (nueva versión) y ofrece
 //    aplicarla (postMessage SKIP_WAITING → recarga al cambiar de controlador).
 // Sin librerías, 0 KB extra.
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { JOINED_KEY, SNOOZE_KEY, SNOOZE_MS } from '@/lib/android-beta'
+import { trackAndroidBeta } from '@/lib/analytics'
 
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
-
-const SNOOZE_KEY = 'taka:app-cta-snooze' // guarda el ms del descarte
-const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000 // 14 días
-
-// ¿Es Android? Solo ahí ofrecemos el instalar-PWA propio. iOS lo cubre el Smart
-// App Banner nativo; escritorio queda excluido (aunque dispare beforeinstallprompt).
+// ¿Es Android? Solo ahí sale el aviso de la app de Android. iOS lo cubre el
+// Smart App Banner nativo; escritorio queda excluido.
 function isAndroid(): boolean {
   if (typeof navigator === 'undefined') return false
   return /android/i.test(navigator.userAgent || '')
 }
 
 export default function PWAManager() {
-  const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
+  const pathname = usePathname()
   const [showInstall, setShowInstall] = useState(false)
   const [updateReady, setUpdateReady] = useState(false)
   // No competir con el aviso de cookies: nada se muestra hasta que el
@@ -58,36 +57,28 @@ export default function PWAManager() {
     return () => window.removeEventListener('load', onLoad)
   }, [])
 
-  // ── 1) Invitación a instalar (SOLO Android) ───────────────────────────────
+  // ── 1) Aviso de la app de Android (SOLO Android) ───────────────────────
   useEffect(() => {
     if (!isAndroid()) return // iOS → Smart App Banner nativo · escritorio → nada
 
-    // ¿Silenciada hace poco?
-    let snoozed = false
+    // Sin esto Chrome pinta su barra de «Instalar app» (la web como PWA), que
+    // competiría con la app de verdad.
+    const onPrompt = (e: Event) => e.preventDefault()
+    window.addEventListener('beforeinstallprompt', onPrompt)
+
+    // ¿Ya se apuntó, o lo cerró hace menos de 15 minutos? Se mira al entrar en
+    // la web y cada vez que cambia de página.
+    let hide = false
     try {
       const raw = localStorage.getItem(SNOOZE_KEY)
-      if (raw) snoozed = Date.now() - Number(raw) < SNOOZE_MS
+      hide = !!localStorage.getItem(JOINED_KEY) || (!!raw && Date.now() - Number(raw) < SNOOZE_MS)
     } catch {}
-    // ¿Ya corre como app instalada (PWA en pantalla de inicio)?
-    const standalone =
-      window.matchMedia?.('(display-mode: standalone)')?.matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true
-    if (snoozed || standalone) return
+    const show = !hide && pathname !== '/android'
+    setShowInstall(show)
+    if (show) trackAndroidBeta('banner_shown')
 
-    // Esperamos a que Chromium ofrezca instalar la PWA.
-    const onPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferred(e as BeforeInstallPromptEvent)
-      setShowInstall(true)
-    }
-    const onInstalled = () => { setShowInstall(false); setDeferred(null) }
-    window.addEventListener('beforeinstallprompt', onPrompt)
-    window.addEventListener('appinstalled', onInstalled)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt)
-      window.removeEventListener('appinstalled', onInstalled)
-    }
-  }, [])
+    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
+  }, [pathname])
 
   // ── 2) Aviso de versión nueva ─────────────────────────────────────────────
   useEffect(() => {
@@ -136,21 +127,12 @@ export default function PWAManager() {
     return () => window.clearInterval(id)
   }, [])
 
-  const doInstall = async () => {
-    if (!deferred) return
-    try {
-      await deferred.prompt()
-      await deferred.userChoice
-    } finally {
-      setShowInstall(false)
-      setDeferred(null)
-    }
-  }
-
-  const dismissInstall = () => {
+  const snoozeInstall = () => {
     setShowInstall(false)
     try { localStorage.setItem(SNOOZE_KEY, String(Date.now())) } catch {}
   }
+  const doInstall = () => { trackAndroidBeta('banner_click'); snoozeInstall() }
+  const dismissInstall = () => { trackAndroidBeta('banner_dismiss'); snoozeInstall() }
 
   const applyUpdate = async () => {
     const reg = await navigator.serviceWorker.getRegistration().catch(() => null)
@@ -194,34 +176,28 @@ export default function PWAManager() {
         <div
           style={{
             pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 10,
-            maxWidth: 420, width: '100%', padding: '10px 10px 10px 14px',
-            borderRadius: 14, background: 'rgba(20,18,30,0.96)',
-            border: '1px solid rgba(124,58,237,0.4)',
-            boxShadow: '0 8px 28px rgba(0,0,0,0.45)',
+            maxWidth: 420, width: '100%', padding: '10px 10px 10px 12px',
+            borderRadius: 14, background: 'rgba(20,18,30,0.97)',
+            border: '1px solid rgba(255,77,46,0.45)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.55)',
           }}>
-          <span aria-hidden style={{
-            flexShrink: 0, width: 34, height: 34, borderRadius: 9,
-            background: 'rgba(124,58,237,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="7" y="2" width="10" height="20" rx="2" />
-              <path d="M11 18h2" />
-            </svg>
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element -- icono local de 36 px */}
+          <img src="/icon-192.png" alt="" width={36} height={36}
+            style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 9 }} />
           <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#ECECF6', lineHeight: 1.3 }}>
-            Instala TakaSports
+            Taka llega a Android
             <span style={{ display: 'block', fontSize: 11, fontWeight: 500, color: '#A0A0B4' }}>
-              Acceso directo desde tu pantalla de inicio
+              Únete a los primeros testers · gratis
             </span>
           </span>
-          <button onClick={doInstall} aria-label="Instalar TakaSports como aplicación"
+          <Link href="/android" onClick={doInstall} aria-label="Probar la app de Taka para Android"
             style={{
-              flexShrink: 0, padding: '7px 14px', borderRadius: 10, border: 'none',
-              background: '#7C3AED', color: '#fff', fontSize: 12, fontWeight: 900,
-              textTransform: 'uppercase', letterSpacing: '0.04em', cursor: 'pointer',
+              flexShrink: 0, padding: '8px 14px', borderRadius: 10,
+              background: '#FF4D2E', color: '#fff', fontSize: 12, fontWeight: 900,
+              textTransform: 'uppercase', letterSpacing: '0.04em', textDecoration: 'none',
             }}>
-            Instalar
-          </button>
+            Probar
+          </Link>
           <button onClick={dismissInstall} aria-label="Ahora no, ocultar"
             style={{
               flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: 'none',

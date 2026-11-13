@@ -212,3 +212,14 @@ export function trackPushSubscribe(params: { source: string; sport?: string }) {
 export function trackPushUnsubscribe(params: { source: string; sport?: string }) {
   track('push_unsubscribe', params)
 }
+
+// ── App de Android (prueba cerrada) ───────────────────────────────
+
+/**
+ * Embudo de testers de Android: el aviso en móviles Android (`banner_*`) y los
+ * tres pasos de /android (`step_1..3`). Google pide 12 testers 14 días antes de
+ * abrir la app a todos; esto dice en qué paso se pierde la gente.
+ */
+export function trackAndroidBeta(action: 'banner_shown' | 'banner_click' | 'banner_dismiss' | 'step_1' | 'step_2' | 'step_3') {
+  track('android_beta', { action })
+}
